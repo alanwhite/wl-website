@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# White Label Website
 
-## Getting Started
+A white-label community website built with Next.js, Prisma, and Auth.js. Each client gets their own instance with custom branding, deployed via Docker.
 
-First, run the development server:
+## Quick Start (New Client Site)
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- A domain name (or use `localhost:3000` for local testing)
+- OAuth credentials for at least one provider (GitHub, Google, or Facebook)
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repo-url> my-client-site
+cd my-client-site
+./setup.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The interactive script will:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Collect your site branding (name, description, hero text)
+2. Configure OAuth providers and email settings
+3. Generate `.env` and `prisma/seed-config.json`
+4. Build and start Docker containers
+5. Seed the database with your branding
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Promote Admin
 
-## Learn More
+After the site is running and you've logged in via OAuth:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+./promote-admin.sh your@email.com
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Manual Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+If you prefer to set things up manually:
 
-## Deploy on Vercel
+1. Copy `.env.example` to `.env` and fill in values
+2. Generate an auth secret: `openssl rand -base64 32`
+3. Optionally create `prisma/seed-config.json` with branding:
+   ```json
+   {
+     "siteName": "My Site",
+     "siteDescription": "Site description",
+     "heroTitle": "Welcome",
+     "heroSubtitle": "Join us today"
+   }
+   ```
+4. Start services: `docker compose up -d --build`
+5. Seed the database: `docker compose exec app npx prisma db seed`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
+
+## Useful Commands
+
+```bash
+docker compose logs -f          # view logs
+docker compose ps               # check service status
+docker compose down              # stop services
+docker compose up -d             # restart services
+./promote-admin.sh user@email    # promote user to admin
+```

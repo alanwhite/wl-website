@@ -1,0 +1,144 @@
+"use server";
+
+import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/auth-helpers";
+import { setConfig, invalidateConfigCache } from "@/lib/config";
+import { revalidatePath } from "next/cache";
+import { saveFile, deleteFile } from "@/lib/upload";
+import { getConfig } from "@/lib/config";
+import { logAudit } from "@/lib/audit";
+
+async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user || !isAdmin(session.user)) {
+    throw new Error("Unauthorized");
+  }
+  return session.user;
+}
+
+export async function updateSiteSettings(settings: Record<string, string>) {
+  const admin = await requireAdmin();
+
+  for (const [key, value] of Object.entries(settings)) {
+    await setConfig(key, value);
+  }
+
+  invalidateConfigCache();
+  revalidatePath("/", "layout");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.update",
+    details: { keys: Object.keys(settings) },
+  });
+}
+
+export async function updateTheme(theme: { primary: string; primaryForeground: string; radius: string }) {
+  const admin = await requireAdmin();
+  await setConfig("site.theme", JSON.stringify(theme));
+  invalidateConfigCache("site.theme");
+  revalidatePath("/", "layout");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.theme.update",
+    details: theme,
+  });
+}
+
+export async function updateRegistrationFields(fields: string) {
+  const admin = await requireAdmin();
+  // Validate it's valid JSON array
+  JSON.parse(fields);
+  await setConfig("registration.fields", fields);
+  invalidateConfigCache("registration.fields");
+  revalidatePath("/register");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.registrationFields.update",
+  });
+}
+
+export async function updateLogo(formData: FormData) {
+  const admin = await requireAdmin();
+  const file = formData.get("logo") as File | null;
+  if (!file || file.size === 0) throw new Error("No file provided");
+
+  const oldLogoUrl = await getConfig("site.logoUrl");
+  if (oldLogoUrl) await deleteFile(oldLogoUrl).catch(() => {});
+
+  const url = await saveFile(file, "branding");
+  await setConfig("site.logoUrl", url);
+  invalidateConfigCache("site.logoUrl");
+  revalidatePath("/", "layout");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.logo.update",
+  });
+
+  return url;
+}
+
+export async function updateFavicon(formData: FormData) {
+  const admin = await requireAdmin();
+  const file = formData.get("favicon") as File | null;
+  if (!file || file.size === 0) throw new Error("No file provided");
+
+  const oldFaviconUrl = await getConfig("site.faviconUrl");
+  if (oldFaviconUrl) await deleteFile(oldFaviconUrl).catch(() => {});
+
+  const url = await saveFile(file, "branding");
+  await setConfig("site.faviconUrl", url);
+  invalidateConfigCache("site.faviconUrl");
+  revalidatePath("/", "layout");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.favicon.update",
+  });
+
+  return url;
+}
+
+export async function updateNavigation(links: NavLink[]) {
+  const admin = await requireAdmin();
+  await setConfig("site.navigation", JSON.stringify(links));
+  invalidateConfigCache("site.navigation");
+  revalidatePath("/", "layout");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.navigation.update",
+    details: { linkCount: links.length },
+  });
+}
+
+export async function updateAnalyticsScript(script: string) {
+  const admin = await requireAdmin();
+  await setConfig("site.analyticsScript", script);
+  invalidateConfigCache("site.analyticsScript");
+  revalidatePath("/", "layout");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.analytics.update",
+  });
+}
+
+export interface NavLink {
+  label: string;
+  href: string;
+  isExternal: boolean;
+  sortOrder: number;
+  minTierLevel: number | null;
+  requiredRoleSlug: string | null;
+}
