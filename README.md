@@ -9,7 +9,8 @@ A white-label community website built with Next.js, Prisma, and Auth.js. Each cl
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- A domain name (or use `localhost:3000` for local testing)
+- [wl-gateway](https://github.com/alanwhite/wl-gateway) running on the target server (for production)
+- A domain name managed via Cloudflare (or use `localhost:3000` for local testing)
 - OAuth credentials for at least one provider (GitHub, Google, or Facebook)
 
 ### Setup
@@ -23,10 +24,12 @@ cd my-client-site
 The interactive script will:
 
 1. Collect your site branding (name, description, hero text)
-2. Configure OAuth providers and email settings
-3. Generate `.env` and `prisma/seed-config.json`
-4. Build and start Docker containers
-5. Seed the database with your branding
+2. Set a unique project name (`COMPOSE_PROJECT_NAME`) for gateway routing
+3. Configure OAuth providers and email settings
+4. Generate `.env` and `prisma/seed-config.json`
+5. Create the `wl-gateway` Docker network (if it doesn't exist)
+6. Build and start Docker containers
+7. Seed the database with your branding
 
 ### Promote Admin
 
@@ -85,15 +88,20 @@ After the site is running and you've logged in via OAuth:
 | `RESEND_API_KEY` | No | Resend API key for sending emails | Logs emails to console |
 | `EMAIL_FROM` | No | Sender address for outgoing emails | `noreply@example.com` |
 | `UPLOAD_DIR` | No | Directory for file uploads | `./uploads` |
+| `COMPOSE_PROJECT_NAME` | Yes (prod) | Unique project name per site (e.g. `client-alpha`). Determines the container name used by the gateway for routing. | `wl-website` |
 
 At least one OAuth provider (ID + secret pair) must be configured for login to work.
 
 ## Production Deployment
 
+Production sites run behind [wl-gateway](https://github.com/alanwhite/wl-gateway), a shared nginx gateway on port 8443 that terminates TLS with Cloudflare origin certificates. Cloudflare Origin Rules route each domain to the gateway.
+
 ### Prerequisites
 
-- A VPS or server with Docker and Docker Compose
-- A domain name with DNS A record pointing to the server
+- A server with Docker and Docker Compose (e.g. ODROID M1)
+- [wl-gateway](https://github.com/alanwhite/wl-gateway) set up and running on the server
+- A domain managed via Cloudflare (DNS proxied through Cloudflare)
+- Port 8443 open on the router, forwarded to the server
 - OAuth app credentials configured with production callback URLs:
   - GitHub: `https://yourdomain.com/api/auth/callback/github`
   - Google: `https://yourdomain.com/api/auth/callback/google`
@@ -103,45 +111,40 @@ At least one OAuth provider (ID + secret pair) must be configured for login to w
 
 1. Clone the repo and run the setup script:
    ```bash
-   git clone <repo-url> my-client-site
-   cd my-client-site
+   git clone <repo-url> ~/my-client-site
+   cd ~/my-client-site
    ./setup.sh
    ```
-   Enter your production domain when prompted (e.g. `https://yourdomain.com`).
+   Enter your production domain and a unique project name (e.g. `client-alpha`) when prompted. The project name determines the container name used for gateway routing.
 
-2. Set up a reverse proxy (nginx or Caddy) to handle SSL termination and forward traffic to port 3000:
-
-   **Caddy** (automatic HTTPS):
-   ```
-   yourdomain.com {
-       reverse_proxy localhost:3000
-   }
-   ```
-
-   **nginx**:
-   ```nginx
-   server {
-       listen 443 ssl;
-       server_name yourdomain.com;
-
-       ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-       ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
-
-       location / {
-           proxy_pass http://localhost:3000;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
-   }
-   ```
-
-3. Start the containers:
+2. Register the site with the gateway:
    ```bash
-   docker compose up -d --build
+   cd ~/wl-gateway
+   ./add-site.sh yourdomain.com client-alpha-app
    ```
-   Database migrations (`prisma migrate deploy`) run automatically on container startup.
+
+3. Place a Cloudflare origin certificate in the gateway:
+   ```bash
+   mkdir -p ~/wl-gateway/nginx/ssl/yourdomain.com
+   # Save the certificate and key from Cloudflare dashboard:
+   #   ~/wl-gateway/nginx/ssl/yourdomain.com/origin.pem
+   #   ~/wl-gateway/nginx/ssl/yourdomain.com/origin.key
+   ```
+   Generate one at: Cloudflare dashboard → your domain → SSL/TLS → Origin Server → Create Certificate.
+
+4. Create a Cloudflare Origin Rule:
+   - Cloudflare dashboard → your domain → Rules → Origin Rules
+   - When: Hostname equals `yourdomain.com`
+   - Then: Destination Port → Override to `8443`
+   - Deploy
+
+5. Verify:
+   ```bash
+   curl https://yourdomain.com/api/health
+   # → {"status":"ok","db":"connected",...}
+   ```
+
+Database migrations (`prisma migrate deploy`) run automatically on container startup.
 
 ### Backups
 
@@ -173,26 +176,33 @@ Each backup archive contains:
 
 ## Multiple Client Deployments
 
-Each client gets a fully isolated instance — separate application, database, and uploads.
+Each client gets a fully isolated instance — separate application, database, and uploads. All sites share a single [wl-gateway](https://github.com/alanwhite/wl-gateway) for routing.
 
 1. Clone the repo into a separate directory per client:
    ```bash
-   git clone <repo-url> client-alpha
-   git clone <repo-url> client-beta
+   git clone <repo-url> ~/client-alpha
+   git clone <repo-url> ~/client-beta
    ```
 
-2. Run `./setup.sh` in each directory. When prompted, assign different host ports to avoid conflicts:
+2. Run `./setup.sh` in each directory with a unique project name:
 
-   | Client | Host Port | `AUTH_URL` |
-   |--------|-----------|------------|
-   | Alpha  | 3001      | `https://alpha.example.com` |
-   | Beta   | 3002      | `https://beta.example.com` |
+   | Client | `COMPOSE_PROJECT_NAME` | Domain |
+   |--------|------------------------|--------|
+   | Alpha  | `client-alpha`         | `alpha.example.com` |
+   | Beta   | `client-beta`          | `beta.example.com` |
 
-3. Each instance has its own Docker Compose stack with isolated database and uploads volumes — no data is shared between clients.
+3. Register each site with the gateway:
+   ```bash
+   cd ~/wl-gateway
+   ./add-site.sh alpha.example.com client-alpha-app
+   ./add-site.sh beta.example.com client-beta-app
+   ```
 
-4. Point your reverse proxy to each port per domain.
+4. Place Cloudflare origin certs and create Origin Rules for each domain (all pointing to port 8443).
 
-A single server comfortably supports up to ~10 client instances, depending on available resources.
+Each instance has its own Docker Compose stack with isolated database and uploads volumes — no data is shared between clients. No host port management is needed; the gateway routes by domain name.
+
+A single server comfortably supports up to ~10 client instances (matching Cloudflare's free-plan Origin Rule limit).
 
 ## Custom Code per Site (Forks)
 
