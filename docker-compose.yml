@@ -6,10 +6,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: wl_website
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -22,8 +22,9 @@ services:
       args:
         AUTH_CREDENTIALS_TEST: "true"
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    container_name: ${COMPOSE_PROJECT_NAME:-wl-website}-app
+    expose:
+      - "3000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/wl_website?schema=public
       AUTH_URL: http://localhost:3000
@@ -34,6 +35,16 @@ services:
         condition: service_healthy
     volumes:
       - uploads:/app/uploads
+    networks:
+      - internal
+      - gateway
+
+networks:
+  internal:
+    driver: bridge
+  gateway:
+    name: wl-gateway
+    external: true
 
 volumes:
   pgdata:

@@ -33,9 +33,10 @@ prompt HERO_TITLE       "Hero title"         "Welcome to Our Community"
 prompt HERO_SUBTITLE    "Hero subtitle"      "Join our community today. Register and get approved to access member resources."
 echo ""
 
-echo "── Domain & Admin ──"
-prompt DOMAIN      "Domain (e.g. example.com or localhost:3000)" "localhost:3000"
-prompt ADMIN_EMAIL "Admin email address"
+echo "── Domain & Deployment ──"
+prompt DOMAIN              "Domain (e.g. example.com or localhost:3000)" "localhost:3000"
+prompt COMPOSE_PROJECT_NAME "Project name (unique per site, e.g. client-alpha)" "wl-website"
+prompt ADMIN_EMAIL          "Admin email address"
 echo ""
 
 # Determine protocol
@@ -85,6 +86,9 @@ EMAIL_FROM="${EMAIL_FROM}"
 
 # File uploads
 UPLOAD_DIR="/app/uploads"
+
+# Docker project name (determines container name: <project>-app)
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME}"
 EOF
 
 echo ""
@@ -104,7 +108,16 @@ EOF
 
 echo "✓ prisma/seed-config.json written"
 
-# ── 4. Build and start ─────────────────────────────────────────────────────
+# ── 4. Ensure gateway network exists ──────────────────────────────────────
+
+if ! docker network inspect wl-gateway &>/dev/null; then
+  docker network create wl-gateway
+  echo "✓ Created Docker network 'wl-gateway'"
+else
+  echo "✓ Docker network 'wl-gateway' already exists"
+fi
+
+# ── 5. Build and start ─────────────────────────────────────────────────────
 
 echo ""
 echo "── Building and starting Docker containers ──"
@@ -145,10 +158,22 @@ echo "  Site URL:    ${PROTOCOL}://${DOMAIN}"
 echo "  Admin email: ${ADMIN_EMAIL}"
 echo ""
 echo "  Next steps:"
-echo "  1. Log in via OAuth at ${PROTOCOL}://${DOMAIN}"
-echo "  2. Promote yourself to admin:"
-echo "     ./promote-admin.sh ${ADMIN_EMAIL}"
-echo "  3. Access the admin dashboard at ${PROTOCOL}://${DOMAIN}/admin"
+if [[ "$DOMAIN" != localhost* && "$DOMAIN" != 127.0.0.* ]]; then
+  echo "  1. Register this site with the gateway:"
+  echo "     cd ~/wl-gateway && ./add-site.sh ${DOMAIN} ${COMPOSE_PROJECT_NAME}-app"
+  echo "  2. Place Cloudflare origin cert:"
+  echo "     ~/wl-gateway/nginx/ssl/${DOMAIN}/origin.pem"
+  echo "     ~/wl-gateway/nginx/ssl/${DOMAIN}/origin.key"
+  echo "  3. Create Cloudflare Origin Rule: ${DOMAIN} → port 8443"
+  echo "  4. Promote yourself to admin:"
+  echo "     ./promote-admin.sh ${ADMIN_EMAIL}"
+  echo "  5. Access the admin dashboard at ${PROTOCOL}://${DOMAIN}/admin"
+else
+  echo "  1. Log in via OAuth at ${PROTOCOL}://${DOMAIN}"
+  echo "  2. Promote yourself to admin:"
+  echo "     ./promote-admin.sh ${ADMIN_EMAIL}"
+  echo "  3. Access the admin dashboard at ${PROTOCOL}://${DOMAIN}/admin"
+fi
 echo ""
 echo "  Useful commands:"
 echo "    docker compose logs -f        # view logs"
