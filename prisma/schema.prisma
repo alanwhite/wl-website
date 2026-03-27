@@ -61,8 +61,11 @@ model User {
   sessions      Session[]
   registration  Registration?
   profile       UserProfile?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  pollsCreated   Poll[]          @relation("PollCreator")
+  pollVotes      PollVote[]
+  authenticators Authenticator[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 model Account {
@@ -97,6 +100,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Authenticator {
+  credentialID         String  @id
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, credentialID])
 }
 
 model Registration {
@@ -208,4 +225,46 @@ model Announcement {
   updatedAt DateTime  @updatedAt
 
   @@index([published, expiresAt])
+}
+
+model Poll {
+  id                String       @id @default(cuid())
+  title             String
+  description       String?      @db.Text
+  isAnonymous       Boolean      @default(false)
+  targetRoleSlugs   String[]     @default([])
+  targetMinTierLevel Int?
+  closedAt          DateTime?
+  closedBy          String?
+  createdBy         String
+  creator           User         @relation("PollCreator", fields: [createdBy], references: [id])
+  options           PollOption[]
+  votes             PollVote[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([createdAt])
+}
+
+model PollOption {
+  id        String     @id @default(cuid())
+  pollId    String
+  text      String
+  sortOrder Int        @default(0)
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes     PollVote[]
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  pollId    String
+  optionId  String
+  userId    String
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([pollId, userId])
 }

@@ -121,6 +121,34 @@ export async function updateNavigation(links: NavLink[]) {
   });
 }
 
+export async function updatePollManagerRoles(rolesJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(rolesJson); // validate
+  await setConfig("polls.managerRoles", rolesJson);
+  invalidateConfigCache("polls.managerRoles");
+  revalidatePath("/polls");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.pollManagerRoles.update",
+  });
+}
+
+export async function updateRegistrationTerms(terms: string) {
+  const admin = await requireAdmin();
+  JSON.parse(terms); // validate
+  await setConfig("registration.terms", terms);
+  invalidateConfigCache("registration.terms");
+  revalidatePath("/register");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.registrationTerms.update",
+  });
+}
+
 export async function updateAnalyticsScript(script: string) {
   const admin = await requireAdmin();
   await setConfig("site.analyticsScript", script);

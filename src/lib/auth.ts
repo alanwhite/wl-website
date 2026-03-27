@@ -4,6 +4,7 @@ import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Facebook from "next-auth/providers/facebook";
 import Credentials from "next-auth/providers/credentials";
+import Passkey from "next-auth/providers/passkey";
 import { prisma } from "./prisma";
 
 const providers = [];
@@ -85,6 +86,12 @@ if (credentialsEnabled) {
   }));
 }
 
+// Passkey provider (requires database sessions, so only enabled in production mode)
+const passkeysEnabled = !credentialsEnabled;
+if (passkeysEnabled) {
+  providers.push(Passkey);
+}
+
 // Credentials provider requires JWT strategy
 const sessionStrategy = credentialsEnabled ? "jwt" as const : "database" as const;
 
@@ -117,6 +124,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/login",
   },
+  experimental: { enableWebAuthn: passkeysEnabled },
   callbacks: {
     async jwt({ token, user, trigger }) {
       if (user) {

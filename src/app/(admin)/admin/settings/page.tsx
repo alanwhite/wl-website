@@ -1,6 +1,6 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
-import type { ThemeConfig, RegistrationField } from "@/lib/config";
+import type { ThemeConfig, RegistrationField, RegistrationTermsConfig } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -19,6 +19,7 @@ export default async function AdminSettingsPage() {
     faviconUrl,
     navLinks,
     analyticsScript,
+    registrationTerms,
     tiers,
     roles,
   ] = await Promise.all([
@@ -32,6 +33,7 @@ export default async function AdminSettingsPage() {
     getConfig("site.faviconUrl"),
     getNavLinks(),
     getConfig("site.analyticsScript"),
+    getConfigJson<RegistrationTermsConfig>("registration.terms"),
     prisma.membershipTier.findMany({ where: { isSystem: false }, orderBy: { level: "asc" }, select: { id: true, name: true, level: true } }),
     prisma.role.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
   ]);
@@ -51,6 +53,8 @@ export default async function AdminSettingsPage() {
           faviconUrl,
           navLinks,
           analyticsScript: analyticsScript ?? "",
+          registrationTerms: registrationTerms ?? { enabled: false, label: "", content: "", links: [] },
+          pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
         }}
         tiers={tiers}
         roles={roles}

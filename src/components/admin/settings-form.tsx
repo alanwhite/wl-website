@@ -12,13 +12,15 @@ import {
   updateSiteSettings,
   updateTheme,
   updateRegistrationFields,
+  updateRegistrationTerms,
+  updatePollManagerRoles,
   updateLogo,
   updateFavicon,
   updateAnalyticsScript,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
-import type { ThemeConfig, RegistrationField } from "@/lib/config";
+import type { ThemeConfig, RegistrationField, RegistrationTermsConfig } from "@/lib/config";
 import { NavigationEditor } from "@/components/admin/navigation-editor";
 
 interface SettingsFormProps {
@@ -33,6 +35,8 @@ interface SettingsFormProps {
     faviconUrl: string | null;
     navLinks: NavLink[];
     analyticsScript: string;
+    registrationTerms: RegistrationTermsConfig;
+    pollManagerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -50,6 +54,11 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(settings.logoUrl);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(settings.faviconUrl);
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
+  const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
+  const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
+  const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
+  const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
+  const [termsLinks, setTermsLinks] = useState(settings.registrationTerms.links);
   const [loading, setLoading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +100,36 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       toast.success("Registration fields saved");
     } catch {
       toast.error("Invalid JSON");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSavePollRoles() {
+    setLoading(true);
+    try {
+      await updatePollManagerRoles(JSON.stringify(pollManagerRoleSlugs));
+      toast.success("Poll manager roles saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveTerms() {
+    setLoading(true);
+    try {
+      const config = JSON.stringify({
+        enabled: termsEnabled,
+        label: termsLabel,
+        content: termsContent,
+        links: termsLinks,
+      });
+      await updateRegistrationTerms(config);
+      toast.success("Terms settings saved");
+    } catch {
+      toast.error("Failed to save");
     } finally {
       setLoading(false);
     }
@@ -150,6 +189,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="theme">Theme</TabsTrigger>
         <TabsTrigger value="navigation">Navigation</TabsTrigger>
         <TabsTrigger value="fields">Registration Fields</TabsTrigger>
+        <TabsTrigger value="terms">Terms &amp; Conditions</TabsTrigger>
+        <TabsTrigger value="polls">Polls</TabsTrigger>
         <TabsTrigger value="integrations">Integrations</TabsTrigger>
       </TabsList>
 
@@ -307,6 +348,142 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               className="font-mono text-sm"
             />
             <Button onClick={handleSaveFields} disabled={loading}>Save Fields</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="terms">
+        <Card>
+          <CardHeader>
+            <CardTitle>Terms &amp; Conditions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              When enabled, users must accept terms before completing registration.
+              You can provide inline text, links to pages, or both.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="termsEnabled"
+                checked={termsEnabled}
+                onChange={(e) => setTermsEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border"
+              />
+              <Label htmlFor="termsEnabled">Require terms acceptance on registration</Label>
+            </div>
+            {termsEnabled && (
+              <>
+                <div className="space-y-2">
+                  <Label>Checkbox Label</Label>
+                  <Input
+                    value={termsLabel}
+                    onChange={(e) => setTermsLabel(e.target.value)}
+                    placeholder="I agree to the terms and conditions"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The text shown next to the checkbox. Links (if any) are appended automatically.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Terms Content (optional)</Label>
+                  <Textarea
+                    value={termsContent}
+                    onChange={(e) => setTermsContent(e.target.value)}
+                    rows={8}
+                    placeholder="Paste the full text of your terms, constitution, or rules here. Shown in a scrollable box above the checkbox."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Links (optional)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Add links to pages like Terms, Privacy Policy, or Constitution. These are appended to the checkbox label.
+                  </p>
+                  {termsLinks.map((link, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        value={link.text}
+                        onChange={(e) => {
+                          const updated = [...termsLinks];
+                          updated[i] = { ...updated[i], text: e.target.value };
+                          setTermsLinks(updated);
+                        }}
+                        placeholder="Link text"
+                        className="flex-1"
+                      />
+                      <Input
+                        value={link.url}
+                        onChange={(e) => {
+                          const updated = [...termsLinks];
+                          updated[i] = { ...updated[i], url: e.target.value };
+                          setTermsLinks(updated);
+                        }}
+                        placeholder="/p/terms or https://..."
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTermsLinks(termsLinks.filter((_, j) => j !== i))}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTermsLinks([...termsLinks, { text: "", url: "" }])}
+                  >
+                    Add Link
+                  </Button>
+                </div>
+              </>
+            )}
+            <Button onClick={handleSaveTerms} disabled={loading}>Save Terms Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="polls">
+        <Card>
+          <CardHeader>
+            <CardTitle>Poll Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which roles can create and close polls. Admins can always manage polls regardless of this setting.
+            </p>
+            <div className="space-y-2">
+              <Label>Poll Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No roles defined yet. Create roles in the Roles section first.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`poll-role-${role.slug}`}
+                        checked={pollManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setPollManagerRoleSlugs([...pollManagerRoleSlugs, role.slug]);
+                          } else {
+                            setPollManagerRoleSlugs(pollManagerRoleSlugs.filter((s) => s !== role.slug));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`poll-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSavePollRoles} disabled={loading}>Save Poll Settings</Button>
           </CardContent>
         </Card>
       </TabsContent>

@@ -6,14 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { PasskeyManager } from "@/components/auth/passkey-manager";
 
 export const dynamic = "force-dynamic";
+
+const passkeysEnabled = process.env.AUTH_CREDENTIALS_TEST !== "true";
 
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [profile, userRoles] = await Promise.all([
+  const [profile, userRoles, authenticators] = await Promise.all([
     prisma.userProfile.findUnique({
       where: { userId: session.user.id },
     }),
@@ -21,6 +24,17 @@ export default async function ProfilePage() {
       where: { userId: session.user.id },
       include: { role: { select: { name: true } } },
     }),
+    passkeysEnabled
+      ? prisma.authenticator.findMany({
+          where: { userId: session.user.id },
+          select: {
+            credentialID: true,
+            credentialDeviceType: true,
+            credentialBackedUp: true,
+            transports: true,
+          },
+        })
+      : [],
   ]);
 
   const initials = session.user.name
@@ -96,6 +110,17 @@ export default async function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {passkeysEnabled && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Passkeys</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PasskeyManager passkeys={authenticators} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

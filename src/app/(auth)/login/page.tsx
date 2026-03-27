@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSiteInfo } from "@/lib/config";
 import { Github } from "lucide-react";
+import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function LoginPage({
 
   const siteInfo = await getSiteInfo();
   const credentialsEnabled = process.env.AUTH_CREDENTIALS_TEST === "true";
+  const passkeysEnabled = !credentialsEnabled;
 
   const providers = [];
   if (process.env.AUTH_GITHUB_ID) providers.push({ id: "github", name: "GitHub", icon: Github });
@@ -97,7 +99,23 @@ export default async function LoginPage({
               </div>
             </div>
           )}
-          {!credentialsEnabled && providers.length === 0 && (
+          {passkeysEnabled && (
+            <>
+              <PasskeyLoginButton />
+              {providers.length > 0 && (
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {!credentialsEnabled && !passkeysEnabled && providers.length === 0 && (
+            /* This case can't happen (passkeys enabled whenever credentials disabled), but kept for safety */
             <p className="text-center text-sm text-muted-foreground">
               No OAuth providers configured. Set AUTH_GITHUB_ID, AUTH_GOOGLE_ID, or AUTH_FACEBOOK_ID in your environment.
             </p>

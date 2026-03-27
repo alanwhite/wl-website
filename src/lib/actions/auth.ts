@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getRegistrationFields } from "@/lib/config";
+import { getRegistrationFields, getRegistrationTerms } from "@/lib/config";
 import { buildRegistrationSchema } from "@/lib/validations/registration";
 import { sendEmail, shouldNotifyAdmin } from "@/lib/email";
 import { redirect } from "next/navigation";
@@ -12,6 +12,7 @@ export async function submitRegistration(formData: FormData) {
   if (!session?.user?.id) throw new Error("Not authenticated");
 
   const fields = await getRegistrationFields();
+  const terms = await getRegistrationTerms();
   const schema = buildRegistrationSchema(fields);
 
   const data: Record<string, unknown> = {};
@@ -54,11 +55,18 @@ export async function submitRegistration(formData: FormData) {
     });
   }
 
+  // Server-side terms validation
+  const termsAccepted = formData.get("termsAccepted") === "on";
+  if (terms.enabled && !termsAccepted) {
+    throw new Error("You must accept the terms to register");
+  }
+  const termsAcceptedAt = terms.enabled && termsAccepted ? new Date() : null;
+
   await prisma.registration.upsert({
     where: { userId: session.user.id },
     update: {
       customFields: validated as Record<string, string | boolean>,
-      termsAcceptedAt: new Date(),
+      termsAcceptedAt,
       documents: {
         createMany: uploadedDocs.length > 0 ? { data: uploadedDocs } : undefined,
       },
@@ -66,7 +74,7 @@ export async function submitRegistration(formData: FormData) {
     create: {
       userId: session.user.id,
       customFields: validated as Record<string, string | boolean>,
-      termsAcceptedAt: new Date(),
+      termsAcceptedAt,
       documents: {
         createMany: uploadedDocs.length > 0 ? { data: uploadedDocs } : undefined,
       },

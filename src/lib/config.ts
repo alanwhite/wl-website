@@ -96,6 +96,58 @@ export async function getRegistrationFields(): Promise<RegistrationField[]> {
   return fields ?? [];
 }
 
+export interface RegistrationTermsLink {
+  text: string;
+  url: string;
+}
+
+export interface RegistrationTermsConfig {
+  enabled: boolean;
+  label: string;
+  content: string;
+  links: RegistrationTermsLink[];
+}
+
+export async function getRegistrationTerms(): Promise<RegistrationTermsConfig> {
+  const terms = await getConfigJson<RegistrationTermsConfig>("registration.terms");
+  return terms ?? { enabled: false, label: "", content: "", links: [] };
+}
+
+export async function getPollManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("polls.managerRoles");
+  return roles ?? [];
+}
+
+export function canAccessPoll(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  poll: { targetRoleSlugs: string[]; targetMinTierLevel: number | null },
+): boolean {
+  // No targeting = everyone can access
+  if (poll.targetRoleSlugs.length === 0 && poll.targetMinTierLevel == null) return true;
+
+  // Check tier requirement
+  if (poll.targetMinTierLevel != null && (user.tierLevel ?? 0) < poll.targetMinTierLevel) {
+    return false;
+  }
+
+  // Check role requirement
+  if (poll.targetRoleSlugs.length > 0) {
+    if (!poll.targetRoleSlugs.some((slug) => user.roleSlugs?.includes(slug))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function canManagePolls(user: { roleSlugs?: string[]; tierLevel?: number }, managerRoles: string[]): boolean {
+  // Admin can always manage polls
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  // Check if user holds any of the configured manager roles
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
 export interface SiteAssets {
   logoUrl: string | null;
   faviconUrl: string | null;
