@@ -12,7 +12,13 @@ export function PasskeyLoginButton() {
     setLoading(true);
     setError(null);
     try {
-      await signIn("passkey", { callbackUrl: "/dashboard" });
+      const result = await signIn("passkey", { redirect: false });
+      if (result?.error) {
+        setError("Passkey authentication failed. Try signing in with an OAuth provider instead.");
+        setLoading(false);
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch {
       setError("Passkey authentication failed. Try signing in with an OAuth provider instead.");
       setLoading(false);
