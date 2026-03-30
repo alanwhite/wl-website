@@ -41,7 +41,10 @@ export async function saveFile(
 }
 
 export async function deleteFile(urlPath: string): Promise<void> {
-  const filePath = path.join(process.cwd(), urlPath);
+  const filePath = path.resolve(process.cwd(), urlPath);
+  if (!filePath.startsWith(UPLOAD_BASE)) {
+    throw new Error("Invalid file path");
+  }
   if (existsSync(filePath)) {
     await unlink(filePath);
   }

@@ -15,7 +15,7 @@ export async function GET() {
         status: "error",
         db: "disconnected",
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Database connection failed",
       },
       { status: 503 }
     );

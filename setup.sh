@@ -63,10 +63,12 @@ echo ""
 # ── 2. Generate .env ────────────────────────────────────────────────────────
 
 AUTH_SECRET=$(openssl rand -base64 32)
+DB_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=' | head -c 24)
 
 cat > .env <<EOF
-# Database (matches docker-compose defaults)
-DATABASE_URL="postgresql://postgres:postgres@db:5432/wl_website?schema=public"
+# Database
+DB_PASSWORD="${DB_PASSWORD}"
+DATABASE_URL="postgresql://postgres:${DB_PASSWORD}@db:5432/wl_website?schema=public"
 
 # Auth.js
 AUTH_SECRET="${AUTH_SECRET}"

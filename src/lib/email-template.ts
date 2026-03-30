@@ -1,5 +1,14 @@
 import { getSiteInfo, getConfig, getThemeConfig } from "./config";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 interface BrandingOptions {
   siteName: string;
   logoUrl: string | null;
@@ -88,7 +97,7 @@ export function rejectionEmailHtml(reason?: string): string {
 <h2 style="margin:0 0 16px;color:#18181b;">Registration Update</h2>
 <p style="color:#3f3f46;line-height:1.6;">
   Your registration has been reviewed.
-  ${reason ? `<br/><br/><strong>Reason:</strong> ${reason}` : ""}
+  ${reason ? `<br/><br/><strong>Reason:</strong> ${escapeHtml(reason)}` : ""}
 </p>
 <p style="color:#3f3f46;line-height:1.6;">
   If you have questions, please contact us.
@@ -101,12 +110,12 @@ export function contactNotificationHtml(name: string, email: string, subject: st
 <table style="width:100%;border-collapse:collapse;">
   <tr>
     <td style="padding:8px 0;color:#71717a;width:80px;">From:</td>
-    <td style="padding:8px 0;color:#18181b;">${name} (${email})</td>
+    <td style="padding:8px 0;color:#18181b;">${escapeHtml(name)} (${escapeHtml(email)})</td>
   </tr>
-  ${subject ? `<tr><td style="padding:8px 0;color:#71717a;">Subject:</td><td style="padding:8px 0;color:#18181b;">${subject}</td></tr>` : ""}
+  ${subject ? `<tr><td style="padding:8px 0;color:#71717a;">Subject:</td><td style="padding:8px 0;color:#18181b;">${escapeHtml(subject)}</td></tr>` : ""}
 </table>
 <div style="margin-top:16px;padding:16px;background:#f4f4f5;border-radius:6px;color:#3f3f46;line-height:1.6;">
-  ${message}
+  ${escapeHtml(message)}
 </div>`;
 }
 

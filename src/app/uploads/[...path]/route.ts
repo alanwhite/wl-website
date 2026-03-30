@@ -35,10 +35,16 @@ export async function GET(
   const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
 
   const buffer = await readFile(filePath);
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
-  });
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=31536000, immutable",
+  };
+
+  // SVGs can contain embedded JavaScript — sandbox them
+  if (ext === ".svg") {
+    headers["Content-Security-Policy"] = "sandbox";
+    headers["Content-Disposition"] = "inline; filename=\"image.svg\"";
+  }
+
+  return new NextResponse(buffer, { headers });
 }

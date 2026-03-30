@@ -9,9 +9,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const ALLOWED_SUBDIRS = ["general", "branding", "media", "documents"];
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   const subdir = (formData.get("subdir") as string) ?? "general";
+
+  if (!ALLOWED_SUBDIRS.includes(subdir)) {
+    return NextResponse.json({ error: "Invalid upload category" }, { status: 400 });
+  }
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -21,9 +27,7 @@ export async function POST(req: NextRequest) {
     const url = await saveFile(file, subdir);
     return NextResponse.json({ url });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Upload failed" },
-      { status: 400 }
-    );
+    console.error("Upload failed:", error);
+    return NextResponse.json({ error: "Upload failed" }, { status: 400 });
   }
 }

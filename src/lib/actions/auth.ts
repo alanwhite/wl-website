@@ -32,10 +32,20 @@ export async function submitRegistration(formData: FormData) {
   const fileFields = fields.filter((f) => f.type === "file");
 
   for (const field of fileFields) {
+    const ALLOWED_DOC_TYPES = [
+      "image/jpeg", "image/png", "image/gif", "image/webp",
+      "application/pdf",
+      "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
     const file = formData.get(field.name) as File | null;
     if (!file || file.size === 0) {
       if (field.required) throw new Error(`${field.label} is required`);
       continue;
+    }
+
+    if (!ALLOWED_DOC_TYPES.includes(file.type)) {
+      throw new Error(`${field.label}: file type not allowed. Use images, PDF, or Word documents.`);
     }
 
     const uploadDir = process.env.UPLOAD_DIR ?? "./uploads";

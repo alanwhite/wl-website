@@ -17,7 +17,8 @@ fi
 
 echo "Promoting ${EMAIL} to Admin tier..."
 
-docker compose exec -T db psql -U postgres -d wl_website -c \
-  "UPDATE \"User\" SET \"tierId\" = 'tier_admin', \"tierLevel\" = 999, \"tierName\" = 'Admin', status = 'APPROVED' WHERE email = '${EMAIL}';"
+docker compose exec -T db psql -U postgres -d wl_website \
+  -v email="$EMAIL" \
+  -c "UPDATE \"User\" SET \"tierId\" = 'tier_admin', \"tierLevel\" = 999, \"tierName\" = 'Admin', status = 'APPROVED' WHERE email = :'email';"
 
 echo "Done. User ${EMAIL} promoted to Admin tier."

@@ -16,10 +16,18 @@ async function requireAdmin() {
   return session.user;
 }
 
+const ALLOWED_SITE_KEYS = [
+  "site.name",
+  "site.description",
+  "site.heroTitle",
+  "site.heroSubtitle",
+];
+
 export async function updateSiteSettings(settings: Record<string, string>) {
   const admin = await requireAdmin();
 
   for (const [key, value] of Object.entries(settings)) {
+    if (!ALLOWED_SITE_KEYS.includes(key)) continue;
     await setConfig(key, value);
   }
 
