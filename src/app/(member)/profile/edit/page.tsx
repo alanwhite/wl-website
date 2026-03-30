@@ -45,11 +45,11 @@ export default async function EditProfilePage() {
                 <Input id="city" name="city" defaultValue={profile?.city ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
+                <Label htmlFor="state">County / Region</Label>
                 <Input id="state" name="state" defaultValue={profile?.state ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zip">ZIP</Label>
+                <Label htmlFor="zip">Postcode</Label>
                 <Input id="zip" name="zip" defaultValue={profile?.zip ?? ""} />
               </div>
             </div>
