@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 import { getSiteInfo, getConfig } from "@/lib/config";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -9,14 +10,15 @@ import { getNavLinks } from "@/lib/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [siteInfo, logoUrl, navLinks] = await Promise.all([
+  const [session, siteInfo, logoUrl, navLinks] = await Promise.all([
+    auth(),
     getSiteInfo(),
     getConfig("site.logoUrl"),
     getNavLinks(),
   ]);
 
   return (
-    <Providers>
+    <Providers session={session}>
       <div className="flex min-h-screen flex-col">
         <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
         <main className="flex-1">

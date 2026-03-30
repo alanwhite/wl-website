@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { getSiteInfo, getConfig } from "@/lib/config";
 import { Header } from "@/components/layout/header";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
@@ -11,14 +12,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [siteInfo, logoUrl, navLinks] = await Promise.all([
+  const [session, siteInfo, logoUrl, navLinks] = await Promise.all([
+    auth(),
     getSiteInfo(),
     getConfig("site.logoUrl"),
     getNavLinks(),
   ]);
 
   return (
-    <Providers>
+    <Providers session={session}>
       <div className="flex min-h-screen flex-col">
         <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
         <div className="flex flex-1">
