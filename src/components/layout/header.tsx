@@ -24,7 +24,7 @@ interface HeaderProps {
 }
 
 export function Header({ siteName, logoUrl, navLinks }: HeaderProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const defaultLinks: NavLink[] = [
     { label: "About", href: "/about", isExternal: false, minTierLevel: null, requiredRoleSlug: null },
@@ -86,7 +86,9 @@ export function Header({ siteName, logoUrl, navLinks }: HeaderProps) {
               </Link>
             )
           )}
-          {session?.user ? (
+          {status === "loading" ? (
+            <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+          ) : session?.user ? (
             <UserNav user={session.user} />
           ) : (
             <Button asChild size="sm">
