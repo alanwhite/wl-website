@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn } from "next-auth/webauthn";
 import { Button } from "@/components/ui/button";
 
 export function PasskeyLoginButton() {
