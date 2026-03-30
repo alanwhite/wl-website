@@ -89,7 +89,11 @@ if (credentialsEnabled) {
 // Passkey provider (requires database sessions, so only enabled in production mode)
 const passkeysEnabled = !credentialsEnabled;
 if (passkeysEnabled) {
-  providers.push(Passkey);
+  providers.push(Passkey({
+    relayingParty: {
+      name: process.env.AUTH_URL?.replace(/^https?:\/\//, "") ?? "wl-website",
+    },
+  }));
 }
 
 // Credentials provider requires JWT strategy
