@@ -117,8 +117,29 @@ async function fetchUserTierAndRoles(userId: string) {
   };
 }
 
+// Wrap PrismaAdapter to inject default tier on user creation
+const baseAdapter = PrismaAdapter(prisma);
+const adapter = {
+  ...baseAdapter,
+  async createUser(data: any) {
+    const pendingTier = await prisma.membershipTier.findFirst({
+      where: { level: 0, isSystem: true },
+    });
+    if (!pendingTier) throw new Error("System pending tier not found");
+
+    return prisma.user.create({
+      data: {
+        ...data,
+        tierId: pendingTier.id,
+        tierLevel: pendingTier.level,
+        tierName: pendingTier.name,
+      },
+    });
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma) as never,
+  adapter: adapter as any,
   providers,
   session: { strategy: sessionStrategy },
   pages: {
