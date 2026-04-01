@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -92,7 +94,12 @@ export default async function UsersPage({
                 </TableCell>
                 <TableCell>{format(user.createdAt, "MMM d, yyyy")}</TableCell>
                 <TableCell>
-                  <UserActions user={user} tiers={tiers} roles={roles} />
+                  <div className="flex items-center gap-1">
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={`/admin/users/${user.id}`}>View</Link>
+                    </Button>
+                    <UserActions user={user} tiers={tiers} roles={roles} />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
