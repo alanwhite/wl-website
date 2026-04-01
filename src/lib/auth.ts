@@ -34,12 +34,54 @@ if (process.env.AUTH_FACEBOOK_ID) {
   }));
 }
 
-if (process.env.AUTH_APPLE_ID) {
-  providers.push(Apple({
-    clientId: process.env.AUTH_APPLE_ID,
-    clientSecret: process.env.AUTH_APPLE_SECRET!,
-    allowDangerousEmailAccountLinking: true,
-  }));
+// Apple Sign In — generates JWT client secret from .p8 key at startup.
+// Env vars needed: AUTH_APPLE_ID, AUTH_APPLE_TEAM_ID, AUTH_APPLE_KEY_ID, AUTH_APPLE_KEY_CONTENTS
+if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_KEY_CONTENTS) {
+  const jose = require("jose") as typeof import("jose");
+
+  const appleSecretPromise = (async () => {
+    const key = await jose.importPKCS8(
+      process.env.AUTH_APPLE_KEY_CONTENTS!.replace(/\\n/g, "\n"),
+      "ES256"
+    );
+    return new jose.SignJWT({})
+      .setAudience("https://appleid.apple.com")
+      .setIssuer(process.env.AUTH_APPLE_TEAM_ID!)
+      .setIssuedAt()
+      .setExpirationTime("180d")
+      .setSubject(process.env.AUTH_APPLE_ID!)
+      .setProtectedHeader({ alg: "ES256", kid: process.env.AUTH_APPLE_KEY_ID! })
+      .sign(key);
+  })();
+
+  providers.push({
+    ...Apple({
+      clientId: process.env.AUTH_APPLE_ID,
+      clientSecret: "generated-at-runtime",
+      allowDangerousEmailAccountLinking: true,
+    }),
+    // Override token endpoint to inject the generated secret
+    token: {
+      url: "https://appleid.apple.com/auth/token",
+      async conform(response: Response) { return response; },
+      async request({ provider, params, checks }: any) {
+        const secret = await appleSecretPromise;
+        const body = new URLSearchParams({
+          client_id: process.env.AUTH_APPLE_ID!,
+          client_secret: secret,
+          grant_type: "authorization_code",
+          code: params.code,
+          redirect_uri: provider.callbackUrl,
+        });
+        const res = await fetch("https://appleid.apple.com/auth/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        });
+        return { tokens: await res.json() };
+      },
+    },
+  } as any);
 }
 
 // Test credentials provider — gated behind AUTH_CREDENTIALS_TEST=true
