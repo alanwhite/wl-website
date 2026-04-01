@@ -11,14 +11,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus } from "lucide-react";
+import { PaginationControls } from "@/components/admin/pagination-controls";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDocumentsPage() {
-  const categories = await prisma.libraryCategory.findMany({
-    orderBy: { sortOrder: "asc" },
-    include: { _count: { select: { documents: true } } },
-  });
+const PAGE_SIZE = 25;
+
+export default async function AdminDocumentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = parseInt(params.page ?? "1");
+
+  const [categories, total] = await Promise.all([
+    prisma.libraryCategory.findMany({
+      orderBy: { sortOrder: "asc" },
+      include: { _count: { select: { documents: true } } },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.libraryCategory.count(),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -72,6 +89,7 @@ export default async function AdminDocumentsPage() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls currentPage={page} totalPages={totalPages} basePath="/admin/documents" />
     </div>
   );
 }

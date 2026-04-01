@@ -10,13 +10,30 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { ContactActions } from "@/components/admin/contact-actions";
+import { PaginationControls } from "@/components/admin/pagination-controls";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminContactsPage() {
-  const contacts = await prisma.contactSubmission.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+const PAGE_SIZE = 25;
+
+export default async function AdminContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = parseInt(params.page ?? "1");
+
+  const [contacts, total] = await Promise.all([
+    prisma.contactSubmission.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.contactSubmission.count(),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -60,6 +77,7 @@ export default async function AdminContactsPage() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls currentPage={page} totalPages={totalPages} basePath="/admin/contacts" />
     </div>
   );
 }

@@ -12,13 +12,30 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
+import { PaginationControls } from "@/components/admin/pagination-controls";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPagesPage() {
-  const pages = await prisma.page.findMany({
-    orderBy: { sortOrder: "asc" },
-  });
+const PAGE_SIZE = 25;
+
+export default async function AdminPagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = parseInt(params.page ?? "1");
+
+  const [pages, total] = await Promise.all([
+    prisma.page.findMany({
+      orderBy: { sortOrder: "asc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.page.count(),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -50,19 +67,19 @@ export default async function AdminPagesPage() {
                 </TableCell>
               </TableRow>
             )}
-            {pages.map((page) => (
-              <TableRow key={page.id}>
-                <TableCell className="font-medium">{page.title}</TableCell>
-                <TableCell className="text-muted-foreground">/p/{page.slug}</TableCell>
+            {pages.map((p) => (
+              <TableRow key={p.id}>
+                <TableCell className="font-medium">{p.title}</TableCell>
+                <TableCell className="text-muted-foreground">/p/{p.slug}</TableCell>
                 <TableCell>
-                  <Badge variant={page.published ? "default" : "secondary"}>
-                    {page.published ? "Published" : "Draft"}
+                  <Badge variant={p.published ? "default" : "secondary"}>
+                    {p.published ? "Published" : "Draft"}
                   </Badge>
                 </TableCell>
-                <TableCell>{format(page.updatedAt, "MMM d, yyyy")}</TableCell>
+                <TableCell>{format(p.updatedAt, "MMM d, yyyy")}</TableCell>
                 <TableCell>
                   <Button asChild size="sm" variant="ghost">
-                    <Link href={`/admin/pages/${page.id}`}>Edit</Link>
+                    <Link href={`/admin/pages/${p.id}`}>Edit</Link>
                   </Button>
                 </TableCell>
               </TableRow>
@@ -70,6 +87,7 @@ export default async function AdminPagesPage() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls currentPage={page} totalPages={totalPages} basePath="/admin/pages" />
     </div>
   );
 }

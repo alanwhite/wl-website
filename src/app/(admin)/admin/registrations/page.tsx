@@ -11,17 +11,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import { PaginationControls } from "@/components/admin/pagination-controls";
 
 export const dynamic = "force-dynamic";
 
-export default async function RegistrationsPage() {
-  const registrations = await prisma.registration.findMany({
-    include: {
-      user: { select: { id: true, name: true, email: true, status: true, image: true } },
-      _count: { select: { documents: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+const PAGE_SIZE = 25;
+
+export default async function RegistrationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = parseInt(params.page ?? "1");
+
+  const [registrations, total] = await Promise.all([
+    prisma.registration.findMany({
+      include: {
+        user: { select: { id: true, name: true, email: true, status: true, image: true } },
+        _count: { select: { documents: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.registration.count(),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -76,6 +93,7 @@ export default async function RegistrationsPage() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls currentPage={page} totalPages={totalPages} basePath="/admin/registrations" />
     </div>
   );
 }

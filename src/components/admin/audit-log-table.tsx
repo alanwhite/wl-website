@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PaginationControls } from "@/components/admin/pagination-controls";
 import {
   Table,
   TableBody,
@@ -118,29 +119,12 @@ export function AuditLogTable({ logs, currentPage, totalPages, actionFilter }: A
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => router.push(`/admin/audit?page=${currentPage - 1}${actionFilter ? `&action=${actionFilter}` : ""}`)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => router.push(`/admin/audit?page=${currentPage + 1}${actionFilter ? `&action=${actionFilter}` : ""}`)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath="/admin/audit"
+        extraParams={actionFilter ? { action: actionFilter } : undefined}
+      />
     </div>
   );
 }

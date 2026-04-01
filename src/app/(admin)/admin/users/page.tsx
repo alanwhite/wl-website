@@ -10,18 +10,33 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { UserActions } from "@/components/admin/user-actions";
+import { PaginationControls } from "@/components/admin/pagination-controls";
 
 export const dynamic = "force-dynamic";
 
-export default async function UsersPage() {
-  const [users, tiers, roles] = await Promise.all([
+const PAGE_SIZE = 25;
+
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = parseInt(params.page ?? "1");
+
+  const [users, total, tiers, roles] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       include: { userRoles: { include: { role: true } } },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
+    prisma.user.count(),
     prisma.membershipTier.findMany({ orderBy: { level: "asc" } }),
     prisma.role.findMany({ orderBy: { name: "asc" } }),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -40,6 +55,13 @@ export default async function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {users.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  No users
+                </TableCell>
+              </TableRow>
+            )}
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.name ?? "—"}</TableCell>
@@ -77,6 +99,7 @@ export default async function UsersPage() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls currentPage={page} totalPages={totalPages} basePath="/admin/users" />
     </div>
   );
 }
