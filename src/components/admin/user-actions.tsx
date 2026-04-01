@@ -12,7 +12,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { updateUserTier, assignUserRole, removeUserRole, updateUserStatus } from "@/lib/actions/admin";
+import { updateUserTier, assignUserRole, removeUserRole, updateUserStatus, deleteUser } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import { MoreHorizontal } from "lucide-react";
 import type { UserStatus } from "@prisma/client";
@@ -161,6 +161,25 @@ export function UserActions({ user, tiers, roles }: UserActionsProps) {
             Unsuspend
           </DropdownMenuItem>
         )}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive"
+          onClick={async () => {
+            if (!confirm("Permanently delete this user and all their data? This cannot be undone.")) return;
+            setLoading(true);
+            try {
+              await deleteUser(user.id);
+              toast.success("User deleted");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Failed to delete user");
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          Delete User
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
