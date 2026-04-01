@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Facebook from "next-auth/providers/facebook";
+import Apple from "next-auth/providers/apple";
 import Credentials from "next-auth/providers/credentials";
 import Passkey from "next-auth/providers/passkey";
 import { prisma } from "./prisma";
@@ -29,6 +30,14 @@ if (process.env.AUTH_FACEBOOK_ID) {
   providers.push(Facebook({
     clientId: process.env.AUTH_FACEBOOK_ID,
     clientSecret: process.env.AUTH_FACEBOOK_SECRET,
+    allowDangerousEmailAccountLinking: true,
+  }));
+}
+
+if (process.env.AUTH_APPLE_ID) {
+  providers.push(Apple({
+    clientId: process.env.AUTH_APPLE_ID,
+    clientSecret: process.env.AUTH_APPLE_SECRET!,
     allowDangerousEmailAccountLinking: true,
   }));
 }

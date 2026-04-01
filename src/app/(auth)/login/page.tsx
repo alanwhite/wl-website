@@ -37,6 +37,7 @@ export default async function LoginPage({
   if (process.env.AUTH_GITHUB_ID) providers.push({ id: "github", name: "GitHub", icon: Github });
   if (process.env.AUTH_GOOGLE_ID) providers.push({ id: "google", name: "Google", icon: null });
   if (process.env.AUTH_FACEBOOK_ID) providers.push({ id: "facebook", name: "Facebook", icon: null });
+  if (process.env.AUTH_APPLE_ID) providers.push({ id: "apple", name: "Apple", icon: null });
 
   return (
     <div className="flex min-h-screen flex-col">
