@@ -15,6 +15,7 @@ import {
   ScrollText,
   Layers,
   Shield,
+  FolderOpen,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/admin/roles", label: "Roles", icon: Shield },
   { href: "/admin/pages", label: "Pages", icon: FileText },
   { href: "/admin/media", label: "Media", icon: Image },
+  { href: "/admin/documents", label: "Documents", icon: FolderOpen },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/contacts", label: "Contacts", icon: MessageSquare },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText },
