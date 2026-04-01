@@ -61,11 +61,12 @@ model User {
   sessions      Session[]
   registration  Registration?
   profile       UserProfile?
-  pollsCreated   Poll[]          @relation("PollCreator")
-  pollVotes      PollVote[]
-  authenticators Authenticator[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  pollsCreated      Poll[]            @relation("PollCreator")
+  pollVotes         PollVote[]
+  authenticators    Authenticator[]
+  libraryDocuments  LibraryDocument[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model Account {
@@ -267,4 +268,36 @@ model PollVote {
   updatedAt DateTime   @updatedAt
 
   @@unique([pollId, userId])
+}
+
+model LibraryCategory {
+  id                 String            @id @default(cuid())
+  name               String
+  slug               String            @unique
+  description        String?
+  sortOrder          Int               @default(0)
+  targetRoleSlugs    String[]          @default([])
+  targetMinTierLevel Int?
+  documents          LibraryDocument[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model LibraryDocument {
+  id          String          @id @default(cuid())
+  categoryId  String
+  category    LibraryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  fileName    String
+  fileType    String
+  filePath    String
+  fileSize    Int
+  uploadedBy  String
+  uploader    User            @relation(fields: [uploadedBy], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@index([createdAt])
 }

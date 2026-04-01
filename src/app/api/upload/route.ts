@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const ALLOWED_SUBDIRS = ["general", "branding", "media", "documents"];
+  const ALLOWED_SUBDIRS = ["general", "branding", "media", "documents", "library"];
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;

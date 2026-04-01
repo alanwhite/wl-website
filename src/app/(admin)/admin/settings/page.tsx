@@ -55,6 +55,7 @@ export default async function AdminSettingsPage() {
           analyticsScript: analyticsScript ?? "",
           registrationTerms: registrationTerms ?? { enabled: false, label: "", content: "", links: [] },
           pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
+          libraryManagerRoles: (await getConfigJson<string[]>("library.managerRoles")) ?? [],
         }}
         tiers={tiers}
         roles={roles}

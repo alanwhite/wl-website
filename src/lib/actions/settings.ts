@@ -129,6 +129,20 @@ export async function updateNavigation(links: NavLink[]) {
   });
 }
 
+export async function updateLibraryManagerRoles(rolesJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(rolesJson);
+  await setConfig("library.managerRoles", rolesJson);
+  invalidateConfigCache("library.managerRoles");
+  revalidatePath("/documents");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.libraryManagerRoles.update",
+  });
+}
+
 export async function updatePollManagerRoles(rolesJson: string) {
   const admin = await requireAdmin();
   JSON.parse(rolesJson); // validate

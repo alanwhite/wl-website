@@ -140,6 +140,17 @@ export function canAccessPoll(
   return true;
 }
 
+export async function getLibraryManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("library.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageLibrary(user: { roleSlugs?: string[]; tierLevel?: number }, managerRoles: string[]): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
 export function canManagePolls(user: { roleSlugs?: string[]; tierLevel?: number }, managerRoles: string[]): boolean {
   // Admin can always manage polls
   if (user.tierLevel && user.tierLevel >= 999) return true;

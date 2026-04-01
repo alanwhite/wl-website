@@ -13,6 +13,7 @@ import {
   updateTheme,
   updateRegistrationFields,
   updateRegistrationTerms,
+  updateLibraryManagerRoles,
   updatePollManagerRoles,
   updateLogo,
   updateFavicon,
@@ -37,6 +38,7 @@ interface SettingsFormProps {
     analyticsScript: string;
     registrationTerms: RegistrationTermsConfig;
     pollManagerRoles: string[];
+    libraryManagerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -55,6 +57,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [faviconPreview, setFaviconPreview] = useState<string | null>(settings.faviconUrl);
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
+  const [libraryManagerRoleSlugs, setLibraryManagerRoleSlugs] = useState<string[]>(settings.libraryManagerRoles);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -100,6 +103,18 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       toast.success("Registration fields saved");
     } catch {
       toast.error("Invalid JSON");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveLibraryRoles() {
+    setLoading(true);
+    try {
+      await updateLibraryManagerRoles(JSON.stringify(libraryManagerRoleSlugs));
+      toast.success("Document library manager roles saved");
+    } catch {
+      toast.error("Failed to save");
     } finally {
       setLoading(false);
     }
@@ -191,6 +206,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="fields">Registration Fields</TabsTrigger>
         <TabsTrigger value="terms">Terms &amp; Conditions</TabsTrigger>
         <TabsTrigger value="polls">Polls</TabsTrigger>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
         <TabsTrigger value="integrations">Integrations</TabsTrigger>
       </TabsList>
 
@@ -484,6 +500,50 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               )}
             </div>
             <Button onClick={handleSavePollRoles} disabled={loading}>Save Poll Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="documents">
+        <Card>
+          <CardHeader>
+            <CardTitle>Document Library Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which roles can upload and manage documents in the library. Admins can always manage documents.
+              Categories and their access rules are managed via the Documents section (coming to the admin sidebar).
+            </p>
+            <div className="space-y-2">
+              <Label>Document Library Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No roles defined yet. Create roles in the Roles section first.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`lib-role-${role.slug}`}
+                        checked={libraryManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setLibraryManagerRoleSlugs([...libraryManagerRoleSlugs, role.slug]);
+                          } else {
+                            setLibraryManagerRoleSlugs(libraryManagerRoleSlugs.filter((s) => s !== role.slug));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`lib-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSaveLibraryRoles} disabled={loading}>Save Document Settings</Button>
           </CardContent>
         </Card>
       </TabsContent>
