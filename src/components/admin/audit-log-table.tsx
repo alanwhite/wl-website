@@ -118,8 +118,7 @@ export function AuditLogTable({ logs, currentPage, totalPages, actionFilter }: A
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Page {currentPage} of {totalPages}
           </p>
@@ -142,7 +141,6 @@ export function AuditLogTable({ logs, currentPage, totalPages, actionFilter }: A
             </Button>
           </div>
         </div>
-      )}
     </div>
   );
 }
