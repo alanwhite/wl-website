@@ -42,7 +42,7 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
     try {
       await removePasskey(credentialID);
       setPasskeys(passkeys.filter((p) => p.credentialID !== credentialID));
-      toast.success("Passkey removed");
+      toast.success("Passkey removed from this site. You may also want to delete it from your device: System Settings → Passwords.", { duration: 8000 });
     } catch {
       toast.error("Failed to remove passkey");
     } finally {
