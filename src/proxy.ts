@@ -23,7 +23,7 @@ export default auth((req) => {
   // Pending users can only access registration-related pages
   if (user.status === "PENDING_REVIEW") {
     if (!pathname.startsWith("/register")) {
-      return NextResponse.redirect(new URL("/register/pending", req.url));
+      return NextResponse.redirect(new URL("/register", req.url));
     }
     return NextResponse.next();
   }
