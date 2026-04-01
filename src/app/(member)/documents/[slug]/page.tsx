@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getLibraryManagerRoles, canManageLibrary, canAccessPoll } from "@/lib/config";
+import { canUploadToCategory, canAccessPoll } from "@/lib/config";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DocumentList } from "@/components/library/document-list";
@@ -33,8 +33,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     redirect("/documents");
   }
 
-  const managerRoles = await getLibraryManagerRoles();
-  const canManage = canManageLibrary(session.user, managerRoles);
+  const canManage = canUploadToCategory(session.user, category);
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">

@@ -19,6 +19,8 @@ interface CategoryFormProps {
     sortOrder: number;
     targetRoleSlugs: string[];
     targetMinTierLevel: number | null;
+    uploaderRoleSlugs: string[];
+    uploaderMinTierLevel: number | null;
   };
   roles: { id: string; name: string; slug: string }[];
   tiers: { id: string; name: string; level: number }[];
@@ -35,6 +37,10 @@ export function CategoryForm({ category, roles, tiers }: CategoryFormProps) {
   const [targetMinTierLevel, setTargetMinTierLevel] = useState<string>(
     category?.targetMinTierLevel?.toString() ?? ""
   );
+  const [uploaderRoleSlugs, setUploaderRoleSlugs] = useState<string[]>(category?.uploaderRoleSlugs ?? []);
+  const [uploaderMinTierLevel, setUploaderMinTierLevel] = useState<string>(
+    category?.uploaderMinTierLevel?.toString() ?? ""
+  );
 
   function handleNameChange(value: string) {
     setName(value);
@@ -48,6 +54,9 @@ export function CategoryForm({ category, roles, tiers }: CategoryFormProps) {
     // Append role slugs
     for (const s of targetRoleSlugs) {
       formData.append("targetRoleSlugs", s);
+    }
+    for (const s of uploaderRoleSlugs) {
+      formData.append("uploaderRoleSlugs", s);
     }
     try {
       if (category) {
@@ -137,7 +146,7 @@ export function CategoryForm({ category, roles, tiers }: CategoryFormProps) {
           </div>
 
           <div className="space-y-3 rounded border p-4">
-            <Label className="text-base">Access Control</Label>
+            <Label className="text-base">Who can view</Label>
             <p className="text-sm text-muted-foreground">
               Leave empty to make this category visible to all approved members.
             </p>
@@ -179,6 +188,59 @@ export function CategoryForm({ category, roles, tiers }: CategoryFormProps) {
                   className="w-full rounded border bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Any tier</option>
+                  {tiers.map((tier) => (
+                    <option key={tier.id} value={tier.level}>
+                      {tier.name} (level {tier.level})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3 rounded border p-4">
+            <Label className="text-base">Who can upload</Label>
+            <p className="text-sm text-muted-foreground">
+              Leave empty so only admins can upload. Select roles/tiers to allow others to upload documents.
+            </p>
+
+            {roles.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm">Allow upload for these roles:</Label>
+                {roles.map((role) => (
+                  <div key={role.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`upload-role-${role.slug}`}
+                      checked={uploaderRoleSlugs.includes(role.slug)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setUploaderRoleSlugs([...uploaderRoleSlugs, role.slug]);
+                        } else {
+                          setUploaderRoleSlugs(uploaderRoleSlugs.filter((s) => s !== role.slug));
+                        }
+                      }}
+                      className="h-4 w-4 rounded border"
+                    />
+                    <Label htmlFor={`upload-role-${role.slug}`} className="text-sm font-normal">
+                      {role.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tiers.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="uploaderMinTierLevel" className="text-sm">Minimum tier level to upload:</Label>
+                <select
+                  id="uploaderMinTierLevel"
+                  name="uploaderMinTierLevel"
+                  value={uploaderMinTierLevel}
+                  onChange={(e) => setUploaderMinTierLevel(e.target.value)}
+                  className="w-full rounded border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Admin only</option>
                   {tiers.map((tier) => (
                     <option key={tier.id} value={tier.level}>
                       {tier.name} (level {tier.level})

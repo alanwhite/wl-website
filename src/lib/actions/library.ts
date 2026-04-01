@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/auth-helpers";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
-import { getLibraryManagerRoles, canManageLibrary } from "@/lib/config";
+import { canUploadToCategory } from "@/lib/config";
 import { saveDocument, deleteFile } from "@/lib/upload";
 
 async function requireAdmin() {
@@ -16,14 +16,10 @@ async function requireAdmin() {
   return session.user;
 }
 
-async function requireLibraryManager() {
+async function requireApprovedMember() {
   const session = await auth();
-  if (!session?.user || session.user.status !== "APPROVED") {
+  if (!session?.user || session.user.status !== "APPROVED" || (session.user.tierLevel ?? 0) <= 0) {
     throw new Error("Unauthorized");
-  }
-  const managerRoles = await getLibraryManagerRoles();
-  if (!canManageLibrary(session.user, managerRoles)) {
-    throw new Error("Unauthorized: requires library manager role");
   }
   return session.user;
 }
@@ -40,6 +36,9 @@ export async function createCategory(formData: FormData) {
   const targetRoleSlugs = formData.getAll("targetRoleSlugs") as string[];
   const targetMinTierLevelRaw = formData.get("targetMinTierLevel") as string;
   const targetMinTierLevel = targetMinTierLevelRaw ? parseInt(targetMinTierLevelRaw, 10) : null;
+  const uploaderRoleSlugs = formData.getAll("uploaderRoleSlugs") as string[];
+  const uploaderMinTierLevelRaw = formData.get("uploaderMinTierLevel") as string;
+  const uploaderMinTierLevel = uploaderMinTierLevelRaw ? parseInt(uploaderMinTierLevelRaw, 10) : null;
 
   if (!name || !slug) throw new Error("Name and slug are required");
 
@@ -51,6 +50,8 @@ export async function createCategory(formData: FormData) {
       sortOrder,
       targetRoleSlugs: targetRoleSlugs.filter(Boolean),
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
+      uploaderRoleSlugs: uploaderRoleSlugs.filter(Boolean),
+      uploaderMinTierLevel: uploaderMinTierLevel && !isNaN(uploaderMinTierLevel) ? uploaderMinTierLevel : null,
     },
   });
 
@@ -76,6 +77,9 @@ export async function updateCategory(id: string, formData: FormData) {
   const targetRoleSlugs = formData.getAll("targetRoleSlugs") as string[];
   const targetMinTierLevelRaw = formData.get("targetMinTierLevel") as string;
   const targetMinTierLevel = targetMinTierLevelRaw ? parseInt(targetMinTierLevelRaw, 10) : null;
+  const uploaderRoleSlugs = formData.getAll("uploaderRoleSlugs") as string[];
+  const uploaderMinTierLevelRaw = formData.get("uploaderMinTierLevel") as string;
+  const uploaderMinTierLevel = uploaderMinTierLevelRaw ? parseInt(uploaderMinTierLevelRaw, 10) : null;
 
   if (!name) throw new Error("Name is required");
 
@@ -87,6 +91,8 @@ export async function updateCategory(id: string, formData: FormData) {
       sortOrder,
       targetRoleSlugs: targetRoleSlugs.filter(Boolean),
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
+      uploaderRoleSlugs: uploaderRoleSlugs.filter(Boolean),
+      uploaderMinTierLevel: uploaderMinTierLevel && !isNaN(uploaderMinTierLevel) ? uploaderMinTierLevel : null,
     },
   });
 
@@ -130,13 +136,17 @@ export async function deleteCategory(id: string) {
   revalidatePath("/documents");
 }
 
-// ── Document management (library managers) ────────────────────────────────
+// ── Document management (per-category upload permissions) ─────────────────
 
 export async function uploadDocument(categoryId: string, formData: FormData) {
-  const user = await requireLibraryManager();
+  const user = await requireApprovedMember();
 
   const category = await prisma.libraryCategory.findUnique({ where: { id: categoryId } });
   if (!category) throw new Error("Category not found");
+
+  if (!canUploadToCategory(user, category)) {
+    throw new Error("You don't have permission to upload to this category");
+  }
 
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
@@ -172,13 +182,17 @@ export async function uploadDocument(categoryId: string, formData: FormData) {
 }
 
 export async function deleteDocument(id: string) {
-  const user = await requireLibraryManager();
+  const user = await requireApprovedMember();
 
   const doc = await prisma.libraryDocument.findUnique({
     where: { id },
-    include: { category: { select: { slug: true, name: true } } },
+    include: { category: true },
   });
   if (!doc) throw new Error("Document not found");
+
+  if (!canUploadToCategory(user, doc.category)) {
+    throw new Error("You don't have permission to manage documents in this category");
+  }
 
   await deleteFile(`/uploads/library/${doc.filePath}`).catch(() => {});
   await prisma.libraryDocument.delete({ where: { id } });
@@ -193,4 +207,5 @@ export async function deleteDocument(id: string) {
   });
 
   revalidatePath(`/documents/${doc.category.slug}`);
+  revalidatePath(`/admin/documents/${doc.category.id}`);
 }

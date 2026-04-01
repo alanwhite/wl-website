@@ -140,15 +140,29 @@ export function canAccessPoll(
   return true;
 }
 
-export async function getLibraryManagerRoles(): Promise<string[]> {
-  const roles = await getConfigJson<string[]>("library.managerRoles");
-  return roles ?? [];
-}
-
-export function canManageLibrary(user: { roleSlugs?: string[]; tierLevel?: number }, managerRoles: string[]): boolean {
+export function canUploadToCategory(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  category: { uploaderRoleSlugs: string[]; uploaderMinTierLevel: number | null },
+): boolean {
+  // Admin can always upload
   if (user.tierLevel && user.tierLevel >= 999) return true;
-  if (managerRoles.length === 0) return false;
-  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+
+  // No uploader restrictions = nobody except admin
+  if (category.uploaderRoleSlugs.length === 0 && category.uploaderMinTierLevel == null) return false;
+
+  // Check tier requirement
+  if (category.uploaderMinTierLevel != null && (user.tierLevel ?? 0) < category.uploaderMinTierLevel) {
+    return false;
+  }
+
+  // Check role requirement
+  if (category.uploaderRoleSlugs.length > 0) {
+    if (!category.uploaderRoleSlugs.some((slug) => user.roleSlugs?.includes(slug))) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function canManagePolls(user: { roleSlugs?: string[]; tierLevel?: number }, managerRoles: string[]): boolean {
