@@ -65,6 +65,7 @@ model User {
   pollVotes         PollVote[]
   authenticators    Authenticator[]
   libraryDocuments  LibraryDocument[]
+  newsletterOptIn   Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 }

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { isNewsletterEnabled, subscribeContact, unsubscribeContact } from "@/lib/emailoctopus";
 
 const profileSchema = z.object({
   bio: z.string().optional(),
@@ -34,13 +35,32 @@ export async function updateProfile(formData: FormData) {
     create: { userId: session.user.id, ...data },
   });
 
-  // Update user name if provided
+  // Update user name and newsletter preference
   const name = formData.get("name") as string;
-  if (name) {
+  const newsletterOptIn = formData.get("newsletterOptIn") === "on";
+
+  const updateData: { name?: string; newsletterOptIn?: boolean } = {};
+  if (name) updateData.name = name;
+  if (isNewsletterEnabled()) updateData.newsletterOptIn = newsletterOptIn;
+
+  if (Object.keys(updateData).length > 0) {
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { name },
+      data: updateData,
     });
+  }
+
+  // Sync newsletter subscription
+  if (isNewsletterEnabled() && session.user.email) {
+    try {
+      if (newsletterOptIn) {
+        await subscribeContact(session.user.email, name || session.user.name);
+      } else {
+        await unsubscribeContact(session.user.email);
+      }
+    } catch (e) {
+      console.error("Newsletter sync failed:", e);
+    }
   }
 
   revalidatePath("/profile");
