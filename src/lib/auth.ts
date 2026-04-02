@@ -34,60 +34,35 @@ if (process.env.AUTH_FACEBOOK_ID) {
   }));
 }
 
-// Apple Sign In — generates JWT client secret from .p8 key.
+// Apple Sign In — generates JWT client secret synchronously using Node crypto.
 // Env vars needed: AUTH_APPLE_ID, AUTH_APPLE_TEAM_ID, AUTH_APPLE_KEY_ID, AUTH_APPLE_KEY_CONTENTS
-// The secret is generated on first OAuth callback and cached for the process lifetime.
 if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_KEY_CONTENTS) {
-  let cachedAppleSecret: string | null = null;
+  const crypto = require("crypto");
+  const keyContents = process.env.AUTH_APPLE_KEY_CONTENTS
+    .replace(/\\\\n/g, "\n")
+    .replace(/\\n/g, "\n");
+  const header = Buffer.from(JSON.stringify({
+    alg: "ES256",
+    kid: process.env.AUTH_APPLE_KEY_ID,
+  })).toString("base64url");
+  const now = Math.floor(Date.now() / 1000);
+  const payload = Buffer.from(JSON.stringify({
+    iss: process.env.AUTH_APPLE_TEAM_ID,
+    iat: now,
+    exp: now + 15552000, // 180 days
+    aud: "https://appleid.apple.com",
+    sub: process.env.AUTH_APPLE_ID,
+  })).toString("base64url");
+  const signer = crypto.createSign("SHA256");
+  signer.update(header + "." + payload);
+  const appleClientSecret = header + "." + payload + "." +
+    signer.sign({ key: keyContents, dsaEncoding: "ieee-p1363" }, "base64url");
 
-  providers.push({
-    ...Apple({
-      clientId: process.env.AUTH_APPLE_ID,
-      clientSecret: "placeholder",
-      allowDangerousEmailAccountLinking: true,
-    }),
-    token: {
-      url: "https://appleid.apple.com/auth/token",
-      async request(context: any) {
-        // Generate and cache the client secret
-        if (!cachedAppleSecret) {
-          const jose = await import("jose");
-          const keyContents = process.env.AUTH_APPLE_KEY_CONTENTS!
-            .replace(/\\\\n/g, "\n")
-            .replace(/\\n/g, "\n");
-          const key = await jose.importPKCS8(keyContents, "ES256");
-          cachedAppleSecret = await new jose.SignJWT({})
-            .setAudience("https://appleid.apple.com")
-            .setIssuer(process.env.AUTH_APPLE_TEAM_ID!)
-            .setIssuedAt()
-            .setExpirationTime("180d")
-            .setSubject(process.env.AUTH_APPLE_ID!)
-            .setProtectedHeader({ alg: "ES256", kid: process.env.AUTH_APPLE_KEY_ID! })
-            .sign(key);
-        }
-
-        const body = new URLSearchParams({
-          client_id: process.env.AUTH_APPLE_ID!,
-          client_secret: cachedAppleSecret,
-          grant_type: "authorization_code",
-          code: context.params.get("code"),
-          redirect_uri: context.provider.callbackUrl,
-        });
-
-        const res = await fetch("https://appleid.apple.com/auth/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body,
-        });
-
-        const tokens = await res.json();
-        if (tokens.error) {
-          throw new Error(`Apple token error: ${tokens.error} - ${tokens.error_description ?? ""}`);
-        }
-        return { tokens };
-      },
-    },
-  } as any);
+  providers.push(Apple({
+    clientId: process.env.AUTH_APPLE_ID,
+    clientSecret: appleClientSecret,
+    allowDangerousEmailAccountLinking: true,
+  }));
 }
 
 // Test credentials provider — gated behind AUTH_CREDENTIALS_TEST=true
