@@ -41,7 +41,7 @@ if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_KEY_CONTENTS) {
 
   const appleSecretPromise = (async () => {
     const key = await jose.importPKCS8(
-      process.env.AUTH_APPLE_KEY_CONTENTS!.replace(/\\n/g, "\n"),
+      process.env.AUTH_APPLE_KEY_CONTENTS!.replace(/\\\\n/g, "\n").replace(/\\n/g, "\n"),
       "ES256"
     );
     return new jose.SignJWT({})
