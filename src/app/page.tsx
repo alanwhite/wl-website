@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { getSiteInfo, getConfig } from "@/lib/config";
@@ -16,6 +17,13 @@ export default async function HomePage() {
     getConfig("site.logoUrl"),
     getNavLinks(),
   ]);
+
+  // Redirect logged-in users to the appropriate page
+  if (session?.user) {
+    if (session.user.status === "APPROVED") redirect("/dashboard");
+    if (session.user.status === "PENDING_REVIEW") redirect("/register");
+    if (session.user.status === "REJECTED") redirect("/register/rejected");
+  }
 
   return (
     <Providers session={session}>
