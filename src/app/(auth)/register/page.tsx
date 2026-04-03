@@ -1,8 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { getRegistrationFields, getRegistrationTerms, getSiteInfo } from "@/lib/config";
+import { getRegistrationFields, getRegistrationTerms, getSiteInfo, getConfig } from "@/lib/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DynamicFormFields } from "@/components/shared/dynamic-form";
@@ -23,15 +24,19 @@ export default async function RegisterPage() {
   });
   if (existing) redirect("/register/pending");
 
-  const fields = await getRegistrationFields();
-  const terms = await getRegistrationTerms();
-  const siteInfo = await getSiteInfo();
+  const [fields, terms, siteInfo, logoUrl] = await Promise.all([
+    getRegistrationFields(),
+    getRegistrationTerms(),
+    getSiteInfo(),
+    getConfig("site.logoUrl"),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="text-xl font-bold hover:opacity-80">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
+            {logoUrl && <Image src={logoUrl} alt={siteInfo.name} width={32} height={32} className="h-8 w-auto" />}
             {siteInfo.name}
           </Link>
         </div>

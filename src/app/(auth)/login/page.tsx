@@ -1,11 +1,12 @@
 import { auth, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSiteInfo } from "@/lib/config";
+import { getSiteInfo, getConfig } from "@/lib/config";
 import { Github } from "lucide-react";
 import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
 
@@ -29,7 +30,7 @@ export default async function LoginPage({
     }
   }
 
-  const siteInfo = await getSiteInfo();
+  const [siteInfo, logoUrl] = await Promise.all([getSiteInfo(), getConfig("site.logoUrl")]);
   const credentialsEnabled = process.env.AUTH_CREDENTIALS_TEST === "true";
   const passkeysEnabled = !credentialsEnabled;
 
@@ -43,7 +44,8 @@ export default async function LoginPage({
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="text-xl font-bold hover:opacity-80">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
+            {logoUrl && <Image src={logoUrl} alt={siteInfo.name} width={32} height={32} className="h-8 w-auto" />}
             {siteInfo.name}
           </Link>
         </div>

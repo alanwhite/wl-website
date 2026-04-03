@@ -41,7 +41,12 @@ export async function generateMetadata(): Promise<Metadata> {
       title: siteInfo.name,
       description: siteInfo.description,
     },
-    ...(faviconUrl ? { icons: { icon: faviconUrl } } : {}),
+    ...(faviconUrl ? {
+      icons: {
+        icon: faviconUrl,
+        apple: faviconUrl,
+      },
+    } : {}),
   };
 }
 
