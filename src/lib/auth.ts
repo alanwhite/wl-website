@@ -76,7 +76,8 @@ if (credentialsEnabled) {
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      if (credentials?.password !== "test") return null;
+      const testPassword = process.env.AUTH_CREDENTIALS_TEST_PASSWORD || "test";
+      if (credentials?.password !== testPassword) return null;
 
       const email = credentials.email as string;
       if (!email) return null;
