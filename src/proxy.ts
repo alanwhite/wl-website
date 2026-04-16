@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 
-const publicPaths = ["/", "/login", "/register", "/about", "/contact", "/p", "/api/auth", "/api/health"];
+const publicPaths = ["/", "/login", "/register", "/about", "/contact", "/p", "/api/auth", "/api/health", "/api/postcode-check"];
 const memberPaths = ["/dashboard", "/profile", "/polls", "/documents"];
 const adminPaths = ["/admin"];
 
