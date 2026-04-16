@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
+import Markdown from "react-markdown";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function AboutPage() {
         <main className="container mx-auto max-w-3xl flex-1 px-4 py-12">
           <h1 className="mb-6 text-3xl font-bold">{page?.title ?? "About Us"}</h1>
           <div className="prose dark:prose-invert max-w-none">
-            {page?.content ?? "Welcome to our community."}
+            <Markdown>{page?.content ?? "Welcome to our community."}</Markdown>
           </div>
         </main>
         <Footer siteName={siteInfo.name} />

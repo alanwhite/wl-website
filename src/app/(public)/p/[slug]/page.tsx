@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
+import Markdown from "react-markdown";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +48,8 @@ export default async function CmsPage({
         <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
         <main className="container mx-auto max-w-3xl flex-1 px-4 py-12">
           <h1 className="mb-6 text-3xl font-bold">{page.title}</h1>
-          <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
-            {page.content}
+          <div className="prose dark:prose-invert max-w-none">
+            <Markdown>{page.content}</Markdown>
           </div>
         </main>
         <Footer siteName={siteInfo.name} />
