@@ -219,6 +219,53 @@ export async function updateAddressData(data: string) {
   return { postcodes, addresses };
 }
 
+export async function addHeroImage(formData: FormData) {
+  const admin = await requireAdmin();
+  const file = formData.get("image") as File | null;
+  if (!file || file.size === 0) throw new Error("No file provided");
+
+  const url = await saveFile(file, "hero");
+
+  const existing = await getConfig("site.heroImages");
+  const images: string[] = existing ? JSON.parse(existing) : [];
+  images.push(url);
+
+  await setConfig("site.heroImages", JSON.stringify(images));
+  invalidateConfigCache("site.heroImages");
+  revalidatePath("/");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.heroImages.add",
+    details: { url },
+  });
+
+  return { url, images };
+}
+
+export async function removeHeroImage(url: string) {
+  const admin = await requireAdmin();
+
+  const existing = await getConfig("site.heroImages");
+  const images: string[] = existing ? JSON.parse(existing) : [];
+  const updated = images.filter((img) => img !== url);
+
+  await setConfig("site.heroImages", JSON.stringify(updated));
+  invalidateConfigCache("site.heroImages");
+  await deleteFile(url).catch(() => {});
+  revalidatePath("/");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.heroImages.remove",
+    details: { url },
+  });
+
+  return updated;
+}
+
 export interface NavLink {
   label: string;
   href: string;

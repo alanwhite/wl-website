@@ -20,6 +20,8 @@ import {
   updateRegistrationGuidance,
   updateTierRules,
   updateAddressData,
+  addHeroImage,
+  removeHeroImage,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
@@ -43,6 +45,7 @@ interface SettingsFormProps {
     tierRules: TierRulesConfig | null;
     pollManagerRoles: string[];
     addressDataSummary: { postcodes: number; addresses: number } | null;
+    heroImages: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -70,10 +73,12 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     settings.tierRules ? JSON.stringify(settings.tierRules, null, 2) : "",
   );
   const [addressSummary, setAddressSummary] = useState(settings.addressDataSummary);
+  const [heroImages, setHeroImages] = useState<string[]>(settings.heroImages);
   const [loading, setLoading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
   const addressFileRef = useRef<HTMLInputElement>(null);
+  const heroImageRef = useRef<HTMLInputElement>(null);
 
   async function handleSaveSite() {
     setLoading(true);
@@ -229,6 +234,37 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     }
   }
 
+  async function handleHeroImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.set("image", file);
+      const result = await addHeroImage(formData);
+      setHeroImages(result.images);
+      toast.success("Hero image added");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload");
+    } finally {
+      setLoading(false);
+      if (heroImageRef.current) heroImageRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveHeroImage(url: string) {
+    setLoading(true);
+    try {
+      const updated = await removeHeroImage(url);
+      setHeroImages(updated);
+      toast.success("Hero image removed");
+    } catch {
+      toast.error("Failed to remove");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSaveAnalytics() {
     setLoading(true);
     try {
@@ -246,6 +282,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       <TabsList className="flex-wrap">
         <TabsTrigger value="site">Site Info</TabsTrigger>
         <TabsTrigger value="branding">Branding</TabsTrigger>
+        <TabsTrigger value="hero">Hero Images</TabsTrigger>
         <TabsTrigger value="theme">Theme</TabsTrigger>
         <TabsTrigger value="navigation">Navigation</TabsTrigger>
         <TabsTrigger value="fields">Registration Fields</TabsTrigger>
@@ -356,6 +393,63 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               <p className="text-xs text-muted-foreground">
                 Recommended: Square image, 32x32px or 64x64px. ICO, PNG, or SVG.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="hero">
+        <Card>
+          <CardHeader>
+            <CardTitle>Hero Slideshow</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Upload images for the landing page hero slideshow. Images crossfade automatically. Use high-resolution landscape images for best results.
+            </p>
+            {heroImages.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {heroImages.map((url) => (
+                  <div key={url} className="group relative overflow-hidden rounded-md border">
+                    <Image
+                      src={url}
+                      alt="Hero image"
+                      width={400}
+                      height={225}
+                      className="aspect-video w-full object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
+                      disabled={loading}
+                      onClick={() => handleRemoveHeroImage(url)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed bg-muted/50 px-4 py-8 text-center text-sm text-muted-foreground">
+                No hero images uploaded. The landing page will show a plain background.
+              </div>
+            )}
+            <div>
+              <input
+                ref={heroImageRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleHeroImageUpload}
+              />
+              <Button
+                variant="outline"
+                disabled={loading}
+                onClick={() => heroImageRef.current?.click()}
+              >
+                Add Image
+              </Button>
             </div>
           </CardContent>
         </Card>

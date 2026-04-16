@@ -225,3 +225,8 @@ export type AddressData = Record<string, AddressDataEntry>;
 export async function getAddressData(): Promise<AddressData | null> {
   return getConfigJson<AddressData>("registration.addressData");
 }
+
+export async function getHeroImages(): Promise<string[]> {
+  const images = await getConfigJson<string[]>("site.heroImages");
+  return images ?? [];
+}
