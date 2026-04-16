@@ -103,6 +103,12 @@ export default async function RegisterPage() {
             <Button type="submit" className="w-full">
               Submit Registration
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Wrong account?{" "}
+              <a href="/api/auth/signout" className="underline hover:text-foreground">
+                Sign out
+              </a>
+            </p>
           </form>
         </CardContent>
       </Card>

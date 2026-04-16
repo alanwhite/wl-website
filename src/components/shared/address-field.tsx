@@ -49,6 +49,7 @@ export function AddressField({
     eligible: boolean;
   }>({ checked: false, valid: false, eligible: false });
 
+  const addressComplete = !!(postcode.trim() && line1.trim() && town.trim());
   const serialized = JSON.stringify({ postcode, line1, line2, town });
 
   const notifyChange = useCallback(
@@ -258,6 +259,27 @@ export function AddressField({
 
       {/* Hidden input with serialized JSON for form submission */}
       <input type="hidden" name={name} value={serialized} />
+      {/* Validation input — blocks form submission if address is incomplete */}
+      {required && (
+        <input
+          tabIndex={-1}
+          aria-hidden="true"
+          className="absolute h-0 w-0 opacity-0"
+          required
+          value={addressComplete ? "complete" : ""}
+          onChange={() => {}}
+          onInvalid={(e) => {
+            (e.target as HTMLInputElement).setCustomValidity(
+              !postcode.trim()
+                ? "Please enter your postcode and click Find Address"
+                : !line1.trim()
+                  ? "Please select or enter your address"
+                  : "Please enter your town or city",
+            );
+          }}
+          onInput={(e) => (e.target as HTMLInputElement).setCustomValidity("")}
+        />
+      )}
     </div>
   );
 }
