@@ -20,14 +20,27 @@ async function requireAdmin() {
 export async function approveRegistration(registrationId: string, tierId?: string) {
   const admin = await requireAdmin();
 
-  // Determine the tier to assign — default to "Member" (level 10)
+  // Determine the tier to assign:
+  // 1. Explicit selection from admin
+  // 2. Auto-suggested tier from registration rules
+  // 3. First non-system tier as fallback
   let tier;
   if (tierId) {
     tier = await prisma.membershipTier.findUnique({ where: { id: tierId } });
     if (!tier) throw new Error("Tier not found");
   } else {
-    tier = await prisma.membershipTier.findFirst({ where: { slug: "member" } });
-    if (!tier) throw new Error("Default member tier not found");
+    // Check for suggested tier on the registration
+    const registration = await prisma.registration.findUnique({
+      where: { id: registrationId },
+      select: { suggestedTierId: true },
+    });
+    if (registration?.suggestedTierId) {
+      tier = await prisma.membershipTier.findUnique({ where: { id: registration.suggestedTierId } });
+    }
+    if (!tier) {
+      tier = await prisma.membershipTier.findFirst({ where: { isSystem: false }, orderBy: { level: "asc" } });
+    }
+    if (!tier) throw new Error("No membership tier available");
   }
 
   const registration = await prisma.registration.update({
