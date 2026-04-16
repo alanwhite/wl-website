@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { approveRegistration, rejectRegistration } from "@/lib/actions/admin";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -25,10 +26,15 @@ interface Tier {
 interface RegistrationActionsProps {
   registrationId: string;
   tiers: Tier[];
+  suggestedTierId?: string | null;
 }
 
-export function RegistrationActions({ registrationId, tiers }: RegistrationActionsProps) {
-  const [tierId, setTierId] = useState(tiers[0]?.id ?? "");
+export function RegistrationActions({ registrationId, tiers, suggestedTierId }: RegistrationActionsProps) {
+  const [tierId, setTierId] = useState(
+    suggestedTierId && tiers.some((t) => t.id === suggestedTierId)
+      ? suggestedTierId
+      : tiers[0]?.id ?? "",
+  );
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -70,7 +76,12 @@ export function RegistrationActions({ registrationId, tiers }: RegistrationActio
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label>Membership Tier</Label>
+          <div className="flex items-center gap-2">
+            <Label>Membership Tier</Label>
+            {suggestedTierId && tierId === suggestedTierId && (
+              <Badge variant="outline" className="text-xs">Auto-suggested</Badge>
+            )}
+          </div>
           <Select value={tierId} onValueChange={setTierId}>
             <SelectTrigger>
               <SelectValue placeholder="Select tier..." />

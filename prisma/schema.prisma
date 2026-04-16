@@ -119,18 +119,19 @@ model Authenticator {
 }
 
 model Registration {
-  id           String     @id @default(cuid())
-  userId       String     @unique
-  customFields Json       @default("{}")
-  notes        String?    @db.Text
-  reviewedBy   String?
-  reviewedAt   DateTime?
-  reviewNotes  String?    @db.Text
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  customFields    Json       @default("{}")
+  notes           String?    @db.Text
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNotes     String?    @db.Text
+  suggestedTierId String?
   termsAcceptedAt DateTime?
-  documents    Document[]
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  documents       Document[]
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 model Document {

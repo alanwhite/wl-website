@@ -57,14 +57,21 @@ export interface SiteInfo {
   heroSubtitle: string;
 }
 
+export interface RegistrationFieldCondition {
+  field: string;
+  operator: "equals" | "not-equals" | "in" | "not-in";
+  value: string | string[];
+}
+
 export interface RegistrationField {
   name: string;
   label: string;
-  type: "text" | "textarea" | "select" | "checkbox" | "file";
+  type: "text" | "textarea" | "select" | "checkbox" | "file" | "address";
   required: boolean;
   placeholder?: string;
   options?: string[]; // for select
   helpText?: string;
+  showWhen?: RegistrationFieldCondition;
 }
 
 export async function getSiteInfo(): Promise<SiteInfo> {
@@ -184,4 +191,37 @@ export async function getSiteAssets(): Promise<SiteAssets> {
     getConfig("site.faviconUrl"),
   ]);
   return { logoUrl, faviconUrl };
+}
+
+export async function getRegistrationGuidance(): Promise<string | null> {
+  return getConfig("registration.guidance");
+}
+
+export interface TierRule {
+  field: string;
+  operator: "starts-with" | "matches" | "equals" | "in";
+  value: string | string[];
+  tierSlug: string;
+}
+
+export interface TierRulesConfig {
+  rules: TierRule[];
+  defaultTierSlug: string;
+  eligiblePostcodes?: string[];
+}
+
+export async function getTierRules(): Promise<TierRulesConfig | null> {
+  return getConfigJson<TierRulesConfig>("registration.tierRules");
+}
+
+export interface AddressDataEntry {
+  street: string;
+  town: string;
+  addresses: string[];
+}
+
+export type AddressData = Record<string, AddressDataEntry>;
+
+export async function getAddressData(): Promise<AddressData | null> {
+  return getConfigJson<AddressData>("registration.addressData");
 }

@@ -68,12 +68,39 @@ export default async function RegistrationDetailPage({
           <CardTitle>Registration Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {Object.entries(customFields).map(([key, value]) => (
-            <p key={key}>
-              <strong className="capitalize">{key.replace(/([A-Z])/g, " $1").trim()}:</strong>{" "}
-              {String(value)}
-            </p>
-          ))}
+          {Object.entries(customFields).map(([key, value]) => {
+            // Detect address JSON (stored as string by address field type)
+            let addressObj: { postcode?: string; line1?: string; line2?: string; town?: string } | null = null;
+            if (typeof value === "string") {
+              try {
+                const parsed = JSON.parse(value);
+                if (parsed && typeof parsed === "object" && parsed.postcode) {
+                  addressObj = parsed;
+                }
+              } catch { /* not JSON */ }
+            }
+
+            if (addressObj) {
+              return (
+                <div key={key} className="space-y-1">
+                  <strong className="capitalize">{key.replace(/([A-Z])/g, " $1").trim()}:</strong>
+                  <div className="ml-4 text-sm">
+                    {addressObj.line1 && <p>{addressObj.line1}</p>}
+                    {addressObj.line2 && <p>{addressObj.line2}</p>}
+                    {addressObj.town && <p>{addressObj.town}</p>}
+                    {addressObj.postcode && <p className="font-medium">{addressObj.postcode}</p>}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <p key={key}>
+                <strong className="capitalize">{key.replace(/([A-Z])/g, " $1").trim()}:</strong>{" "}
+                {String(value)}
+              </p>
+            );
+          })}
           {Object.keys(customFields).length === 0 && (
             <p className="text-muted-foreground">No custom fields submitted</p>
           )}
@@ -103,7 +130,11 @@ export default async function RegistrationDetailPage({
       )}
 
       {registration.user.status === "PENDING_REVIEW" && (
-        <RegistrationActions registrationId={registration.id} tiers={tiers} />
+        <RegistrationActions
+          registrationId={registration.id}
+          tiers={tiers}
+          suggestedTierId={registration.suggestedTierId}
+        />
       )}
     </div>
   );

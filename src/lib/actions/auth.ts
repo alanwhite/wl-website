@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { getRegistrationFields, getRegistrationTerms } from "@/lib/config";
 import { buildRegistrationSchema } from "@/lib/validations/registration";
 import { sendEmail, shouldNotifyAdmin } from "@/lib/email";
+import { evaluateTierSuggestion } from "@/lib/tier-rules";
 import { redirect } from "next/navigation";
 
 export async function submitRegistration(formData: FormData) {
@@ -18,6 +19,8 @@ export async function submitRegistration(formData: FormData) {
   const data: Record<string, unknown> = {};
   for (const field of fields) {
     if (field.type === "file") continue;
+    // Skip conditional fields that weren't submitted (hidden in the form)
+    if (field.showWhen && !formData.has(field.name)) continue;
     if (field.type === "checkbox") {
       data[field.name] = formData.get(field.name) === "on";
     } else {
@@ -72,10 +75,16 @@ export async function submitRegistration(formData: FormData) {
   }
   const termsAcceptedAt = terms.enabled && termsAccepted ? new Date() : null;
 
+  // Evaluate tier suggestion based on rules (if configured)
+  const suggestedTierId = await evaluateTierSuggestion(
+    validated as Record<string, unknown>,
+  );
+
   await prisma.registration.upsert({
     where: { userId: session.user.id },
     update: {
       customFields: validated as Record<string, string | boolean>,
+      suggestedTierId,
       termsAcceptedAt,
       documents: {
         createMany: uploadedDocs.length > 0 ? { data: uploadedDocs } : undefined,
@@ -84,6 +93,7 @@ export async function submitRegistration(formData: FormData) {
     create: {
       userId: session.user.id,
       customFields: validated as Record<string, string | boolean>,
+      suggestedTierId,
       termsAcceptedAt,
       documents: {
         createMany: uploadedDocs.length > 0 ? { data: uploadedDocs } : undefined,

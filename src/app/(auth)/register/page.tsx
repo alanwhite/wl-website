@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { getRegistrationFields, getRegistrationTerms, getSiteInfo, getConfig } from "@/lib/config";
+import { getRegistrationFields, getRegistrationTerms, getRegistrationGuidance, getSiteInfo, getConfig } from "@/lib/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DynamicFormFields } from "@/components/shared/dynamic-form";
@@ -24,9 +24,10 @@ export default async function RegisterPage() {
   });
   if (existing) redirect("/register/pending");
 
-  const [fields, terms, siteInfo, logoUrl] = await Promise.all([
+  const [fields, terms, guidance, siteInfo, logoUrl] = await Promise.all([
     getRegistrationFields(),
     getRegistrationTerms(),
+    getRegistrationGuidance(),
     getSiteInfo(),
     getConfig("site.logoUrl"),
   ]);
@@ -51,6 +52,16 @@ export default async function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form action={submitRegistration} className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              You are registering as <span className="font-medium text-foreground">{session.user.email}</span>
+            </p>
+            {guidance && (
+              <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
+                {guidance.split("\n").map((line, i) => (
+                  <p key={i} className={line.trim() === "" ? "h-2" : undefined}>{line}</p>
+                ))}
+              </div>
+            )}
             <DynamicFormFields fields={fields} />
             {terms.enabled && (
               <>

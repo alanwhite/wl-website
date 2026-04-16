@@ -170,6 +170,55 @@ export async function updateAnalyticsScript(script: string) {
   });
 }
 
+export async function updateRegistrationGuidance(guidance: string) {
+  const admin = await requireAdmin();
+  await setConfig("registration.guidance", guidance);
+  invalidateConfigCache("registration.guidance");
+  revalidatePath("/register");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.registrationGuidance.update",
+  });
+}
+
+export async function updateTierRules(rules: string) {
+  const admin = await requireAdmin();
+  JSON.parse(rules); // validate
+  await setConfig("registration.tierRules", rules);
+  invalidateConfigCache("registration.tierRules");
+  revalidatePath("/register");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.tierRules.update",
+  });
+}
+
+export async function updateAddressData(data: string) {
+  const admin = await requireAdmin();
+  const parsed = JSON.parse(data); // validate
+  const postcodes = Object.keys(parsed).length;
+  const addresses = Object.values(parsed).reduce(
+    (sum: number, entry: unknown) =>
+      sum + ((entry as { addresses: unknown[] }).addresses?.length ?? 0),
+    0,
+  );
+  await setConfig("registration.addressData", data);
+  invalidateConfigCache("registration.addressData");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.addressData.update",
+    details: { postcodes, addresses },
+  });
+
+  return { postcodes, addresses };
+}
+
 export interface NavLink {
   label: string;
   href: string;

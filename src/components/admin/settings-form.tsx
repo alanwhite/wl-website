@@ -17,10 +17,13 @@ import {
   updateLogo,
   updateFavicon,
   updateAnalyticsScript,
+  updateRegistrationGuidance,
+  updateTierRules,
+  updateAddressData,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
-import type { ThemeConfig, RegistrationField, RegistrationTermsConfig } from "@/lib/config";
+import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig } from "@/lib/config";
 import { NavigationEditor } from "@/components/admin/navigation-editor";
 
 interface SettingsFormProps {
@@ -36,7 +39,10 @@ interface SettingsFormProps {
     navLinks: NavLink[];
     analyticsScript: string;
     registrationTerms: RegistrationTermsConfig;
+    registrationGuidance: string;
+    tierRules: TierRulesConfig | null;
     pollManagerRoles: string[];
+    addressDataSummary: { postcodes: number; addresses: number } | null;
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -59,9 +65,15 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
   const [termsLinks, setTermsLinks] = useState(settings.registrationTerms.links);
+  const [guidanceText, setGuidanceText] = useState(settings.registrationGuidance);
+  const [tierRulesJson, setTierRulesJson] = useState(
+    settings.tierRules ? JSON.stringify(settings.tierRules, null, 2) : "",
+  );
+  const [addressSummary, setAddressSummary] = useState(settings.addressDataSummary);
   const [loading, setLoading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
+  const addressFileRef = useRef<HTMLInputElement>(null);
 
   async function handleSaveSite() {
     setLoading(true);
@@ -169,6 +181,54 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     }
   }
 
+  async function handleSaveGuidance() {
+    setLoading(true);
+    try {
+      await updateRegistrationGuidance(guidanceText);
+      toast.success("Registration guidance saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveTierRules() {
+    setLoading(true);
+    try {
+      if (tierRulesJson.trim()) {
+        JSON.parse(tierRulesJson); // validate
+        await updateTierRules(tierRulesJson);
+      } else {
+        await updateTierRules("null");
+      }
+      toast.success("Tier rules saved");
+    } catch {
+      toast.error("Invalid JSON");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAddressFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const text = await file.text();
+      JSON.parse(text); // validate
+      const result = await updateAddressData(text);
+      setAddressSummary(result);
+      toast.success(`Loaded ${result.postcodes} postcodes with ${result.addresses} addresses`);
+    } catch {
+      toast.error("Invalid JSON file");
+    } finally {
+      setLoading(false);
+      // Reset input so the same file can be re-uploaded
+      if (addressFileRef.current) addressFileRef.current.value = "";
+    }
+  }
+
   async function handleSaveAnalytics() {
     setLoading(true);
     try {
@@ -189,6 +249,9 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="theme">Theme</TabsTrigger>
         <TabsTrigger value="navigation">Navigation</TabsTrigger>
         <TabsTrigger value="fields">Registration Fields</TabsTrigger>
+        <TabsTrigger value="guidance">Registration Guidance</TabsTrigger>
+        <TabsTrigger value="tierRules">Tier Rules</TabsTrigger>
+        <TabsTrigger value="addressData">Address Data</TabsTrigger>
         <TabsTrigger value="terms">Terms &amp; Conditions</TabsTrigger>
         <TabsTrigger value="polls">Polls</TabsTrigger>
         <TabsTrigger value="integrations">Integrations</TabsTrigger>
@@ -339,7 +402,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Define custom registration fields as a JSON array. Each field needs: name, label, type (text/textarea/select/checkbox/file), required (boolean). Optional: placeholder, options (for select), helpText.
+              Define custom registration fields as a JSON array. Each field needs: name, label, type (text/textarea/select/checkbox/file/address), required (boolean). Optional: placeholder, options (for select), helpText, showWhen (conditional visibility).
             </p>
             <Textarea
               value={fieldsJson}
@@ -348,6 +411,92 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               className="font-mono text-sm"
             />
             <Button onClick={handleSaveFields} disabled={loading}>Save Fields</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="guidance">
+        <Card>
+          <CardHeader>
+            <CardTitle>Registration Guidance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Optional guidance text shown above the registration form. Use this to explain membership types, eligibility criteria, or what information is needed.
+            </p>
+            <Textarea
+              value={guidanceText}
+              onChange={(e) => setGuidanceText(e.target.value)}
+              rows={6}
+              placeholder="e.g. To join as a Full Member, please provide your name, postcode and address..."
+            />
+            <Button onClick={handleSaveGuidance} disabled={loading}>Save Guidance</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="tierRules">
+        <Card>
+          <CardHeader>
+            <CardTitle>Tier Rules</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure automatic tier suggestions based on registration data. When a user submits their registration, the system evaluates these rules and pre-selects the suggested tier for admin review. Leave empty to disable.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Format: JSON with &quot;rules&quot; array (each with field, operator, value, tierSlug), &quot;defaultTierSlug&quot;, and optional &quot;eligiblePostcodes&quot; array for live postcode checking. Operators: starts-with, equals, in, matches.
+            </p>
+            <Textarea
+              value={tierRulesJson}
+              onChange={(e) => setTierRulesJson(e.target.value)}
+              rows={16}
+              className="font-mono text-sm"
+              placeholder={`{\n  "rules": [\n    {\n      "field": "address.postcode",\n      "operator": "in",\n      "value": ["G69 8FD", "G69 8FE"],\n      "tierSlug": "full-member"\n    }\n  ],\n  "defaultTierSlug": "associate-member",\n  "eligiblePostcodes": ["G69 8FD", "G69 8FE"]\n}`}
+            />
+            <Button onClick={handleSaveTierRules} disabled={loading}>Save Tier Rules</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="addressData">
+        <Card>
+          <CardHeader>
+            <CardTitle>Address Lookup Data</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Upload a JSON file of addresses keyed by postcode. When a user enters a matching postcode during registration, they get an address dropdown instead of typing manually.
+            </p>
+            {addressSummary ? (
+              <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
+                Currently loaded: <strong>{addressSummary.postcodes}</strong> postcodes with <strong>{addressSummary.addresses}</strong> addresses.
+              </div>
+            ) : (
+              <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                No address data loaded.
+              </div>
+            )}
+            <div>
+              <input
+                ref={addressFileRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleAddressFileUpload}
+              />
+              <Button
+                variant="outline"
+                disabled={loading}
+                onClick={() => addressFileRef.current?.click()}
+              >
+                {addressSummary ? "Replace Address Data" : "Upload Address Data"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Format: JSON object keyed by postcode, each with street, town, and addresses array.
+              Generate using <code>load-addresses.sh</code> or upload directly here.
+            </p>
           </CardContent>
         </Card>
       </TabsContent>

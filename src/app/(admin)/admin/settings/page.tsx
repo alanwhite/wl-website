@@ -1,6 +1,6 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
-import type { ThemeConfig, RegistrationField, RegistrationTermsConfig } from "@/lib/config";
+import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +20,9 @@ export default async function AdminSettingsPage() {
     navLinks,
     analyticsScript,
     registrationTerms,
+    registrationGuidance,
+    tierRules,
+    addressData,
     tiers,
     roles,
   ] = await Promise.all([
@@ -34,6 +37,9 @@ export default async function AdminSettingsPage() {
     getNavLinks(),
     getConfig("site.analyticsScript"),
     getConfigJson<RegistrationTermsConfig>("registration.terms"),
+    getConfig("registration.guidance"),
+    getConfigJson<TierRulesConfig>("registration.tierRules"),
+    getConfigJson<AddressData>("registration.addressData"),
     prisma.membershipTier.findMany({ where: { isSystem: false }, orderBy: { level: "asc" }, select: { id: true, name: true, level: true } }),
     prisma.role.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
   ]);
@@ -54,6 +60,17 @@ export default async function AdminSettingsPage() {
           navLinks,
           analyticsScript: analyticsScript ?? "",
           registrationTerms: registrationTerms ?? { enabled: false, label: "", content: "", links: [] },
+          registrationGuidance: registrationGuidance ?? "",
+          tierRules: tierRules ?? null,
+          addressDataSummary: addressData
+            ? {
+                postcodes: Object.keys(addressData).length,
+                addresses: Object.values(addressData).reduce(
+                  (sum, entry) => sum + (entry.addresses?.length ?? 0),
+                  0,
+                ),
+              }
+            : null,
           pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
         }}
         tiers={tiers}
