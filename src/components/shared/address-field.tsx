@@ -77,6 +77,11 @@ export function AddressField({
       const res = await fetch(
         `/api/postcode-check?postcode=${encodeURIComponent(trimmed)}`,
       );
+      if (!res.ok) {
+        console.error("Postcode check failed:", res.status, res.statusText);
+        setEligibility({ checked: true, valid: false, eligible: false });
+        return;
+      }
       const data = await res.json();
       setEligibility({
         checked: true,

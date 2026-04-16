@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { getAddressData, getTierRules } from "@/lib/config";
 import { rateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,13 +7,10 @@ const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
 const limiter = rateLimit({ interval: 60_000 });
 
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  // Rate limit by IP — no auth required for postcode lookup
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
   try {
-    await limiter.check(10, session.user.id);
+    await limiter.check(10, ip);
   } catch {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
