@@ -278,21 +278,22 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   }
 
   return (
-    <Tabs defaultValue="site">
-      <TabsList className="flex-wrap">
-        <TabsTrigger value="site">Site Info</TabsTrigger>
-        <TabsTrigger value="branding">Branding</TabsTrigger>
-        <TabsTrigger value="hero">Hero Images</TabsTrigger>
-        <TabsTrigger value="theme">Theme</TabsTrigger>
-        <TabsTrigger value="navigation">Navigation</TabsTrigger>
-        <TabsTrigger value="fields">Registration Fields</TabsTrigger>
-        <TabsTrigger value="guidance">Registration Guidance</TabsTrigger>
-        <TabsTrigger value="tierRules">Tier Rules</TabsTrigger>
-        <TabsTrigger value="addressData">Address Data</TabsTrigger>
-        <TabsTrigger value="terms">Terms &amp; Conditions</TabsTrigger>
-        <TabsTrigger value="polls">Polls</TabsTrigger>
-        <TabsTrigger value="integrations">Integrations</TabsTrigger>
+    <Tabs defaultValue="site" orientation="vertical" className="flex flex-col gap-6 md:flex-row md:items-start">
+      <TabsList className="flex h-auto w-full flex-row gap-1 overflow-x-auto bg-transparent p-0 md:w-56 md:shrink-0 md:flex-col md:overflow-x-visible">
+        <TabsTrigger value="site" className="justify-start">Site Info</TabsTrigger>
+        <TabsTrigger value="branding" className="justify-start">Branding</TabsTrigger>
+        <TabsTrigger value="hero" className="justify-start">Hero Images</TabsTrigger>
+        <TabsTrigger value="theme" className="justify-start">Theme</TabsTrigger>
+        <TabsTrigger value="navigation" className="justify-start">Navigation</TabsTrigger>
+        <TabsTrigger value="fields" className="justify-start">Registration Fields</TabsTrigger>
+        <TabsTrigger value="guidance" className="justify-start">Reg. Guidance</TabsTrigger>
+        <TabsTrigger value="tierRules" className="justify-start">Tier Rules</TabsTrigger>
+        <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
+        <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
+        <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
+        <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
       </TabsList>
+      <div className="flex-1 min-w-0">
 
       <TabsContent value="site">
         <Card>
@@ -753,6 +754,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
           </CardContent>
         </Card>
       </TabsContent>
+      </div>
     </Tabs>
   );
 }
