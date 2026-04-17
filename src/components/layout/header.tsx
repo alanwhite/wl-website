@@ -21,9 +21,10 @@ interface HeaderProps {
   siteName: string;
   logoUrl?: string | null;
   navLinks?: NavLink[];
+  transparent?: boolean;
 }
 
-export function Header({ siteName, logoUrl, navLinks }: HeaderProps) {
+export function Header({ siteName, logoUrl, navLinks, transparent }: HeaderProps) {
   const { data: session, status } = useSession();
 
   const defaultLinks: NavLink[] = [
@@ -56,23 +57,26 @@ export function Header({ siteName, logoUrl, navLinks }: HeaderProps) {
   });
 
   return (
-    <header className="border-b">
+    <header className={transparent ? "" : "border-b"}>
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold">
+        <Link href="/" className={`flex items-center gap-2 text-xl font-bold ${transparent ? "text-white" : ""}`}>
           {logoUrl ? (
             <Image src={logoUrl} alt={siteName} width={32} height={32} className="h-8 w-auto" />
           ) : null}
           {siteName}
         </Link>
         <nav className="flex items-center gap-4">
-          {visibleLinks.map((link) =>
-            link.isExternal ? (
+          {visibleLinks.map((link) => {
+            const linkClass = transparent
+              ? "text-sm text-white/80 hover:text-white"
+              : "text-sm text-muted-foreground hover:text-foreground";
+            return link.isExternal ? (
               <a
                 key={link.href}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={linkClass}
               >
                 {link.label}
               </a>
@@ -80,18 +84,18 @@ export function Header({ siteName, logoUrl, navLinks }: HeaderProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className={linkClass}
               >
                 {link.label}
               </Link>
-            )
-          )}
+            );
+          })}
           {status === "loading" ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : session?.user ? (
             <UserNav user={session.user} />
           ) : (
-            <Button asChild size="sm">
+            <Button asChild size="sm" variant={transparent ? "secondary" : "default"}>
               <Link href="/login">Sign In</Link>
             </Button>
           )}

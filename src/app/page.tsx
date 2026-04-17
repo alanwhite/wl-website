@@ -27,29 +27,60 @@ export default async function HomePage() {
     if (session.user.status === "REJECTED") redirect("/register/rejected");
   }
 
-  return (
-    <Providers session={session}>
-      <div className="flex min-h-screen flex-col">
-        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
-        <main className="flex-1">
-          <HeroSlideshow images={heroImages}>
-            <div className="container mx-auto flex flex-col items-center justify-center gap-6 px-4 py-24 text-center">
-              <h1 className={`text-4xl font-bold tracking-tight sm:text-6xl ${heroImages.length > 0 ? "text-white" : ""}`}>
+  const hasHero = heroImages.length > 0;
+
+  if (hasHero) {
+    return (
+      <Providers session={session}>
+        <div className="relative min-h-screen">
+          {/* Header overlays the hero */}
+          <div className="absolute inset-x-0 top-0 z-20">
+            <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} transparent />
+          </div>
+          <HeroSlideshow images={heroImages} fullScreen>
+            <div className="container mx-auto flex flex-col items-center justify-center gap-6 px-4 text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
                 {siteInfo.heroTitle}
               </h1>
-              <p className={`max-w-2xl text-lg ${heroImages.length > 0 ? "text-white/80" : "text-muted-foreground"}`}>
+              <p className="max-w-2xl text-lg text-white/80">
                 {siteInfo.heroSubtitle}
               </p>
               <div className="flex gap-4">
-                <Button asChild size="lg" variant={heroImages.length > 0 ? "secondary" : "default"}>
+                <Button asChild size="lg" variant="secondary">
                   <Link href="/login">Get Started</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className={heroImages.length > 0 ? "border-white/70 bg-white/10 text-white hover:bg-white/20" : ""}>
+                <Button asChild variant="outline" size="lg" className="border-white/70 bg-white/10 text-white hover:bg-white/20">
                   <Link href="/about">Learn More</Link>
                 </Button>
               </div>
             </div>
           </HeroSlideshow>
+        </div>
+      </Providers>
+    );
+  }
+
+  return (
+    <Providers session={session}>
+      <div className="flex min-h-screen flex-col">
+        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
+        <main className="flex-1">
+          <section className="container mx-auto flex flex-col items-center justify-center gap-6 px-4 py-24 text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+              {siteInfo.heroTitle}
+            </h1>
+            <p className="max-w-2xl text-lg text-muted-foreground">
+              {siteInfo.heroSubtitle}
+            </p>
+            <div className="flex gap-4">
+              <Button asChild size="lg">
+                <Link href="/login">Get Started</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/about">Learn More</Link>
+              </Button>
+            </div>
+          </section>
         </main>
         <Footer siteName={siteInfo.name} />
       </div>

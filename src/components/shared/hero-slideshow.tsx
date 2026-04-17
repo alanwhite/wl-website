@@ -6,6 +6,7 @@ import Image from "next/image";
 interface HeroSlideshowProps {
   images: string[];
   interval?: number; // ms between transitions, default 8000
+  fullScreen?: boolean; // fill entire viewport
   children: React.ReactNode;
 }
 
@@ -20,6 +21,7 @@ const kenBurnsVariants = [
 export function HeroSlideshow({
   images,
   interval = 8000,
+  fullScreen = false,
   children,
 }: HeroSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -38,16 +40,18 @@ export function HeroSlideshow({
     return () => clearInterval(timer);
   }, [advance, interval, images.length]);
 
+  const heightClass = fullScreen ? "min-h-screen" : "min-h-[70vh]";
+
   if (images.length === 0) {
     return (
-      <section className="relative flex min-h-[70vh] items-center justify-center">
+      <section className={`relative flex ${heightClass} items-center justify-center`}>
         {children}
       </section>
     );
   }
 
   return (
-    <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden">
+    <section className={`relative flex ${heightClass} items-center justify-center overflow-hidden`}>
       {/* Background images with Ken Burns effect */}
       {images.map((src, i) => (
         <div
