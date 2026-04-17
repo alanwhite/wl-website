@@ -30,7 +30,7 @@ export default async function AboutPage() {
   return (
     <Providers>
       <div className="flex min-h-screen flex-col">
-        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
+        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)} />
         <main className="container mx-auto max-w-3xl flex-1 px-4 py-12">
           <h1 className="mb-6 text-3xl font-bold">{page?.title ?? "About Us"}</h1>
           <div className="prose dark:prose-invert max-w-none">

@@ -17,7 +17,7 @@ export default async function ContactPage() {
   return (
     <Providers>
       <div className="flex min-h-screen flex-col">
-        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
+        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)} />
         <main className="container mx-auto max-w-lg flex-1 px-4 py-12">
           <ContactForm />
         </main>
