@@ -44,7 +44,7 @@ export default async function HomePage() {
                 <Button asChild size="lg" variant={heroImages.length > 0 ? "secondary" : "default"}>
                   <Link href="/login">Get Started</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className={heroImages.length > 0 ? "border-white text-white hover:bg-white/20" : ""}>
+                <Button asChild variant="outline" size="lg" className={heroImages.length > 0 ? "border-white/70 bg-white/10 text-white hover:bg-white/20" : ""}>
                   <Link href="/about">Learn More</Link>
                 </Button>
               </div>
