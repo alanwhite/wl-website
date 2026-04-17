@@ -273,4 +273,5 @@ export interface NavLink {
   sortOrder: number;
   minTierLevel: number | null;
   requiredRoleSlug: string | null;
+  icon?: string;
 }

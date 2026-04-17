@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { updateNavigation, type NavLink } from "@/lib/actions/settings";
 import { toast } from "sonner";
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
+import { availableIcons, getIcon } from "@/lib/icons";
 
 interface NavigationEditorProps {
   initialLinks: NavLink[];
@@ -96,7 +97,7 @@ export function NavigationEditor({ initialLinks, tiers, roles }: NavigationEdito
                 <ArrowDown className="h-3 w-3" />
               </Button>
             </div>
-            <div className="grid flex-1 gap-3 sm:grid-cols-5">
+            <div className="grid flex-1 gap-3 sm:grid-cols-6">
               <div className="space-y-1">
                 <Label className="text-xs">Label</Label>
                 <Input
@@ -112,6 +113,31 @@ export function NavigationEditor({ initialLinks, tiers, roles }: NavigationEdito
                   onChange={(e) => updateLink(index, { href: e.target.value })}
                   placeholder="/about"
                 />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Icon</Label>
+                <Select
+                  value={link.icon ?? "none"}
+                  onValueChange={(v) => updateLink(index, { icon: v === "none" ? undefined : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {availableIcons.map((name) => {
+                      const Icon = getIcon(name);
+                      return (
+                        <SelectItem key={name} value={name}>
+                          <span className="flex items-center gap-2">
+                            {Icon && <Icon className="h-3.5 w-3.5" />}
+                            {name}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Min Tier</Label>
