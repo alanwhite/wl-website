@@ -125,3 +125,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Ken Burns effect animations for hero slideshow */
+@keyframes kenburns-zoom-in {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.15) translate(-1%, -1%); }
+}
+@keyframes kenburns-zoom-out {
+  from { transform: scale(1.15) translate(-1%, -1%); }
+  to { transform: scale(1) translate(0, 0); }
+}
+@keyframes kenburns-pan-left {
+  from { transform: scale(1.1) translate(2%, 0); }
+  to { transform: scale(1.1) translate(-2%, -1%); }
+}
+@keyframes kenburns-pan-right {
+  from { transform: scale(1.1) translate(-2%, 0); }
+  to { transform: scale(1.1) translate(2%, -1%); }
+}
+
+.animate-kenburns-zoom-in {
+  animation: kenburns-zoom-in linear forwards;
+}
+.animate-kenburns-zoom-out {
+  animation: kenburns-zoom-out linear forwards;
+}
+.animate-kenburns-pan-left {
+  animation: kenburns-pan-left linear forwards;
+}
+.animate-kenburns-pan-right {
+  animation: kenburns-pan-right linear forwards;
+}

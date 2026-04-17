@@ -5,13 +5,21 @@ import Image from "next/image";
 
 interface HeroSlideshowProps {
   images: string[];
-  interval?: number; // ms between transitions, default 6000
+  interval?: number; // ms between transitions, default 8000
   children: React.ReactNode;
 }
 
+// Each image gets a different pan direction for variety
+const kenBurnsVariants = [
+  "animate-kenburns-zoom-in",
+  "animate-kenburns-zoom-out",
+  "animate-kenburns-pan-left",
+  "animate-kenburns-pan-right",
+];
+
 export function HeroSlideshow({
   images,
-  interval = 6000,
+  interval = 8000,
   children,
 }: HeroSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,6 +29,10 @@ export function HeroSlideshow({
   }, [images.length]);
 
   useEffect(() => {
+    if (images.length <= 1 && images.length > 0) {
+      // Single image still gets the Ken Burns effect, no need to advance
+      return;
+    }
     if (images.length <= 1) return;
     const timer = setInterval(advance, interval);
     return () => clearInterval(timer);
@@ -36,21 +48,26 @@ export function HeroSlideshow({
 
   return (
     <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden">
-      {/* Background images */}
+      {/* Background images with Ken Burns effect */}
       {images.map((src, i) => (
         <div
           key={src}
           className="absolute inset-0 transition-opacity duration-[2000ms] ease-in-out"
           style={{ opacity: i === currentIndex ? 1 : 0 }}
         >
-          <Image
-            src={src}
-            alt=""
-            fill
-            className="object-cover"
-            priority={i === 0}
-            sizes="100vw"
-          />
+          <div
+            className={`h-full w-full ${i === currentIndex ? kenBurnsVariants[i % kenBurnsVariants.length] : ""}`}
+            style={{ animationDuration: `${interval}ms` }}
+          >
+            <Image
+              src={src}
+              alt=""
+              fill
+              className="object-cover"
+              priority={i === 0}
+              sizes="100vw"
+            />
+          </div>
         </div>
       ))}
 
