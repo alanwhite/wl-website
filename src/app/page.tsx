@@ -55,6 +55,14 @@ export default async function HomePage() {
               </div>
             </div>
           </HeroSlideshow>
+          {/* Footer links overlay */}
+          <div className="absolute inset-x-0 bottom-0 z-20 py-4 text-center text-xs text-white/60">
+            <div className="flex items-center justify-center gap-4">
+              <a href="/p/privacy" className="hover:text-white/90">Privacy Policy</a>
+              <a href="/p/terms" className="hover:text-white/90">Terms &amp; Conditions</a>
+            </div>
+            <p className="mt-1">&copy; {new Date().getFullYear()} {siteInfo.name}</p>
+          </div>
         </div>
       </Providers>
     );
