@@ -3,28 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  FolderOpen,
-  BarChart3,
-  User,
-} from "lucide-react";
+import { getIcon } from "@/lib/icons";
+import { LayoutDashboard, User } from "lucide-react";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/documents", label: "Documents", icon: FolderOpen },
-  { href: "/polls", label: "Polls", icon: BarChart3 },
-  { href: "/profile", label: "Profile", icon: User },
-];
+interface MemberNavItem {
+  label: string;
+  href: string;
+  icon?: string;
+}
 
-export function MemberSidebar() {
+interface MemberSidebarProps {
+  items: MemberNavItem[];
+}
+
+export function MemberSidebar({ items }: MemberSidebarProps) {
   const pathname = usePathname();
+
+  // Always include Dashboard first and Profile last
+  const allItems: MemberNavItem[] = [
+    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+    ...items.filter((i) => i.href !== "/dashboard" && i.href !== "/profile"),
+    { label: "Profile", href: "/profile", icon: "User" },
+  ];
 
   return (
     <aside className="hidden w-64 border-r bg-muted/30 md:block min-h-[calc(100vh-4rem)]">
       <nav className="flex flex-col gap-1 p-4">
-        {navItems.map((item) => {
-          const Icon = item.icon;
+        {allItems.map((item) => {
+          const Icon = getIcon(item.icon) ?? LayoutDashboard;
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (

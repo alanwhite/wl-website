@@ -7,6 +7,7 @@ export interface NavLink {
   sortOrder: number;
   minTierLevel: number | null;
   requiredRoleSlug: string | null;
+  icon?: string; // lucide icon name, e.g. "FolderOpen", "BarChart3"
   // Backward compat: old format used `visibility`
   visibility?: "public" | "members" | "all";
 }
