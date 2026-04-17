@@ -60,8 +60,12 @@ export function HeroSlideshow({
           style={{ opacity: i === currentIndex ? 1 : 0 }}
         >
           <div
-            className={`h-full w-full ${i === currentIndex ? kenBurnsVariants[i % kenBurnsVariants.length] : ""}`}
-            style={{ animationDuration: `${interval}ms` }}
+            className={`h-full w-full ${kenBurnsVariants[i % kenBurnsVariants.length]}`}
+            style={{
+              animationDuration: `${interval}ms`,
+              animationIterationCount: "infinite",
+              animationDirection: "alternate",
+            }}
           >
             <Image
               src={src}

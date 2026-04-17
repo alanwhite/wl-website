@@ -145,14 +145,14 @@
 }
 
 .animate-kenburns-zoom-in {
-  animation: kenburns-zoom-in linear forwards;
+  animation: kenburns-zoom-in ease-in-out infinite alternate;
 }
 .animate-kenburns-zoom-out {
-  animation: kenburns-zoom-out linear forwards;
+  animation: kenburns-zoom-out ease-in-out infinite alternate;
 }
 .animate-kenburns-pan-left {
-  animation: kenburns-pan-left linear forwards;
+  animation: kenburns-pan-left ease-in-out infinite alternate;
 }
 .animate-kenburns-pan-right {
-  animation: kenburns-pan-right linear forwards;
+  animation: kenburns-pan-right ease-in-out infinite alternate;
 }
