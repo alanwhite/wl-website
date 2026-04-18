@@ -280,6 +280,11 @@ export function canViewFinancials(
   return viewerRoles.some((slug) => user.roleSlugs?.includes(slug));
 }
 
+export async function getSiteTimezone(): Promise<string> {
+  const tz = await getConfig("site.timezone");
+  return tz ?? "Europe/London";
+}
+
 export async function getFinancialYearStart(): Promise<number> {
   const month = await getConfig("financials.yearStartMonth");
   return month ? parseInt(month) : 1; // default January

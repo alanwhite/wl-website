@@ -54,15 +54,24 @@ export function EventForm({ event }: EventFormProps) {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
+
+    // Convert local datetime-local values to ISO strings with timezone
+    // datetime-local gives "2026-05-07T18:00", new Date() interprets as local time
+    const rawStart = form.get("startDate") as string;
+    const rawEnd = (form.get("endDate") as string) || rawStart;
+    const startDateISO = new Date(rawStart).toISOString();
+    const endDateISO = new Date(rawEnd).toISOString();
+    const recurrenceEndRaw = form.get("recurrenceEnd") as string;
+
     const data = {
       title: form.get("title") as string,
       description: (form.get("description") as string) || undefined,
       location: (form.get("location") as string) || undefined,
-      startDate: (form.get("startDate") as string),
-      endDate: (form.get("endDate") as string) || (form.get("startDate") as string),
+      startDate: startDateISO,
+      endDate: endDateISO,
       allDay,
       recurrence: recurrence === "none" ? undefined : recurrence,
-      recurrenceEnd: (form.get("recurrenceEnd") as string) || undefined,
+      recurrenceEnd: recurrenceEndRaw ? new Date(recurrenceEndRaw).toISOString() : undefined,
     };
 
     try {

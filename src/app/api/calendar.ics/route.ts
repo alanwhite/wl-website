@@ -1,15 +1,44 @@
 import { prisma } from "@/lib/prisma";
-import { getSiteInfo } from "@/lib/config";
+import { getSiteInfo, getSiteTimezone } from "@/lib/config";
 import { NextResponse } from "next/server";
 
 function escapeIcal(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
-function formatIcalDate(date: Date, allDay: boolean): string {
-  if (allDay) {
-    return date.toISOString().slice(0, 10).replace(/-/g, "");
-  }
+/**
+ * Format a UTC Date as a local-time iCal string in the given timezone.
+ * Uses Intl.DateTimeFormat to get the local time components.
+ */
+function formatInTimezone(date: Date, timezone: string): string {
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const parts = fmt.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${get("year")}${get("month")}${get("day")}T${get("hour")}${get("minute")}${get("second")}`;
+}
+
+function formatDateOnly(date: Date, timezone: string): string {
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = fmt.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${get("year")}${get("month")}${get("day")}`;
+}
+
+function formatUtc(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
@@ -23,33 +52,37 @@ function recurrenceToRRule(recurrence: string): string | null {
 }
 
 export async function GET() {
-  const [events, siteInfo] = await Promise.all([
+  const [events, siteInfo, timezone] = await Promise.all([
     prisma.calendarEvent.findMany({
       orderBy: { startDate: "asc" },
     }),
     getSiteInfo(),
+    getSiteTimezone(),
   ]);
+
+  const domain = process.env.AUTH_URL?.replace(/^https?:\/\//, "") ?? "localhost";
 
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     `PRODID:-//${escapeIcal(siteInfo.name)}//Events//EN`,
     `X-WR-CALNAME:${escapeIcal(siteInfo.name)}`,
+    `X-WR-TIMEZONE:${timezone}`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
   ];
 
   for (const event of events) {
     lines.push("BEGIN:VEVENT");
-    lines.push(`UID:${event.id}@${process.env.AUTH_URL?.replace(/^https?:\/\//, "") ?? "localhost"}`);
-    lines.push(`DTSTAMP:${formatIcalDate(event.updatedAt, false)}`);
+    lines.push(`UID:${event.id}@${domain}`);
+    lines.push(`DTSTAMP:${formatUtc(event.updatedAt)}`);
 
     if (event.allDay) {
-      lines.push(`DTSTART;VALUE=DATE:${formatIcalDate(event.startDate, true)}`);
-      lines.push(`DTEND;VALUE=DATE:${formatIcalDate(event.endDate, true)}`);
+      lines.push(`DTSTART;VALUE=DATE:${formatDateOnly(event.startDate, timezone)}`);
+      lines.push(`DTEND;VALUE=DATE:${formatDateOnly(event.endDate, timezone)}`);
     } else {
-      lines.push(`DTSTART:${formatIcalDate(event.startDate, false)}`);
-      lines.push(`DTEND:${formatIcalDate(event.endDate, false)}`);
+      lines.push(`DTSTART;TZID=${timezone}:${formatInTimezone(event.startDate, timezone)}`);
+      lines.push(`DTEND;TZID=${timezone}:${formatInTimezone(event.endDate, timezone)}`);
     }
 
     lines.push(`SUMMARY:${escapeIcal(event.title)}`);
@@ -66,7 +99,7 @@ export async function GET() {
       if (rrule) {
         let rule = rrule;
         if (event.recurrenceEnd) {
-          rule += `;UNTIL=${formatIcalDate(event.recurrenceEnd, false)}`;
+          rule += `;UNTIL=${formatInTimezone(event.recurrenceEnd, timezone)}`;
         }
         lines.push(rule);
       }

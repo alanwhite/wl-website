@@ -37,13 +37,20 @@ export async function createEvent(data: {
 }) {
   const user = await requireCalendarManager();
 
+  const startDate = new Date(data.startDate);
+  let endDate = new Date(data.endDate || data.startDate);
+  // Ensure end is after start — default to start + 1 hour
+  if (endDate <= startDate) {
+    endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+  }
+
   const event = await prisma.calendarEvent.create({
     data: {
       title: data.title,
       description: data.description || null,
       location: data.location || null,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
+      startDate,
+      endDate,
       allDay: data.allDay,
       recurrence: data.recurrence || null,
       recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
@@ -83,14 +90,20 @@ export async function updateEvent(
 ) {
   const user = await requireCalendarManager();
 
+  const updateStart = new Date(data.startDate);
+  let updateEnd = new Date(data.endDate || data.startDate);
+  if (updateEnd <= updateStart) {
+    updateEnd = new Date(updateStart.getTime() + 60 * 60 * 1000);
+  }
+
   const event = await prisma.calendarEvent.update({
     where: { id: eventId },
     data: {
       title: data.title,
       description: data.description || null,
       location: data.location || null,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
+      startDate: updateStart,
+      endDate: updateEnd,
       allDay: data.allDay,
       recurrence: data.recurrence || null,
       recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
