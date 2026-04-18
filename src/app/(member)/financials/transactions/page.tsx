@@ -59,9 +59,14 @@ export default async function TransactionsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Transactions</h1>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/financials">Back</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <a href={`/api/export/financials${typeFilter ? `?type=${typeFilter}` : ""}`} download>Export CSV</a>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/financials">Back</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">

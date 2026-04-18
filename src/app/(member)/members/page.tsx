@@ -73,14 +73,19 @@ export default async function MembersPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Members</h1>
-        <Button asChild variant={pendingCount > 0 ? "default" : "outline"} size="sm">
-          <Link href="/members/registrations">
-            Registrations
-            {pendingCount > 0 && (
-              <Badge variant="secondary" className="ml-2">{pendingCount}</Badge>
-            )}
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <a href="/api/export/members" download>Export CSV</a>
+          </Button>
+          <Button asChild variant={pendingCount > 0 ? "default" : "outline"} size="sm">
+            <Link href="/members/registrations">
+              Registrations
+              {pendingCount > 0 && (
+                <Badge variant="secondary" className="ml-2">{pendingCount}</Badge>
+              )}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <form action="/members" method="get">

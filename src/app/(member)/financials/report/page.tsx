@@ -80,6 +80,9 @@ export default async function MonthlyReportPage({
       <div className="flex items-center justify-between print:hidden">
         <h1 className="text-2xl font-bold">Monthly Report</h1>
         <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <a href={`/api/export/financials?month=${month}&year=${year}`} download>Export CSV</a>
+          </Button>
           <Button onClick={() => window.print()} variant="outline" size="sm" className="print:hidden">
             Print
           </Button>
