@@ -57,7 +57,10 @@ export default async function FinancialsPage() {
         <h1 className="text-2xl font-bold">Financials</h1>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="/financials/report">Report</Link>
+            <Link href="/financials/report">Monthly</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/financials/annual">Annual</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/financials/transactions">All Transactions</Link>

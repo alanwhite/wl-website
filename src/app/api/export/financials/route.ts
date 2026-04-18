@@ -44,6 +44,10 @@ export async function GET(request: NextRequest) {
     const periodEnd = endOfMonth(new Date(year, month - 1));
     where = { date: { gte: periodStart, lte: periodEnd } };
     filenameSuffix = `${year}-${String(month).padStart(2, "0")}`;
+  } else if (yearParam) {
+    const year = parseInt(yearParam);
+    where = { date: { gte: new Date(year, 0, 1), lte: new Date(year, 11, 31, 23, 59, 59) } };
+    filenameSuffix = `${year}`;
   }
 
   const transactions = await prisma.transaction.findMany({
