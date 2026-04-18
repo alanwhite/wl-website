@@ -28,6 +28,7 @@ import {
   updateTierRules,
   updateAddressData,
   updateMemberManagerRoles,
+  updateAnnouncementManagerRoles,
   updateCalendarManagerRoles,
   updateFinancialRoles,
   addHeroImage,
@@ -61,6 +62,7 @@ interface SettingsFormProps {
     financialManagerRoles: string[];
     financialViewerRoles: string[];
     financialYearStartMonth: number;
+    announcementManagerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -80,6 +82,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
   const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
+  const [announcementManagerRoleSlugs, setAnnouncementManagerRoleSlugs] = useState<string[]>(settings.announcementManagerRoles);
   const [calendarManagerRoleSlugs, setCalendarManagerRoleSlugs] = useState<string[]>(settings.calendarManagerRoles);
   const [financialManagerRoleSlugs, setFinancialManagerRoleSlugs] = useState<string[]>(settings.financialManagerRoles);
   const [financialViewerRoleSlugs, setFinancialViewerRoleSlugs] = useState<string[]>(settings.financialViewerRoles);
@@ -147,6 +150,18 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     try {
       await updatePollManagerRoles(JSON.stringify(pollManagerRoleSlugs));
       toast.success("Poll manager roles saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveAnnouncementRoles() {
+    setLoading(true);
+    try {
+      await updateAnnouncementManagerRoles(JSON.stringify(announcementManagerRoleSlugs));
+      toast.success("Announcement roles saved");
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -351,6 +366,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
         <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
         <TabsTrigger value="memberMgmt" className="justify-start">Member Mgmt</TabsTrigger>
+        <TabsTrigger value="announcements" className="justify-start">Announcements</TabsTrigger>
         <TabsTrigger value="calendar" className="justify-start">Calendar</TabsTrigger>
         <TabsTrigger value="financials" className="justify-start">Financials</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
@@ -748,6 +764,47 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               </>
             )}
             <Button onClick={handleSaveTerms} disabled={loading}>Save Terms Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="announcements">
+        <Card>
+          <CardHeader>
+            <CardTitle>Announcement Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which roles can create and manage announcements.
+            </p>
+            <div className="space-y-2">
+              <Label>Announcement Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No roles defined yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`ann-role-${role.slug}`}
+                        checked={announcementManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setAnnouncementManagerRoleSlugs([...announcementManagerRoleSlugs, role.slug]);
+                          } else {
+                            setAnnouncementManagerRoleSlugs(announcementManagerRoleSlugs.filter((s) => s !== role.slug));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`ann-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSaveAnnouncementRoles} disabled={loading}>Save Announcement Settings</Button>
           </CardContent>
         </Card>
       </TabsContent>
