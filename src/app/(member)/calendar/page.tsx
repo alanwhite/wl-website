@@ -6,9 +6,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { format } from "date-fns";
-import { CalendarDays, MapPin, Plus, Link as LinkIcon } from "lucide-react";
+import { CalendarDays, MapPin, Plus } from "lucide-react";
 import { CalendarSubscribe } from "@/components/calendar/calendar-subscribe";
+import { LocalDate } from "@/components/shared/local-date";
 
 export const dynamic = "force-dynamic";
 
@@ -73,9 +73,10 @@ export default async function CalendarPage() {
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-3.5 w-3.5" />
-                          {event.allDay
-                            ? format(event.startDate, "EEE d MMM yyyy")
-                            : format(event.startDate, "EEE d MMM yyyy, h:mm a")}
+                          <LocalDate
+                            date={event.startDate}
+                            dateFormat={event.allDay ? "EEE d MMM yyyy" : "EEE d MMM yyyy, h:mm a"}
+                          />
                         </span>
                         {event.location && (
                           <span className="flex items-center gap-1">

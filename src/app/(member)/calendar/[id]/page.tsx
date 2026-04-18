@@ -6,8 +6,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
 import { CalendarDays, MapPin, Pencil } from "lucide-react";
+import { LocalDate } from "@/components/shared/local-date";
 import { DeleteEventButton } from "@/components/calendar/delete-event-button";
 
 export const dynamic = "force-dynamic";
@@ -59,8 +59,8 @@ export default async function EventDetailPage({
             <span className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
               {event.allDay
-                ? format(event.startDate, "EEEE d MMMM yyyy")
-                : `${format(event.startDate, "EEEE d MMMM yyyy, h:mm a")} — ${format(event.endDate, "h:mm a")}`}
+                ? <LocalDate date={event.startDate} dateFormat="EEEE d MMMM yyyy" />
+                : <><LocalDate date={event.startDate} dateFormat="EEEE d MMMM yyyy, h:mm a" /> — <LocalDate date={event.endDate} dateFormat="h:mm a" /></>}
             </span>
             {event.location && (
               <span className="flex items-center gap-2">
@@ -75,7 +75,7 @@ export default async function EventDetailPage({
               <Badge variant="outline">Repeats {event.recurrence}</Badge>
               {event.recurrenceEnd && (
                 <span className="text-sm text-muted-foreground">
-                  until {format(event.recurrenceEnd, "d MMM yyyy")}
+                  until <LocalDate date={event.recurrenceEnd} dateFormat="d MMM yyyy" />
                 </span>
               )}
             </div>
@@ -86,7 +86,7 @@ export default async function EventDetailPage({
           )}
 
           <p className="text-xs text-muted-foreground">
-            Created by {event.creator.name ?? "Unknown"} on {format(event.createdAt, "d MMM yyyy")}
+            Created by {event.creator.name ?? "Unknown"} on <LocalDate date={event.createdAt} dateFormat="d MMM yyyy" />
           </p>
         </CardContent>
       </Card>
