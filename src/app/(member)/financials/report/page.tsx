@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { MonthSelector } from "@/components/financials/month-selector";
+import { PrintButton } from "@/components/financials/print-button";
 
 export const dynamic = "force-dynamic";
 
@@ -83,9 +84,7 @@ export default async function MonthlyReportPage({
           <Button asChild variant="outline" size="sm">
             <a href={`/api/export/financials?month=${month}&year=${year}`} download>Export CSV</a>
           </Button>
-          <Button onClick={() => window.print()} variant="outline" size="sm" className="print:hidden">
-            Print
-          </Button>
+          <PrintButton />
           <Button asChild variant="outline" size="sm">
             <Link href="/financials">Back</Link>
           </Button>
