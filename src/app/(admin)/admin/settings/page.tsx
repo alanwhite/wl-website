@@ -79,6 +79,7 @@ export default async function AdminSettingsPage() {
           calendarManagerRoles: (await getConfigJson<string[]>("calendar.managerRoles")) ?? [],
           financialManagerRoles: (await getConfigJson<string[]>("financials.managerRoles")) ?? [],
           financialViewerRoles: (await getConfigJson<string[]>("financials.viewerRoles")) ?? [],
+          financialYearStartMonth: parseInt((await getConfig("financials.yearStartMonth")) ?? "1"),
           pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
         }}
         tiers={tiers}

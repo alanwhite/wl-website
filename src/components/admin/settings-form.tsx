@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   updateSiteSettings,
@@ -53,6 +60,7 @@ interface SettingsFormProps {
     calendarManagerRoles: string[];
     financialManagerRoles: string[];
     financialViewerRoles: string[];
+    financialYearStartMonth: number;
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -75,6 +83,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [calendarManagerRoleSlugs, setCalendarManagerRoleSlugs] = useState<string[]>(settings.calendarManagerRoles);
   const [financialManagerRoleSlugs, setFinancialManagerRoleSlugs] = useState<string[]>(settings.financialManagerRoles);
   const [financialViewerRoleSlugs, setFinancialViewerRoleSlugs] = useState<string[]>(settings.financialViewerRoles);
+  const [financialYearStart, setFinancialYearStart] = useState(String(settings.financialYearStartMonth));
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -163,8 +172,9 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       await updateFinancialRoles({
         managerRoles: JSON.stringify(financialManagerRoleSlugs),
         viewerRoles: JSON.stringify(financialViewerRoleSlugs),
+        yearStartMonth: financialYearStart,
       });
-      toast.success("Financial roles saved");
+      toast.success("Financial settings saved");
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -851,6 +861,33 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Which month does the financial year start? Annual reports will use this.
+              </p>
+              <div className="space-y-2">
+                <Label>Financial Year Starts</Label>
+                <Select value={financialYearStart} onValueChange={setFinancialYearStart}>
+                  <SelectTrigger className="max-w-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">January</SelectItem>
+                    <SelectItem value="2">February</SelectItem>
+                    <SelectItem value="3">March</SelectItem>
+                    <SelectItem value="4">April</SelectItem>
+                    <SelectItem value="5">May</SelectItem>
+                    <SelectItem value="6">June</SelectItem>
+                    <SelectItem value="7">July</SelectItem>
+                    <SelectItem value="8">August</SelectItem>
+                    <SelectItem value="9">September</SelectItem>
+                    <SelectItem value="10">October</SelectItem>
+                    <SelectItem value="11">November</SelectItem>
+                    <SelectItem value="12">December</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <Button onClick={handleSaveFinancialRoles} disabled={loading}>Save Financial Settings</Button>

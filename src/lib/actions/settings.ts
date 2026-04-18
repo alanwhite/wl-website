@@ -156,12 +156,16 @@ export async function updateCalendarManagerRoles(rolesJson: string) {
   });
 }
 
-export async function updateFinancialRoles(data: { managerRoles: string; viewerRoles: string }) {
+export async function updateFinancialRoles(data: { managerRoles: string; viewerRoles: string; yearStartMonth?: string }) {
   const admin = await requireAdmin();
   JSON.parse(data.managerRoles);
   JSON.parse(data.viewerRoles);
   await setConfig("financials.managerRoles", data.managerRoles);
   await setConfig("financials.viewerRoles", data.viewerRoles);
+  if (data.yearStartMonth) {
+    await setConfig("financials.yearStartMonth", data.yearStartMonth);
+    invalidateConfigCache("financials.yearStartMonth");
+  }
   invalidateConfigCache("financials.managerRoles");
   invalidateConfigCache("financials.viewerRoles");
 

@@ -280,6 +280,11 @@ export function canViewFinancials(
   return viewerRoles.some((slug) => user.roleSlugs?.includes(slug));
 }
 
+export async function getFinancialYearStart(): Promise<number> {
+  const month = await getConfig("financials.yearStartMonth");
+  return month ? parseInt(month) : 1; // default January
+}
+
 export async function getFinancialCategories(): Promise<{ name: string; type: string }[]> {
   const cats = await getConfigJson<{ name: string; type: string }[]>("financials.categories");
   return cats ?? [

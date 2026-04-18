@@ -50,6 +50,20 @@ export async function GET(request: NextRequest) {
     filenameSuffix = `${year}`;
   }
 
+  // Financial year export (uses configured start month)
+  const fyearParam = request.nextUrl.searchParams.get("fyear");
+  if (fyearParam) {
+    const { getFinancialYearStart } = await import("@/lib/config");
+    const startMonth = await getFinancialYearStart();
+    const year = parseInt(fyearParam);
+    const periodStart = new Date(year, startMonth - 1, 1);
+    const endYear = startMonth === 1 ? year : year + 1;
+    const endMonth = startMonth === 1 ? 12 : startMonth - 1;
+    const periodEnd = new Date(endYear, endMonth, 0, 23, 59, 59);
+    where = { date: { gte: periodStart, lte: periodEnd } };
+    filenameSuffix = `FY${year}-${endYear}`;
+  }
+
   const transactions = await prisma.transaction.findMany({
     where,
     orderBy: { date: "asc" },
