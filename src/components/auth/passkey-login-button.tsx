@@ -14,13 +14,13 @@ export function PasskeyLoginButton() {
     try {
       const result = await signIn("passkey", { redirect: false });
       if (result?.error) {
-        setError("Passkey authentication failed. Try signing in with an OAuth provider instead.");
+        setError("Sign in failed. Try using one of the buttons above instead.");
         setLoading(false);
       } else {
         window.location.href = "/dashboard";
       }
     } catch {
-      setError("Passkey authentication failed. Try signing in with an OAuth provider instead.");
+      setError("Sign in failed. Try using one of the buttons above instead.");
       setLoading(false);
     }
   }
@@ -34,7 +34,7 @@ export function PasskeyLoginButton() {
         className="w-full"
         size="lg"
       >
-        {loading ? "Authenticating..." : "Sign in with Passkey"}
+        {loading ? "Signing in..." : "Sign in with your device"}
       </Button>
       {error && (
         <p className="text-sm text-destructive">{error}</p>

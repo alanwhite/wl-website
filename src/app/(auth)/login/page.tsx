@@ -54,7 +54,7 @@ export default async function LoginPage({
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">{siteInfo.name}</CardTitle>
-          <CardDescription>Sign in to access your account</CardDescription>
+          <CardDescription>Sign in or register</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {params.error === "suspended" && (
@@ -102,27 +102,7 @@ export default async function LoginPage({
               </div>
             </div>
           )}
-          {passkeysEnabled && (
-            <>
-              <PasskeyLoginButton />
-              {providers.length > 0 && (
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-          {!credentialsEnabled && !passkeysEnabled && providers.length === 0 && (
-            /* This case can't happen (passkeys enabled whenever credentials disabled), but kept for safety */
-            <p className="text-center text-sm text-muted-foreground">
-              No OAuth providers configured. Set AUTH_GITHUB_ID, AUTH_GOOGLE_ID, or AUTH_FACEBOOK_ID in your environment.
-            </p>
-          )}
+          {/* Provider buttons first — primary action for new and returning users */}
           {providers.map((provider) => (
             <form
               key={provider.id}
@@ -137,6 +117,25 @@ export default async function LoginPage({
               </Button>
             </form>
           ))}
+          {providers.length > 0 && (
+            <p className="text-center text-xs text-muted-foreground">
+              New here? Just click one of the buttons above to register.
+            </p>
+          )}
+          {/* Passkey section — secondary, for returning members only */}
+          {passkeysEnabled && (
+            <>
+              <div className="relative pt-2">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Returning member?</span>
+                </div>
+              </div>
+              <PasskeyLoginButton />
+            </>
+          )}
         </CardContent>
       </Card>
       </div>

@@ -20,9 +20,9 @@ export function PasskeyPrompt() {
     <Card className="border-primary/30 bg-primary/5">
       <CardContent className="flex items-center gap-4 py-4">
         <div className="flex-1">
-          <p className="text-sm font-medium">Set up a passkey for easier sign-in</p>
+          <p className="text-sm font-medium">Set up quick sign-in</p>
           <p className="text-xs text-muted-foreground">
-            Use your fingerprint, face, or security key to sign in — no need to remember which login provider you used.
+            Use your fingerprint, face, or device PIN to sign in next time — no need to remember which account you used.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
