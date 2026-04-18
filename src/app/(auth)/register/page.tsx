@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { DynamicFormFields } from "@/components/shared/dynamic-form";
 import { submitRegistration } from "@/lib/actions/auth";
+import Markdown from "react-markdown";
 
 export const dynamic = "force-dynamic";
 
@@ -56,20 +57,16 @@ export default async function RegisterPage() {
               You are registering as <span className="font-medium text-foreground">{session.user.email}</span>
             </p>
             {guidance && (
-              <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
-                {guidance.split("\n").map((line, i) => (
-                  <p key={i} className={line.trim() === "" ? "h-2" : undefined}>{line}</p>
-                ))}
+              <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm prose prose-sm dark:prose-invert max-w-none">
+                <Markdown>{guidance}</Markdown>
               </div>
             )}
             <DynamicFormFields fields={fields} />
             {terms.enabled && (
               <>
                 {terms.content && (
-                  <div className="max-h-48 overflow-y-auto rounded border p-3 text-sm text-muted-foreground">
-                    {terms.content.split("\n").map((line, i) => (
-                      <p key={i} className={line.trim() === "" ? "h-3" : undefined}>{line}</p>
-                    ))}
+                  <div className="max-h-48 overflow-y-auto rounded border p-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+                    <Markdown>{terms.content}</Markdown>
                   </div>
                 )}
                 <div className="flex items-start gap-2">
