@@ -5,6 +5,7 @@ import { getMemberManagerRoles, canManageMembers } from "@/lib/config";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -91,7 +92,8 @@ export default async function MembersPage({
         />
       </form>
 
-      <div className="rounded-md border">
+      {/* Desktop table */}
+      <div className="hidden rounded-md border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -127,6 +129,31 @@ export default async function MembersPage({
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="space-y-3 md:hidden">
+        {users.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">
+            {query ? "No members match your search" : "No members yet"}
+          </p>
+        )}
+        {users.map((user) => (
+          <Link key={user.id} href={`/members/${user.id}`} className="block">
+            <Card className="transition-colors hover:bg-muted/50">
+              <CardContent className="flex items-center justify-between py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate">{user.name ?? "—"}</p>
+                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">{user.tierName}</Badge>
+                    <Badge variant={statusColor(user.status)} className="text-xs">{user.status}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   );

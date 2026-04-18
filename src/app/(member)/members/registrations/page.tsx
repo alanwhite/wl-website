@@ -5,6 +5,7 @@ import { getMemberManagerRoles, canManageMembers } from "@/lib/config";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -49,7 +50,8 @@ export default async function RegistrationsPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      {/* Desktop table */}
+      <div className="hidden rounded-md border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -85,6 +87,31 @@ export default async function RegistrationsPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="space-y-3 md:hidden">
+        {registrations.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">No registrations</p>
+        )}
+        {registrations.map((reg) => (
+          <Link key={reg.id} href={`/members/registrations/${reg.id}`} className="block">
+            <Card className="transition-colors hover:bg-muted/50">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{reg.user.name ?? "—"}</p>
+                    <p className="text-sm text-muted-foreground truncate">{reg.user.email}</p>
+                  </div>
+                  <Badge variant={statusColor(reg.user.status)} className="ml-2 shrink-0 text-xs">
+                    {reg.user.status}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{format(reg.createdAt, "MMM d, yyyy")}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   );
