@@ -47,30 +47,92 @@ After the site is running and you've logged in via OAuth:
 |-------|------|-------------|
 | `(public)` | `/`, `/about`, `/contact`, `/p/[slug]` | Public-facing pages and dynamic content pages |
 | `(auth)` | `/login`, `/register`, `/register/pending`, `/register/rejected` | Authentication and registration flow |
-| `(member)` | `/dashboard`, `/profile`, `/profile/edit` | Logged-in member area |
-| `(admin)` | `/admin/*` | Admin panel: users, registrations, pages, announcements, media, roles, tiers, contacts, audit log, settings |
+| `(member)` | `/dashboard`, `/profile`, `/documents`, `/polls`, `/calendar`, `/financials`, `/members` | Logged-in member area |
+| `(admin)` | `/admin/*` | Admin panel: system config, pages, announcements, media, roles, tiers, contacts, audit log, settings |
+
+### Features
+
+All features are configurable per deployment via SiteConfig — sites only see features that are configured.
+
+**Registration & Onboarding:**
+- OAuth sign-in (Google, Apple, GitHub, Facebook)
+- Configurable registration form with dynamic fields and conditional visibility
+- Address field type with postcode lookup and address dropdown (local data or paid API)
+- Tier eligibility rules — auto-suggest membership tier based on form data (e.g. postcode)
+- Registration guidance text configurable per site
+- Admin or role-based registration approval with auto-suggested tier
+
+**Member Management:**
+- Role-based member management (configurable — e.g. Secretary manages members, not just admin)
+- View/search members, approve/reject registrations, change tiers, assign roles, suspend/delete
+- Available from the member area sidebar, not just admin panel
+
+**Document Library:**
+- Categories with role/tier-based access control
+- Role-based upload permissions per category
+
+**Polls:**
+- Create polls targeted to specific roles/tiers
+- Role-gated poll management (configurable)
+
+**Calendar:**
+- Create/edit/delete events with recurrence (weekly, monthly, yearly)
+- Event targeting by role/tier
+- iCal subscription feed at `/api/calendar.ics` (webcal compatible — subscribe on iPhone/Google Calendar)
+- Role-gated event management
+
+**Financials:**
+- Income/expense transaction tracking (amounts stored as pence for precision)
+- Dashboard with balance, income/expense totals, recent transactions
+- Transaction list with type/category filters and search
+- Monthly report with opening balance, transactions, closing balance — print-friendly for management meetings
+- Configurable categories
+- Dual role config: manager roles (add/edit) and viewer roles (read-only)
+
+**Content & Branding:**
+- CMS pages with markdown support (About, Privacy, Terms, custom pages)
+- Configurable hero image slideshow with Ken Burns drift effect
+- Full-screen landing page with transparent header overlay
+- Customisable theme colours, logo, favicon
+- Newsletter opt-in integration (EmailOctopus)
+
+**Navigation:**
+- Desktop sidebar + mobile bottom tab bar in member area
+- Config-driven navigation with icons, role/tier gating
+- "More" menu on mobile for overflow items
+- Public pages show only public links
+
+**Admin Panel:**
+- System configuration only (branding, theme, navigation, registration, tiers, roles, pages, settings)
+- Vertical tab layout for settings
+- Role configuration for all delegated features (polls, calendar, financials, member management)
 
 ### Database Models
 
 - **User** — email, name, status (`PENDING_REVIEW` / `APPROVED` / `REJECTED` / `SUSPENDED`), linked to a membership tier
 - **MembershipTier** — name, slug, level (integer hierarchy), system flag
-- **Role / UserRole** — named roles with tier-level requirements; many-to-many with users
-- **Registration / Document** — registration applications with optional uploaded documents
+- **Role / UserRole** — named roles with tier-level requirements and prerequisites; many-to-many with users
+- **Registration / Document** — registration applications with optional uploaded documents and suggested tier
 - **UserProfile** — extended profile fields (bio, phone, address, extra JSON)
-- **Page** — CMS pages with slug, title, content, publish status, sort order
+- **Page** — CMS pages with slug, title, markdown content, publish status, sort order
 - **Announcement** — title, content, published/pinned flags, optional expiry
+- **CalendarEvent** — events with recurrence, location, role/tier targeting
+- **Transaction** — income/expense records with category, amount (pence), reference
+- **LibraryCategory / LibraryDocument** — document library with role-based access and upload permissions
+- **Poll / PollOption / PollVote** — polls with role/tier targeting
 - **ContactSubmission** — contact form entries with read tracking
 - **Media** — uploaded files with metadata and alt text
 - **AuditLog** — tracks user actions with target type/id, details JSON, IP address
-- **SiteConfig** — key-value site configuration store
-- **Account / Session / VerificationToken** — Auth.js managed tables
+- **SiteConfig** — key-value site configuration store (theme, navigation, registration fields, tier rules, address data, role configs, etc.)
+- **Account / Session / VerificationToken / Authenticator** — Auth.js managed tables
 
 ### Auth Flow
 
-1. User signs in via OAuth (GitHub, Google, or Facebook)
+1. User signs in via OAuth (Google, Apple, GitHub, or Facebook) or Passkey
 2. On first login, a `User` record is auto-created with status `PENDING_REVIEW`
-3. An admin reviews and approves the registration in the admin panel
-4. Once approved, the user gains access to member-tier routes and features
+3. User completes a configurable registration form (with optional postcode/address lookup)
+4. A member manager (or admin) reviews and approves the registration, with auto-suggested tier
+5. Once approved, the user gains access to member-tier routes and features
 
 ## Environment Variables
 
@@ -85,6 +147,10 @@ After the site is running and you've logged in via OAuth:
 | `AUTH_GOOGLE_SECRET` | No | Google OAuth client secret | — |
 | `AUTH_FACEBOOK_ID` | No | Facebook OAuth app ID | — |
 | `AUTH_FACEBOOK_SECRET` | No | Facebook OAuth app secret | — |
+| `AUTH_APPLE_ID` | No | Apple Services ID (e.g. `org.example.web.signin`) | — |
+| `AUTH_APPLE_TEAM_ID` | No | Apple Developer Team ID | — |
+| `AUTH_APPLE_KEY_ID` | No | Apple Sign In key ID | — |
+| `AUTH_APPLE_KEY_CONTENTS` | No | Apple `.p8` private key (newlines as `\n`) | — |
 | `RESEND_API_KEY` | No | Resend API key for sending emails | Logs emails to console |
 | `EMAIL_FROM` | No | Sender address for outgoing emails | `noreply@example.com` |
 | `UPLOAD_DIR` | No | Directory for file uploads | `./uploads` |
@@ -103,8 +169,9 @@ Production sites run behind [wl-gateway](https://github.com/alanwhite/wl-gateway
 - A domain managed via Cloudflare (DNS proxied through Cloudflare)
 - Port 8443 open on the router, forwarded to the server
 - OAuth app credentials configured with production callback URLs:
-  - GitHub: `https://yourdomain.com/api/auth/callback/github`
   - Google: `https://yourdomain.com/api/auth/callback/google`
+  - Apple: `https://yourdomain.com/api/auth/callback/apple`
+  - GitHub: `https://yourdomain.com/api/auth/callback/github`
   - Facebook: `https://yourdomain.com/api/auth/callback/facebook`
 
 ### Steps
@@ -204,6 +271,57 @@ Each instance has its own Docker Compose stack with isolated database and upload
 
 A single server comfortably supports up to ~10 client instances (matching Cloudflare's free-plan Origin Rule limit).
 
+## SiteConfig Keys
+
+All per-site configuration is stored in the `SiteConfig` table and managed via Admin > Settings.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `site.name` | string | Site name |
+| `site.description` | string | Site description |
+| `site.heroTitle` | string | Landing page hero title |
+| `site.heroSubtitle` | string | Landing page hero subtitle |
+| `site.theme` | JSON | Theme colours (primary, primaryForeground, radius) |
+| `site.logoUrl` | string | Logo image URL |
+| `site.faviconUrl` | string | Favicon URL |
+| `site.heroImages` | JSON array | Hero slideshow image URLs |
+| `site.navigation` | JSON array | Navigation links with label, href, icon, tier/role gating |
+| `site.analyticsScript` | string | Analytics tracking script |
+| `registration.fields` | JSON array | Dynamic registration form fields with conditional visibility |
+| `registration.guidance` | string | Guidance text shown above the registration form |
+| `registration.terms` | JSON | Terms & conditions config |
+| `registration.tierRules` | JSON | Auto-tier suggestion rules + eligible postcodes |
+| `registration.addressData` | JSON | Local address lookup data keyed by postcode |
+| `email.adminNotifications` | string | Enable admin email notifications ("true"/"false") |
+| `polls.managerRoles` | JSON array | Role slugs that can manage polls |
+| `calendar.managerRoles` | JSON array | Role slugs that can manage calendar events |
+| `financials.managerRoles` | JSON array | Role slugs that can manage transactions |
+| `financials.viewerRoles` | JSON array | Role slugs that can view financials (empty = all members) |
+| `financials.categories` | JSON array | Transaction categories with name and type |
+| `members.managerRoles` | JSON array | Role slugs that can manage members |
+
+## Address Data
+
+For sites with postcode-based registration (e.g. community associations), address lookup data can be loaded from a JSON file:
+
+```bash
+# Load address data into SiteConfig from a JSON file
+./load-addresses.sh [path-to-json]   # default: src/data/gartloch-addresses.json
+```
+
+Or upload via Admin > Settings > Address Data tab.
+
+The JSON format is keyed by postcode:
+```json
+{
+  "G69 8FD": {
+    "street": "Gartloch Way",
+    "town": "Glasgow",
+    "addresses": ["21 Gartloch Way", "23 Gartloch Way", ...]
+  }
+}
+```
+
 ## Custom Code per Site (Forks)
 
 Vanilla sites deploy directly from the template repo. Sites needing custom code (e.g. polls, custom pages, unique integrations) get their own GitHub fork instead.
@@ -269,14 +387,15 @@ npm run dev
 ## Useful Commands
 
 ```bash
-docker compose logs -f          # view logs
-docker compose ps               # check service status
-docker compose down              # stop services
-docker compose up -d             # restart services
-./promote-admin.sh user@email    # promote user to admin
-./deploy.sh user@host [dir]      # deploy to remote host via SSH
-./merge-upstream.sh              # pull template updates into a fork
-./backup.sh                      # back up database, uploads, and .env
-./backup.sh --keep 7             # back up and retain only 7 most recent
-./restore.sh <archive>           # restore from a backup archive
+docker compose logs -f              # view logs
+docker compose ps                   # check service status
+docker compose down                 # stop services
+docker compose up -d                # restart services
+./promote-admin.sh user@email       # promote user to admin
+./deploy.sh user@host [dir]         # deploy to remote host via SSH
+./merge-upstream.sh                 # pull template updates into a fork
+./backup.sh                         # back up database, uploads, and .env
+./backup.sh --keep 7                # back up and retain only 7 most recent
+./restore.sh <archive>              # restore from a backup archive
+./load-addresses.sh [json-file]     # load address lookup data into SiteConfig
 ```
