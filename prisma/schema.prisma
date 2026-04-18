@@ -66,6 +66,7 @@ model User {
   authenticators    Authenticator[]
   libraryDocuments  LibraryDocument[]
   eventsCreated     CalendarEvent[]   @relation("EventCreator")
+  eventRsvps        EventRsvp[]
   transactionsCreated Transaction[]   @relation("TransactionCreator")
   newsletterOptIn   Boolean           @default(false)
   createdAt         DateTime          @default(now())
@@ -321,12 +322,26 @@ model CalendarEvent {
   targetRoleSlugs    String[]  @default([])
   targetMinTierLevel Int?
   createdBy          String
-  creator            User      @relation("EventCreator", fields: [createdBy], references: [id])
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  creator            User         @relation("EventCreator", fields: [createdBy], references: [id])
+  rsvps              EventRsvp[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   @@index([startDate])
   @@index([createdAt])
+}
+
+model EventRsvp {
+  id        String        @id @default(cuid())
+  eventId   String
+  userId    String
+  status    String        // "accepted", "declined", "maybe"
+  event     CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([eventId, userId])
 }
 
 model Transaction {

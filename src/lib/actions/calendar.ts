@@ -146,3 +146,29 @@ export async function deleteEvent(eventId: string) {
 
   revalidatePath("/calendar");
 }
+
+export async function rsvpEvent(eventId: string, status: "accepted" | "declined" | "maybe") {
+  const session = await auth();
+  if (!session?.user || session.user.status !== "APPROVED") {
+    throw new Error("Unauthorized");
+  }
+
+  await prisma.eventRsvp.upsert({
+    where: { eventId_userId: { eventId, userId: session.user.id } },
+    update: { status },
+    create: { eventId, userId: session.user.id, status },
+  });
+
+  revalidatePath(`/calendar/${eventId}`);
+}
+
+export async function removeRsvp(eventId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.eventRsvp.delete({
+    where: { eventId_userId: { eventId, userId: session.user.id } },
+  }).catch(() => {});
+
+  revalidatePath(`/calendar/${eventId}`);
+}

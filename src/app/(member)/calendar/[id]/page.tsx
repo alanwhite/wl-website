@@ -6,9 +6,10 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, MapPin, Pencil } from "lucide-react";
+import { CalendarDays, MapPin, Pencil, Check, X, HelpCircle } from "lucide-react";
 import { LocalDate } from "@/components/shared/local-date";
 import { DeleteEventButton } from "@/components/calendar/delete-event-button";
+import { RsvpButton } from "@/components/calendar/rsvp-button";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,24 @@ export default async function EventDetailPage({
   const { id } = await params;
   const event = await prisma.calendarEvent.findUnique({
     where: { id },
-    include: { creator: { select: { name: true } } },
+    include: {
+      creator: { select: { name: true } },
+      rsvps: {
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
   if (!event) notFound();
 
   const managerRoles = await getCalendarManagerRoles();
   const canManage = canManageCalendar(session.user, managerRoles);
+
+  const myRsvp = event.rsvps.find((r) => r.userId === session.user.id);
+  const accepted = event.rsvps.filter((r) => r.status === "accepted");
+  const maybe = event.rsvps.filter((r) => r.status === "maybe");
+  const declined = event.rsvps.filter((r) => r.status === "declined");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -88,6 +100,54 @@ export default async function EventDetailPage({
           <p className="text-xs text-muted-foreground">
             Created by {event.creator.name ?? "Unknown"} on <LocalDate date={event.createdAt} dateFormat="d MMM yyyy" />
           </p>
+        </CardContent>
+      </Card>
+
+      {/* RSVP */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">RSVP</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RsvpButton eventId={event.id} currentStatus={myRsvp?.status} />
+
+          {event.rsvps.length > 0 && (
+            <div className="space-y-3 pt-2">
+              {accepted.length > 0 && (
+                <div>
+                  <p className="flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
+                    <Check className="h-3.5 w-3.5" />
+                    Accepted ({accepted.length})
+                  </p>
+                  <p className="ml-5 text-sm text-muted-foreground">
+                    {accepted.map((r) => r.user.name ?? "Unknown").join(", ")}
+                  </p>
+                </div>
+              )}
+              {maybe.length > 0 && (
+                <div>
+                  <p className="flex items-center gap-1 text-sm font-medium text-amber-600 dark:text-amber-400">
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    Maybe ({maybe.length})
+                  </p>
+                  <p className="ml-5 text-sm text-muted-foreground">
+                    {maybe.map((r) => r.user.name ?? "Unknown").join(", ")}
+                  </p>
+                </div>
+              )}
+              {declined.length > 0 && (
+                <div>
+                  <p className="flex items-center gap-1 text-sm font-medium text-red-600 dark:text-red-400">
+                    <X className="h-3.5 w-3.5" />
+                    Declined ({declined.length})
+                  </p>
+                  <p className="ml-5 text-sm text-muted-foreground">
+                    {declined.map((r) => r.user.name ?? "Unknown").join(", ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
