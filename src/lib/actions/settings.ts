@@ -143,6 +143,35 @@ export async function updatePollManagerRoles(rolesJson: string) {
   });
 }
 
+export async function updateCalendarManagerRoles(rolesJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(rolesJson);
+  await setConfig("calendar.managerRoles", rolesJson);
+  invalidateConfigCache("calendar.managerRoles");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.calendarManagerRoles.update",
+  });
+}
+
+export async function updateFinancialRoles(data: { managerRoles: string; viewerRoles: string }) {
+  const admin = await requireAdmin();
+  JSON.parse(data.managerRoles);
+  JSON.parse(data.viewerRoles);
+  await setConfig("financials.managerRoles", data.managerRoles);
+  await setConfig("financials.viewerRoles", data.viewerRoles);
+  invalidateConfigCache("financials.managerRoles");
+  invalidateConfigCache("financials.viewerRoles");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.financialRoles.update",
+  });
+}
+
 export async function updateMemberManagerRoles(rolesJson: string) {
   const admin = await requireAdmin();
   JSON.parse(rolesJson); // validate

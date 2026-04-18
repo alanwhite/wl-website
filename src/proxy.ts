@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 
-const publicPaths = ["/", "/login", "/register", "/about", "/contact", "/p", "/api/auth", "/api/health", "/api/postcode-check"];
-const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members"];
+const publicPaths = ["/", "/login", "/register", "/about", "/contact", "/p", "/api/auth", "/api/health", "/api/postcode-check", "/api/calendar.ics"];
+const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members", "/calendar", "/financials"];
 const adminPaths = ["/admin"];
 
 export default auth((req) => {

@@ -21,6 +21,8 @@ import {
   Shield,
   Star,
   Newspaper,
+  Wallet,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,6 +49,8 @@ const iconMap: Record<string, LucideIcon> = {
   Shield,
   Star,
   Newspaper,
+  Wallet,
+  TrendingUp,
 };
 
 export function getIcon(name: string | undefined): LucideIcon | null {

@@ -236,6 +236,65 @@ export function canManageMembers(
   return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
 }
 
+export async function getCalendarManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("calendar.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageCalendar(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
+export async function getFinancialManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("financials.managerRoles");
+  return roles ?? [];
+}
+
+export async function getFinancialViewerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("financials.viewerRoles");
+  return roles ?? [];
+}
+
+export function canManageFinancials(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
+export function canViewFinancials(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  viewerRoles: string[],
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (canManageFinancials(user, managerRoles)) return true;
+  if (viewerRoles.length === 0) return true; // empty = all members can view
+  return viewerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
+export async function getFinancialCategories(): Promise<{ name: string; type: string }[]> {
+  const cats = await getConfigJson<{ name: string; type: string }[]>("financials.categories");
+  return cats ?? [
+    { name: "Subscriptions", type: "income" },
+    { name: "Donations", type: "income" },
+    { name: "Events", type: "income" },
+    { name: "Other Income", type: "income" },
+    { name: "Supplies", type: "expense" },
+    { name: "Equipment", type: "expense" },
+    { name: "Venue", type: "expense" },
+    { name: "Travel", type: "expense" },
+    { name: "Other Expense", type: "expense" },
+  ];
+}
+
 export async function getAddressData(): Promise<AddressData | null> {
   return getConfigJson<AddressData>("registration.addressData");
 }

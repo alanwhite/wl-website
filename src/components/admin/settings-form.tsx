@@ -21,6 +21,8 @@ import {
   updateTierRules,
   updateAddressData,
   updateMemberManagerRoles,
+  updateCalendarManagerRoles,
+  updateFinancialRoles,
   addHeroImage,
   removeHeroImage,
   type NavLink,
@@ -48,6 +50,9 @@ interface SettingsFormProps {
     addressDataSummary: { postcodes: number; addresses: number } | null;
     heroImages: string[];
     memberManagerRoles: string[];
+    calendarManagerRoles: string[];
+    financialManagerRoles: string[];
+    financialViewerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -67,6 +72,9 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
   const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
+  const [calendarManagerRoleSlugs, setCalendarManagerRoleSlugs] = useState<string[]>(settings.calendarManagerRoles);
+  const [financialManagerRoleSlugs, setFinancialManagerRoleSlugs] = useState<string[]>(settings.financialManagerRoles);
+  const [financialViewerRoleSlugs, setFinancialViewerRoleSlugs] = useState<string[]>(settings.financialViewerRoles);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -130,6 +138,33 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     try {
       await updatePollManagerRoles(JSON.stringify(pollManagerRoleSlugs));
       toast.success("Poll manager roles saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveCalendarRoles() {
+    setLoading(true);
+    try {
+      await updateCalendarManagerRoles(JSON.stringify(calendarManagerRoleSlugs));
+      toast.success("Calendar roles saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveFinancialRoles() {
+    setLoading(true);
+    try {
+      await updateFinancialRoles({
+        managerRoles: JSON.stringify(financialManagerRoleSlugs),
+        viewerRoles: JSON.stringify(financialViewerRoleSlugs),
+      });
+      toast.success("Financial roles saved");
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -306,6 +341,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
         <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
         <TabsTrigger value="memberMgmt" className="justify-start">Member Mgmt</TabsTrigger>
+        <TabsTrigger value="calendar" className="justify-start">Calendar</TabsTrigger>
+        <TabsTrigger value="financials" className="justify-start">Financials</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
         <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
       </TabsList>
@@ -701,6 +738,122 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               </>
             )}
             <Button onClick={handleSaveTerms} disabled={loading}>Save Terms Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="calendar">
+        <Card>
+          <CardHeader>
+            <CardTitle>Calendar Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which roles can create and manage calendar events. All approved members can view events.
+            </p>
+            <div className="space-y-2">
+              <Label>Calendar Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No roles defined yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`cal-role-${role.slug}`}
+                        checked={calendarManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCalendarManagerRoleSlugs([...calendarManagerRoleSlugs, role.slug]);
+                          } else {
+                            setCalendarManagerRoleSlugs(calendarManagerRoleSlugs.filter((s) => s !== role.slug));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`cal-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSaveCalendarRoles} disabled={loading}>Save Calendar Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="financials">
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select which roles can add and edit transactions (typically Treasurer).
+              </p>
+              <div className="space-y-2">
+                <Label>Financial Manager Roles</Label>
+                {roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No roles defined yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {roles.map((role) => (
+                      <div key={role.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`fin-mgr-${role.slug}`}
+                          checked={financialManagerRoleSlugs.includes(role.slug)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFinancialManagerRoleSlugs([...financialManagerRoleSlugs, role.slug]);
+                            } else {
+                              setFinancialManagerRoleSlugs(financialManagerRoleSlugs.filter((s) => s !== role.slug));
+                            }
+                          }}
+                          className="h-4 w-4 rounded border"
+                        />
+                        <Label htmlFor={`fin-mgr-${role.slug}`}>{role.name}</Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select which roles can view financials (leave empty for all members to view).
+              </p>
+              <div className="space-y-2">
+                <Label>Financial Viewer Roles (optional)</Label>
+                {roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No roles defined yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {roles.map((role) => (
+                      <div key={role.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`fin-view-${role.slug}`}
+                          checked={financialViewerRoleSlugs.includes(role.slug)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFinancialViewerRoleSlugs([...financialViewerRoleSlugs, role.slug]);
+                            } else {
+                              setFinancialViewerRoleSlugs(financialViewerRoleSlugs.filter((s) => s !== role.slug));
+                            }
+                          }}
+                          className="h-4 w-4 rounded border"
+                        />
+                        <Label htmlFor={`fin-view-${role.slug}`}>{role.name}</Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Button onClick={handleSaveFinancialRoles} disabled={loading}>Save Financial Settings</Button>
           </CardContent>
         </Card>
       </TabsContent>
