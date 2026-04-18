@@ -12,6 +12,7 @@ const ALLOWED_IMAGE_TYPES = [
   "image/gif",
   "image/webp",
   "image/svg+xml",
+  "application/pdf",
 ];
 const ALLOWED_DOCUMENT_TYPES = [
   ...ALLOWED_IMAGE_TYPES,

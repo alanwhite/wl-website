@@ -81,7 +81,7 @@ export function MediaGallery({ items, currentPage, totalPages }: MediaGalleryPro
         <Input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.pdf"
           multiple
           onChange={handleUpload}
           className="max-w-xs"
