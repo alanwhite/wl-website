@@ -20,6 +20,7 @@ import {
   updateRegistrationGuidance,
   updateTierRules,
   updateAddressData,
+  updateMemberManagerRoles,
   addHeroImage,
   removeHeroImage,
   type NavLink,
@@ -46,6 +47,7 @@ interface SettingsFormProps {
     pollManagerRoles: string[];
     addressDataSummary: { postcodes: number; addresses: number } | null;
     heroImages: string[];
+    memberManagerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -64,6 +66,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [faviconPreview, setFaviconPreview] = useState<string | null>(settings.faviconUrl);
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
+  const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -127,6 +130,18 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     try {
       await updatePollManagerRoles(JSON.stringify(pollManagerRoleSlugs));
       toast.success("Poll manager roles saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveMemberManagerRoles() {
+    setLoading(true);
+    try {
+      await updateMemberManagerRoles(JSON.stringify(memberManagerRoleSlugs));
+      toast.success("Member manager roles saved");
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -290,6 +305,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="tierRules" className="justify-start">Tier Rules</TabsTrigger>
         <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
         <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
+        <TabsTrigger value="memberMgmt" className="justify-start">Member Mgmt</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
         <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
       </TabsList>
@@ -685,6 +701,49 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               </>
             )}
             <Button onClick={handleSaveTerms} disabled={loading}>Save Terms Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="memberMgmt">
+        <Card>
+          <CardHeader>
+            <CardTitle>Member Management</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which roles can manage members — approve registrations, change tiers, suspend or delete users. Admins can always manage members regardless of this setting.
+            </p>
+            <div className="space-y-2">
+              <Label>Member Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No roles defined yet. Create roles in the Roles section first.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`member-mgmt-role-${role.slug}`}
+                        checked={memberManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setMemberManagerRoleSlugs([...memberManagerRoleSlugs, role.slug]);
+                          } else {
+                            setMemberManagerRoleSlugs(memberManagerRoleSlugs.filter((s) => s !== role.slug));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`member-mgmt-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSaveMemberManagerRoles} disabled={loading}>Save Member Management Settings</Button>
           </CardContent>
         </Card>
       </TabsContent>

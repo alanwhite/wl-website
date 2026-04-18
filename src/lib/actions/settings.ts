@@ -143,6 +143,19 @@ export async function updatePollManagerRoles(rolesJson: string) {
   });
 }
 
+export async function updateMemberManagerRoles(rolesJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(rolesJson); // validate
+  await setConfig("members.managerRoles", rolesJson);
+  invalidateConfigCache("members.managerRoles");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.memberManagerRoles.update",
+  });
+}
+
 export async function updateRegistrationTerms(terms: string) {
   const admin = await requireAdmin();
   JSON.parse(terms); // validate

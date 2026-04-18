@@ -75,6 +75,7 @@ export default async function AdminSettingsPage() {
               }
             : null,
           heroImages,
+          memberManagerRoles: (await getConfigJson<string[]>("members.managerRoles")) ?? [],
           pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
         }}
         tiers={tiers}

@@ -222,6 +222,20 @@ export interface AddressDataEntry {
 
 export type AddressData = Record<string, AddressDataEntry>;
 
+export async function getMemberManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("members.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageMembers(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
 export async function getAddressData(): Promise<AddressData | null> {
   return getConfigJson<AddressData>("registration.addressData");
 }

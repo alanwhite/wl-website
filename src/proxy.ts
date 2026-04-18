@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 
 const publicPaths = ["/", "/login", "/register", "/about", "/contact", "/p", "/api/auth", "/api/health", "/api/postcode-check"];
-const memberPaths = ["/dashboard", "/profile", "/polls", "/documents"];
+const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members"];
 const adminPaths = ["/admin"];
 
 export default auth((req) => {
