@@ -20,6 +20,21 @@ export async function submitContact(formData: FormData) {
     throw new Error("Too many submissions. Please try again later.");
   }
 
+  // Verify Turnstile token if configured
+  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  if (turnstileSecret) {
+    const token = formData.get("cf-turnstile-response") as string;
+    if (!token) throw new Error("Verification required");
+
+    const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret: turnstileSecret, response: token, remoteip: ip }),
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) throw new Error("Verification failed. Please try again.");
+  }
+
   const data = {
     name: formData.get("name") as string,
     email: formData.get("email") as string,
