@@ -98,7 +98,7 @@ export default async function EventDetailPage({
           )}
 
           <p className="text-xs text-muted-foreground">
-            Created by {event.creator.name ?? "Unknown"} on <LocalDate date={event.createdAt} dateFormat="d MMM yyyy" />
+            Created by {event.creator?.name ?? "Unknown"} on <LocalDate date={event.createdAt} dateFormat="d MMM yyyy" />
           </p>
         </CardContent>
       </Card>

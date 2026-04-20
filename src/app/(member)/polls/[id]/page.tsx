@@ -69,7 +69,7 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
             <div>
               <CardTitle>{poll.title}</CardTitle>
               <CardDescription>
-                Created by {poll.creator.name ?? "Unknown"} on{" "}
+                Created by {poll.creator?.name ?? "Unknown"} on{" "}
                 {poll.createdAt.toLocaleDateString()}
               </CardDescription>
             </div>

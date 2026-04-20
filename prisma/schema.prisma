@@ -243,8 +243,8 @@ model Poll {
   targetMinTierLevel Int?
   closedAt          DateTime?
   closedBy          String?
-  createdBy         String
-  creator           User         @relation("PollCreator", fields: [createdBy], references: [id])
+  createdBy         String?
+  creator           User?        @relation("PollCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   options           PollOption[]
   votes             PollVote[]
   createdAt         DateTime     @default(now())
@@ -301,8 +301,8 @@ model LibraryDocument {
   fileType    String
   filePath    String
   fileSize    Int
-  uploadedBy  String
-  uploader    User            @relation(fields: [uploadedBy], references: [id])
+  uploadedBy  String?
+  uploader    User?           @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -322,8 +322,8 @@ model CalendarEvent {
   recurrenceEnd      DateTime?
   targetRoleSlugs    String[]  @default([])
   targetMinTierLevel Int?
-  createdBy          String
-  creator            User         @relation("EventCreator", fields: [createdBy], references: [id])
+  createdBy          String?
+  creator            User?        @relation("EventCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   rsvps              EventRsvp[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
@@ -353,8 +353,8 @@ model Transaction {
   description String
   amount      Int
   reference   String?
-  createdBy   String
-  creator     User     @relation("TransactionCreator", fields: [createdBy], references: [id])
+  createdBy   String?
+  creator     User?    @relation("TransactionCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

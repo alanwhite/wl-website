@@ -14,7 +14,7 @@ interface DocumentItem {
   filePath: string;
   fileSize: number;
   createdAt: Date;
-  uploader: { name: string | null };
+  uploader: { name: string | null } | null;
 }
 
 interface DocumentListProps {
@@ -84,7 +84,7 @@ export function DocumentList({ documents: initialDocs, canManage }: DocumentList
               <p className="text-xs text-muted-foreground truncate">{doc.description}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              {formatFileSize(doc.fileSize)} &middot; {doc.uploader.name ?? "Unknown"} &middot;{" "}
+              {formatFileSize(doc.fileSize)} &middot; {doc.uploader?.name ?? "Unknown"} &middot;{" "}
               {new Date(doc.createdAt).toLocaleDateString()}
             </p>
           </div>

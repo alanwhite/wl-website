@@ -80,7 +80,7 @@ export default async function TransactionDetailPage({
           <p><strong>Amount:</strong> {formatPence(transaction.amount)}</p>
           {transaction.reference && <p><strong>Reference:</strong> {transaction.reference}</p>}
           <p className="text-xs text-muted-foreground">
-            Added by {transaction.creator.name ?? "Unknown"} on {format(transaction.createdAt, "d MMM yyyy")}
+            Added by {transaction.creator?.name ?? "Unknown"} on {format(transaction.createdAt, "d MMM yyyy")}
           </p>
         </CardContent>
       </Card>
