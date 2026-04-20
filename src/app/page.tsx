@@ -12,10 +12,11 @@ import { HeroSlideshow } from "@/components/shared/hero-slideshow";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [session, siteInfo, logoUrl, navLinks, heroImages] = await Promise.all([
+  const [session, siteInfo, logoUrl, logoDarkUrl, navLinks, heroImages] = await Promise.all([
     auth(),
     getSiteInfo(),
     getConfig("site.logoUrl"),
+    getConfig("site.logoDarkUrl"),
     getNavLinks(),
     getHeroImages(),
   ]);
@@ -35,7 +36,7 @@ export default async function HomePage() {
         <div className="relative min-h-screen">
           {/* Header overlays the hero */}
           <div className="absolute inset-x-0 top-0 z-20">
-            <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} transparent />
+            <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={navLinks} transparent />
           </div>
           <HeroSlideshow images={heroImages} fullScreen>
             <div className="container mx-auto flex flex-col items-center justify-center gap-6 px-4 text-center">

@@ -20,11 +20,12 @@ interface NavLink {
 interface HeaderProps {
   siteName: string;
   logoUrl?: string | null;
+  logoDarkUrl?: string | null;
   navLinks?: NavLink[];
   transparent?: boolean;
 }
 
-export function Header({ siteName, logoUrl, navLinks, transparent }: HeaderProps) {
+export function Header({ siteName, logoUrl, logoDarkUrl, navLinks, transparent }: HeaderProps) {
   const { data: session, status } = useSession();
 
   const defaultLinks: NavLink[] = [
@@ -60,9 +61,26 @@ export function Header({ siteName, logoUrl, navLinks, transparent }: HeaderProps
     <header className={transparent ? "" : "border-b"}>
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className={`flex items-center gap-2 text-xl font-bold ${transparent ? "text-white" : ""}`}>
-          {logoUrl ? (
-            <Image src={logoUrl} alt={siteName} width={32} height={32} className="h-8 w-auto" />
-          ) : null}
+          {logoUrl && (
+            <>
+              <Image
+                src={logoUrl}
+                alt={siteName}
+                width={32}
+                height={32}
+                className={`h-8 w-auto ${logoDarkUrl ? "dark:hidden" : ""}`}
+              />
+              {logoDarkUrl && (
+                <Image
+                  src={logoDarkUrl}
+                  alt={siteName}
+                  width={32}
+                  height={32}
+                  className="hidden h-8 w-auto dark:block"
+                />
+              )}
+            </>
+          )}
           {siteName}
         </Link>
         <nav className="flex items-center gap-4">

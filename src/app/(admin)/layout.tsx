@@ -12,17 +12,18 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, siteInfo, logoUrl, navLinks] = await Promise.all([
+  const [session, siteInfo, logoUrl, logoDarkUrl, navLinks] = await Promise.all([
     auth(),
     getSiteInfo(),
     getConfig("site.logoUrl"),
+    getConfig("site.logoDarkUrl"),
     getNavLinks(),
   ]);
 
   return (
     <Providers session={session}>
       <div className="flex min-h-screen flex-col">
-        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks} />
+        <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={navLinks} />
         <div className="flex flex-1">
           <AdminSidebar />
           <main className="flex-1 p-6">{children}</main>
