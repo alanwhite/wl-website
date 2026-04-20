@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface CategoryCardProps {
   slug: string;
@@ -13,14 +13,12 @@ export function CategoryCard({ slug, name, description, documentCount }: Categor
   return (
     <Link href={`/documents/${slug}`}>
       <Card className="transition-colors hover:border-primary/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{name}</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="py-4">
+          <p className="font-semibold">{name}</p>
           {description && (
-            <p className="mb-2 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           )}
-          <Badge variant="secondary">
+          <Badge variant="secondary" className="mt-2">
             {documentCount} document{documentCount !== 1 ? "s" : ""}
           </Badge>
         </CardContent>

@@ -34,8 +34,8 @@ export default async function PollsPage() {
   const closedPolls = accessiblePolls.filter((p) => p.closedAt);
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Polls</h1>
         {isManager && (
           <Link href="/polls/create">
@@ -49,7 +49,7 @@ export default async function PollsPage() {
       )}
 
       {openPolls.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {openPolls.map((poll) => (
             <PollCard
               key={poll.id}
@@ -69,7 +69,7 @@ export default async function PollsPage() {
         <>
           {openPolls.length > 0 && <hr className="my-6" />}
           <h2 className="mb-3 text-lg font-semibold text-muted-foreground">Closed</h2>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {closedPolls.map((poll) => (
               <PollCard
                 key={poll.id}
