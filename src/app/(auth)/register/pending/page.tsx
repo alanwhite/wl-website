@@ -31,9 +31,9 @@ export default async function PendingPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
             <Clock className="h-8 w-8" />
           </div>
-          <CardTitle>Registration Pending</CardTitle>
+          <CardTitle>Thank you for registering!</CardTitle>
           <CardDescription>
-            Your registration is being reviewed by an administrator. You&apos;ll receive an email once a decision has been made.
+            We&apos;ve received your registration and it&apos;s now being reviewed. We&apos;ll be in touch by email once it&apos;s been approved — this usually doesn&apos;t take long. We look forward to welcoming you!
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -44,7 +44,7 @@ export default async function PendingPage() {
             }}
           >
             <Button variant="outline" type="submit">
-              Sign Out
+              Back to home
             </Button>
           </form>
         </CardContent>
