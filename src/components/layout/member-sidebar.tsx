@@ -52,7 +52,7 @@ export function MemberSidebar({ items, notificationCounts = {} }: MemberSidebarP
                   "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-medium",
                   isActive
                     ? "bg-primary-foreground text-primary"
-                    : "bg-destructive text-destructive-foreground",
+                    : "bg-red-600 text-white",
                 )}>
                   {count}
                 </span>

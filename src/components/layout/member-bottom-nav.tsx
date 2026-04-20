@@ -31,7 +31,7 @@ function NotiBadge({ count, className }: { count: number; className?: string }) 
   if (count <= 0) return null;
   return (
     <span className={cn(
-      "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground",
+      "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white",
       className,
     )}>
       {count > 99 ? "99+" : count}
@@ -135,7 +135,7 @@ export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottom
                           "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-medium",
                           isActive(item.href)
                             ? "bg-primary-foreground text-primary"
-                            : "bg-destructive text-destructive-foreground",
+                            : "bg-red-600 text-white",
                         )}>
                           {count}
                         </span>
