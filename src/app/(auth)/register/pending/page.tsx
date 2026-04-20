@@ -36,7 +36,10 @@ export default async function PendingPage() {
             We&apos;ve received your registration and it&apos;s now being reviewed. We&apos;ll be in touch by email once it&apos;s been approved — this usually doesn&apos;t take long. We look forward to welcoming you!
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Keep an eye on your email — we&apos;ll send a confirmation to the address linked to your Google or Apple account. If you don&apos;t see it within a day or so, please check your junk or spam folder.
+          </p>
           <form
             action={async () => {
               "use server";
