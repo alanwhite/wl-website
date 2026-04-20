@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getIcon } from "@/lib/icons";
-import { LayoutDashboard, User, MoreHorizontal } from "lucide-react";
+import { LayoutDashboard, MoreHorizontal } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -22,15 +22,27 @@ interface MemberNavItem {
 
 interface MemberBottomNavProps {
   items: MemberNavItem[];
+  notificationCounts?: Record<string, number>;
 }
 
-const MAX_VISIBLE = 3; // + More button = 4 slots
+const MAX_VISIBLE = 3;
 
-export function MemberBottomNav({ items }: MemberBottomNavProps) {
+function NotiBadge({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span className={cn(
+      "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground",
+      className,
+    )}>
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottomNavProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // Always include Dashboard first, Profile last
   const allItems: MemberNavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
     ...items.filter((i) => i.href !== "/dashboard" && i.href !== "/profile"),
@@ -40,6 +52,12 @@ export function MemberBottomNav({ items }: MemberBottomNavProps) {
   const needsMore = allItems.length > MAX_VISIBLE + 1;
   const visibleItems = needsMore ? allItems.slice(0, MAX_VISIBLE) : allItems;
   const overflowItems = needsMore ? allItems.slice(MAX_VISIBLE) : [];
+
+  // Cumulative count for overflow items
+  const overflowCount = overflowItems.reduce(
+    (sum, item) => sum + (notificationCounts[item.href] ?? 0),
+    0,
+  );
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
@@ -53,16 +71,20 @@ export function MemberBottomNav({ items }: MemberBottomNavProps) {
       <div className="flex items-center justify-around">
         {visibleItems.map((item) => {
           const Icon = getIcon(item.icon) ?? LayoutDashboard;
+          const count = notificationCounts[item.href] ?? 0;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
+                "relative flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
                 isActive(item.href) ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className="h-5 w-5" />
+              <div className="relative">
+                <Icon className="h-5 w-5" />
+                <NotiBadge count={count} />
+              </div>
               {item.label}
             </Link>
           );
@@ -73,13 +95,16 @@ export function MemberBottomNav({ items }: MemberBottomNavProps) {
             <SheetTrigger asChild>
               <button
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
+                  "relative flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
                   overflowItems.some((i) => isActive(i.href))
                     ? "text-primary"
                     : "text-muted-foreground",
                 )}
               >
-                <MoreHorizontal className="h-5 w-5" />
+                <div className="relative">
+                  <MoreHorizontal className="h-5 w-5" />
+                  <NotiBadge count={overflowCount} />
+                </div>
                 More
               </button>
             </SheetTrigger>
@@ -90,6 +115,7 @@ export function MemberBottomNav({ items }: MemberBottomNavProps) {
               <nav className="flex flex-col gap-1 py-4">
                 {overflowItems.map((item) => {
                   const Icon = getIcon(item.icon) ?? LayoutDashboard;
+                  const count = notificationCounts[item.href] ?? 0;
                   return (
                     <Link
                       key={item.href}
@@ -103,7 +129,17 @@ export function MemberBottomNav({ items }: MemberBottomNavProps) {
                       )}
                     >
                       <Icon className="h-5 w-5" />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {count > 0 && (
+                        <span className={cn(
+                          "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-medium",
+                          isActive(item.href)
+                            ? "bg-primary-foreground text-primary"
+                            : "bg-destructive text-destructive-foreground",
+                        )}>
+                          {count}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

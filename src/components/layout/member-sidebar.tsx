@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getIcon } from "@/lib/icons";
-import { LayoutDashboard, User } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 interface MemberNavItem {
   label: string;
@@ -14,12 +14,12 @@ interface MemberNavItem {
 
 interface MemberSidebarProps {
   items: MemberNavItem[];
+  notificationCounts?: Record<string, number>;
 }
 
-export function MemberSidebar({ items }: MemberSidebarProps) {
+export function MemberSidebar({ items, notificationCounts = {} }: MemberSidebarProps) {
   const pathname = usePathname();
 
-  // Always include Dashboard first and Profile last
   const allItems: MemberNavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
     ...items.filter((i) => i.href !== "/dashboard" && i.href !== "/profile"),
@@ -33,6 +33,7 @@ export function MemberSidebar({ items }: MemberSidebarProps) {
           const Icon = getIcon(item.icon) ?? LayoutDashboard;
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
+          const count = notificationCounts[item.href] ?? 0;
           return (
             <Link
               key={item.href}
@@ -45,7 +46,17 @@ export function MemberSidebar({ items }: MemberSidebarProps) {
               )}
             >
               <Icon className="h-4 w-4" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {count > 0 && (
+                <span className={cn(
+                  "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-medium",
+                  isActive
+                    ? "bg-primary-foreground text-primary"
+                    : "bg-destructive text-destructive-foreground",
+                )}>
+                  {count}
+                </span>
+              )}
             </Link>
           );
         })}

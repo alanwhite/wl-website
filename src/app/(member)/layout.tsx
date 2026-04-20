@@ -6,6 +6,7 @@ import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
+import { getNotificationCounts } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -41,17 +42,22 @@ export default async function MemberLayout({
       icon: link.icon,
     }));
 
+  // Fetch notification counts for badge display
+  const notificationCounts = user?.status === "APPROVED"
+    ? await getNotificationCounts(user)
+    : {};
+
   return (
     <Providers session={session}>
       <div className="flex min-h-screen flex-col">
         <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={[]} />
         <div className="flex flex-1">
-          <MemberSidebar items={memberLinks} />
+          <MemberSidebar items={memberLinks} notificationCounts={notificationCounts} />
           <main className="flex-1 px-4 py-8 pb-20 md:px-6 md:pb-8">
             {children}
           </main>
         </div>
-        <MemberBottomNav items={memberLinks} />
+        <MemberBottomNav items={memberLinks} notificationCounts={notificationCounts} />
       </div>
     </Providers>
   );
