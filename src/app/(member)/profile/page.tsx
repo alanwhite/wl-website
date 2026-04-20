@@ -46,7 +46,7 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Profile</h1>
+        <h1 className="text-2xl font-bold">Profile</h1>
         <Button asChild>
           <Link href="/profile/edit">Edit Profile</Link>
         </Button>
