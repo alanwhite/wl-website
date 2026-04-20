@@ -238,6 +238,7 @@ model Poll {
   title             String
   description       String?      @db.Text
   isAnonymous       Boolean      @default(false)
+  maxVotes          Int          @default(1)
   targetRoleSlugs   String[]     @default([])
   targetMinTierLevel Int?
   closedAt          DateTime?
@@ -272,7 +273,7 @@ model PollVote {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  @@unique([pollId, userId])
+  @@unique([pollId, userId, optionId])
 }
 
 model LibraryCategory {

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PollVoteForm } from "@/components/polls/poll-vote-form";
 import { PollResults } from "@/components/polls/poll-results";
 import { ClosePollButton } from "@/components/polls/close-poll-button";
+import { DeletePollButton } from "@/components/polls/delete-poll-button";
 
 export const dynamic = "force-dynamic";
 
@@ -39,23 +40,26 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
   const managerRoles = await getPollManagerRoles();
   const isManager = canManagePolls(session.user, managerRoles);
 
-  // Check access (managers can always view)
   if (!isManager && !canAccessPoll(session.user, poll)) {
     redirect("/polls");
   }
+
   const isClosed = !!poll.closedAt;
-  const userVote = poll.votes.find((v) => v.userId === session.user.id);
+  const userVoteOptionIds = poll.votes
+    .filter((v) => v.userId === session.user.id)
+    .map((v) => v.optionId);
   const totalVotes = poll.votes.length;
 
-  // Build results data, respecting anonymous mode
   const optionResults = poll.options.map((option) => ({
     id: option.id,
     text: option.text,
     count: option.votes.length,
     voters: poll.isAnonymous
-      ? [] // Never expose voter names for anonymous polls
+      ? []
       : option.votes.map((v) => ({ id: v.user.id, name: v.user.name })),
   }));
+
+  const maxVotesLabel = poll.maxVotes === 0 ? "Unlimited" : poll.maxVotes === 1 ? null : `Up to ${poll.maxVotes}`;
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
@@ -71,6 +75,7 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
             </div>
             <div className="flex shrink-0 gap-1">
               {poll.isAnonymous && <Badge variant="outline">Anonymous</Badge>}
+              {maxVotesLabel && <Badge variant="outline">{maxVotesLabel}</Badge>}
               <Badge variant={isClosed ? "secondary" : "default"}>
                 {isClosed ? "Closed" : "Open"}
               </Badge>
@@ -91,17 +96,16 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Voting form — shown for open polls */}
           {!isClosed && (
             <PollVoteForm
               pollId={poll.id}
               options={poll.options.map((o) => ({ id: o.id, text: o.text }))}
-              currentVoteOptionId={userVote?.optionId ?? null}
+              currentVoteOptionIds={userVoteOptionIds}
+              maxVotes={poll.maxVotes}
               isClosed={false}
             />
           )}
 
-          {/* Results */}
           {(isClosed || (!poll.isAnonymous && totalVotes > 0)) && (
             <>
               <hr />
@@ -111,12 +115,11 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
                 totalVotes={totalVotes}
                 isAnonymous={poll.isAnonymous}
                 isClosed={isClosed}
-                userVoteOptionId={userVote?.optionId ?? null}
+                userVoteOptionId={userVoteOptionIds[0] ?? null}
               />
             </>
           )}
 
-          {/* Anonymous open poll — just show vote status */}
           {!isClosed && poll.isAnonymous && (
             <>
               <hr />
@@ -125,16 +128,18 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
                 totalVotes={totalVotes}
                 isAnonymous={true}
                 isClosed={false}
-                userVoteOptionId={userVote?.optionId ?? null}
+                userVoteOptionId={userVoteOptionIds[0] ?? null}
               />
             </>
           )}
 
-          {/* Close button for managers */}
-          {isManager && !isClosed && (
+          {isManager && (
             <>
               <hr />
-              <ClosePollButton pollId={poll.id} />
+              <div className="flex gap-3">
+                {!isClosed && <ClosePollButton pollId={poll.id} />}
+                <DeletePollButton pollId={poll.id} pollTitle={poll.title} />
+              </div>
             </>
           )}
         </CardContent>

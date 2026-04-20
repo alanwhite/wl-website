@@ -23,12 +23,33 @@ async function requirePollManager() {
   return user;
 }
 
+async function snapshotResults(pollId: string) {
+  const poll = await prisma.poll.findUnique({
+    where: { id: pollId },
+    include: {
+      options: { orderBy: { sortOrder: "asc" } },
+      votes: true,
+    },
+  });
+  if (!poll) return {};
+  return {
+    title: poll.title,
+    totalVotes: poll.votes.length,
+    results: poll.options.map((o) => ({
+      option: o.text,
+      votes: poll.votes.filter((v) => v.optionId === o.id).length,
+    })),
+  };
+}
+
 export async function createPoll(formData: FormData) {
   const user = await requirePollManager();
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const isAnonymous = formData.get("isAnonymous") === "on";
+  const maxVotesRaw = formData.get("maxVotes") as string;
+  const maxVotes = maxVotesRaw ? parseInt(maxVotesRaw, 10) : 1;
   const optionsRaw = formData.getAll("options") as string[];
   const targetRoleSlugs = formData.getAll("targetRoleSlugs") as string[];
   const targetMinTierLevelRaw = formData.get("targetMinTierLevel") as string;
@@ -44,6 +65,7 @@ export async function createPoll(formData: FormData) {
       title: title.trim(),
       description: description?.trim() || null,
       isAnonymous,
+      maxVotes: isNaN(maxVotes) ? 1 : maxVotes,
       targetRoleSlugs: targetRoleSlugs.filter(Boolean),
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
       createdBy: user.id,
@@ -62,14 +84,14 @@ export async function createPoll(formData: FormData) {
     action: "poll.create",
     targetType: "Poll",
     targetId: poll.id,
-    details: { title: poll.title, isAnonymous, optionCount: options.length, targetRoleSlugs, targetMinTierLevel },
+    details: { title: poll.title, isAnonymous, maxVotes, optionCount: options.length, targetRoleSlugs, targetMinTierLevel },
   });
 
   revalidatePath("/polls");
   return poll.id;
 }
 
-export async function castVote(pollId: string, optionId: string) {
+export async function castVotes(pollId: string, optionIds: string[]) {
   const user = await requireApprovedMember();
 
   const poll = await prisma.poll.findUnique({
@@ -80,17 +102,32 @@ export async function castVote(pollId: string, optionId: string) {
   if (!poll) throw new Error("Poll not found");
   if (poll.closedAt) throw new Error("Poll is closed");
   if (!canAccessPoll(user, poll)) throw new Error("You do not have access to this poll");
-  if (!poll.options.some((o) => o.id === optionId)) {
-    throw new Error("Invalid option");
+
+  // Validate option IDs
+  const validIds = new Set(poll.options.map((o) => o.id));
+  for (const id of optionIds) {
+    if (!validIds.has(id)) throw new Error("Invalid option");
   }
 
-  await prisma.pollVote.upsert({
-    where: { pollId_userId: { pollId, userId: user.id } },
-    update: { optionId, updatedAt: new Date() },
-    create: { pollId, optionId, userId: user.id },
-  });
+  // Validate vote count
+  if (poll.maxVotes > 0 && optionIds.length > poll.maxVotes) {
+    throw new Error(`You can select at most ${poll.maxVotes} option${poll.maxVotes === 1 ? "" : "s"}`);
+  }
+
+  // Replace strategy: delete existing votes and create new ones
+  await prisma.$transaction([
+    prisma.pollVote.deleteMany({ where: { pollId, userId: user.id } }),
+    ...optionIds.map((optionId) =>
+      prisma.pollVote.create({ data: { pollId, optionId, userId: user.id } }),
+    ),
+  ]);
 
   revalidatePath(`/polls/${pollId}`);
+}
+
+// Backward compatible — single vote
+export async function castVote(pollId: string, optionId: string) {
+  return castVotes(pollId, [optionId]);
 }
 
 export async function closePoll(pollId: string) {
@@ -99,6 +136,8 @@ export async function closePoll(pollId: string) {
   const poll = await prisma.poll.findUnique({ where: { id: pollId } });
   if (!poll) throw new Error("Poll not found");
   if (poll.closedAt) throw new Error("Poll is already closed");
+
+  const results = await snapshotResults(pollId);
 
   await prisma.poll.update({
     where: { id: pollId },
@@ -111,9 +150,28 @@ export async function closePoll(pollId: string) {
     action: "poll.close",
     targetType: "Poll",
     targetId: pollId,
-    details: { title: poll.title },
+    details: results,
   });
 
   revalidatePath(`/polls/${pollId}`);
+  revalidatePath("/polls");
+}
+
+export async function deletePoll(pollId: string) {
+  const user = await requirePollManager();
+
+  const results = await snapshotResults(pollId);
+
+  await prisma.poll.delete({ where: { id: pollId } });
+
+  await logAudit({
+    userId: user.id,
+    userName: user.name ?? "Unknown",
+    action: "poll.delete",
+    targetType: "Poll",
+    targetId: pollId,
+    details: results,
+  });
+
   revalidatePath("/polls");
 }

@@ -80,6 +80,23 @@ export function CreatePollForm({ roles, tiers }: CreatePollFormProps) {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="maxVotes">Votes per member</Label>
+        <select
+          id="maxVotes"
+          name="maxVotes"
+          defaultValue="1"
+          className="w-full rounded border bg-background px-3 py-2 text-sm"
+        >
+          <option value="1">1 (single choice)</option>
+          <option value="2">Up to 2</option>
+          <option value="3">Up to 3</option>
+          <option value="4">Up to 4</option>
+          <option value="5">Up to 5</option>
+          <option value="0">Unlimited</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
         <Label>Options (minimum 2)</Label>
         {options.map((option, i) => (
           <div key={i} className="flex items-center gap-2">
