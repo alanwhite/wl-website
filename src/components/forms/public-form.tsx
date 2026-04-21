@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DynamicFormFields } from "@/components/shared/dynamic-form";
 import { submitForm } from "@/lib/actions/forms";
 import { toast } from "sonner";
+import Markdown from "react-markdown";
 import type { RegistrationField } from "@/lib/config";
 
 declare global {
@@ -107,7 +108,11 @@ export function PublicFormComponent({
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+        {description && (
+          <CardDescription className="prose prose-sm dark:prose-invert max-w-none">
+            <Markdown>{description}</Markdown>
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className="space-y-4">
