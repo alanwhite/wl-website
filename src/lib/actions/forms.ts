@@ -47,7 +47,17 @@ async function requireFormManager(formId: string) {
   return session.user;
 }
 
-// ── Form CRUD (admin only) ──
+// ── Hero image upload ──
+
+export async function uploadFormHeroImage(formData: FormData): Promise<string> {
+  await requireFormCreator();
+  const { saveFile } = await import("@/lib/upload");
+  const file = formData.get("image") as File | null;
+  if (!file || file.size === 0) throw new Error("No file provided");
+  return saveFile(file, "hero");
+}
+
+// ── Form CRUD ──
 
 export async function createForm(data: {
   title: string;
