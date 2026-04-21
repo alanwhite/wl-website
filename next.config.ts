@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
     unoptimized: false,
   },
+  serverActions: {
+    bodySizeLimit: "10mb",
+  },
 };
 
 export default nextConfig;

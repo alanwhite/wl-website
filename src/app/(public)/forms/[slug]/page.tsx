@@ -46,7 +46,7 @@ export default async function PublicFormPage({
             />
           </div>
           <HeroSlideshow images={[form.heroImageUrl!]} fullScreen>
-            <div className="container mx-auto max-w-lg px-4">
+            <div className="container mx-auto max-w-2xl px-4">
               {isClosed ? (
                 <Card className="bg-background/95 backdrop-blur">
                   <CardContent className="py-12 text-center">
@@ -83,7 +83,7 @@ export default async function PublicFormPage({
           logoUrl={logoUrl}
           navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)}
         />
-        <main className="container mx-auto max-w-lg flex-1 px-4 py-12">
+        <main className="container mx-auto max-w-2xl flex-1 px-4 py-12">
           {isClosed ? (
             <Card>
               <CardContent className="py-12 text-center">
