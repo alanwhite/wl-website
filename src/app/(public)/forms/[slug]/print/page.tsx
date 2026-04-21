@@ -35,29 +35,30 @@ export default async function PrintFormPage({
       <head>
         <title>{form.title} — {siteInfo.name}</title>
         <style>{`
-          @page { size: A4; margin: 20mm; }
+          @page { size: A4; margin: 12mm 15mm; }
           html { color-scheme: light !important; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #111; background: #fff; line-height: 1.5; }
-          h1 { font-size: 20px; text-align: center; margin-bottom: 4px; }
-          h2 { font-size: 16px; margin-top: 20px; margin-bottom: 8px; }
-          h3 { font-size: 14px; margin-top: 16px; margin-bottom: 6px; }
-          .subtitle { text-align: center; color: #666; font-size: 12px; margin-bottom: 24px; }
-          .field { margin-bottom: 16px; }
-          .field-label { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
-          .field-line { border-bottom: 1px solid #999; min-height: 24px; }
-          .field-box { border: 1px solid #999; min-height: 60px; padding: 4px; }
-          .field-help { font-size: 10px; color: #666; margin-top: 2px; }
-          .checkbox-field { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
-          .checkbox-box { width: 16px; height: 16px; border: 2px solid #333; flex-shrink: 0; margin-top: 2px; }
-          .checkbox-text { font-size: 11px; }
-          .options { font-size: 11px; color: #444; margin-top: 2px; }
-          .divider { border-top: 2px solid #333; margin: 24px 0; }
-          .terms { font-size: 11px; line-height: 1.6; }
-          .terms h3 { font-size: 13px; }
-          .terms ol, .terms ul { padding-left: 20px; }
-          .terms li { margin-bottom: 4px; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; color: #111; background: #fff; line-height: 1.4; }
+          h1 { font-size: 18px; text-align: center; margin-bottom: 2px; }
+          h2 { font-size: 14px; margin-top: 12px; margin-bottom: 4px; }
+          h3 { font-size: 12px; margin-top: 8px; margin-bottom: 3px; }
+          .subtitle { text-align: center; color: #666; font-size: 11px; margin-bottom: 12px; }
+          .field { margin-bottom: 10px; }
+          .field-label { font-weight: 600; font-size: 11px; margin-bottom: 2px; }
+          .field-line { border-bottom: 1px solid #999; min-height: 20px; }
+          .field-box { border: 1px solid #999; min-height: 40px; padding: 3px; }
+          .field-help { font-size: 9px; color: #666; margin-top: 1px; }
+          .checkbox-field { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 8px; }
+          .checkbox-box { width: 14px; height: 14px; border: 2px solid #333; flex-shrink: 0; margin-top: 1px; }
+          .checkbox-text { font-size: 10px; }
+          .options { font-size: 10px; color: #444; margin-top: 1px; }
+          .divider { border-top: 1.5px solid #333; margin: 12px 0; }
+          .terms { font-size: 9px; line-height: 1.4; }
+          .terms h3 { font-size: 11px; margin-top: 6px; margin-bottom: 2px; }
+          .terms ol, .terms ul { padding-left: 16px; margin: 2px 0; }
+          .terms li { margin-bottom: 1px; }
+          .terms p { margin: 2px 0; }
           .terms strong { font-weight: 600; }
-          .signature { margin-top: 32px; display: flex; gap: 40px; }
+          .signature { margin-top: 16px; display: flex; gap: 40px; }
           .sig-field { flex: 1; }
           .sig-line { border-bottom: 1px solid #999; min-height: 24px; margin-top: 20px; }
           .sig-label { font-size: 10px; color: #666; margin-top: 4px; }
