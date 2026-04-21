@@ -66,6 +66,8 @@ export async function createForm(data: {
   description?: string;
   fields: string;
   heroImageUrl?: string;
+  heroTitle?: string;
+  hideHeader?: boolean;
   managerRoleSlugs: string[];
 }) {
   const user = await requireFormCreator();
@@ -78,6 +80,8 @@ export async function createForm(data: {
       description: data.description || null,
       fields: JSON.parse(data.fields),
       heroImageUrl: data.heroImageUrl || null,
+      heroTitle: data.heroTitle || null,
+      hideHeader: data.hideHeader ?? false,
       managerRoleSlugs: data.managerRoleSlugs,
       createdBy: user.id,
     },
@@ -104,6 +108,8 @@ export async function updateForm(
     description?: string;
     fields: string;
     heroImageUrl?: string;
+    heroTitle?: string;
+    hideHeader?: boolean;
     published: boolean;
     managerRoleSlugs: string[];
   },
@@ -129,6 +135,8 @@ export async function updateForm(
       description: data.description || null,
       fields: JSON.parse(data.fields),
       heroImageUrl: newHeroUrl,
+      heroTitle: data.heroTitle || null,
+      hideHeader: data.hideHeader ?? false,
       published: data.published,
       managerRoleSlugs: data.managerRoleSlugs,
     },

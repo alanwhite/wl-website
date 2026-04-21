@@ -21,6 +21,8 @@ interface FormEditorProps {
     description: string | null;
     fields: unknown;
     heroImageUrl: string | null;
+    heroTitle: string | null;
+    hideHeader: boolean;
     published: boolean;
     managerRoleSlugs: string[];
   };
@@ -37,6 +39,8 @@ export function FormEditor({ roles, form }: FormEditorProps) {
     form ? JSON.stringify(form.fields, null, 2) : "[]",
   );
   const [heroImageUrl, setHeroImageUrl] = useState(form?.heroImageUrl ?? "");
+  const [heroTitle, setHeroTitle] = useState(form?.heroTitle ?? "");
+  const [hideHeader, setHideHeader] = useState(form?.hideHeader ?? false);
   const [published, setPublished] = useState(form?.published ?? false);
   const [managerSlugs, setManagerSlugs] = useState<string[]>(form?.managerRoleSlugs ?? []);
   const heroFileRef = useRef<HTMLInputElement>(null);
@@ -59,6 +63,8 @@ export function FormEditor({ roles, form }: FormEditorProps) {
           description,
           fields: fieldsJson,
           heroImageUrl: heroImageUrl || undefined,
+          heroTitle: heroTitle || undefined,
+          hideHeader,
           published,
           managerRoleSlugs: managerSlugs,
         });
@@ -70,6 +76,8 @@ export function FormEditor({ roles, form }: FormEditorProps) {
           description,
           fields: fieldsJson,
           heroImageUrl: heroImageUrl || undefined,
+          heroTitle: heroTitle || undefined,
+          hideHeader,
           managerRoleSlugs: managerSlugs,
         });
         toast.success("Form created");
@@ -175,6 +183,21 @@ export function FormEditor({ roles, form }: FormEditorProps) {
               )}
             </div>
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Hero Title (optional)</Label>
+          <Input
+            value={heroTitle}
+            onChange={(e) => setHeroTitle(e.target.value)}
+            placeholder="e.g. Gartloch Village Summer Gala Day"
+          />
+          <p className="text-xs text-muted-foreground">
+            Large heading displayed above the form on the hero background.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={hideHeader} onCheckedChange={setHideHeader} />
+          <Label>Hide site header</Label>
         </div>
         <div className="space-y-2">
           <Label>Fields (JSON)</Label>

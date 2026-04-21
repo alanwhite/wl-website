@@ -37,22 +37,30 @@ export default async function PublicFormPage({
     return (
       <Providers session={session}>
         <div className="relative min-h-screen">
-          <div className="absolute inset-x-0 top-0 z-20">
-            <Header
-              siteName={siteInfo.name}
-              logoUrl={logoUrl}
-              navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)}
-              transparent
-            />
-          </div>
-          {/* Fixed hero background — stays full viewport while form scrolls over */}
+          {!form.hideHeader && (
+            <div className="absolute inset-x-0 top-0 z-20">
+              <Header
+                siteName={siteInfo.name}
+                logoUrl={logoUrl}
+                navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)}
+                transparent
+              />
+            </div>
+          )}
+          {/* Fixed hero background */}
           <div className="fixed inset-0 z-0">
             <HeroSlideshow images={[form.heroImageUrl!]} fullScreen>
               <div />
             </HeroSlideshow>
           </div>
           <div className="relative z-10 min-h-screen">
-            <div className="container mx-auto max-w-2xl px-4 pt-24 pb-12">
+            <div className="container mx-auto max-w-2xl px-4 pt-16 pb-12">
+              {/* Hero title — big heading above the form */}
+              {form.heroTitle && (
+                <h1 className="mb-8 text-center text-3xl font-bold text-white drop-shadow-lg sm:text-5xl">
+                  {form.heroTitle}
+                </h1>
+              )}
               {isClosed ? (
                 <Card className="bg-background/85 backdrop-blur-sm shadow-xl">
                   <CardContent className="py-12 text-center">

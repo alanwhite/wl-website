@@ -1,0 +1,2 @@
+ALTER TABLE "PublicForm" ADD COLUMN "heroTitle" TEXT;
+ALTER TABLE "PublicForm" ADD COLUMN "hideHeader" BOOLEAN NOT NULL DEFAULT false;
