@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
-import { isAdmin } from "@/lib/auth-helpers";
+import { getFormCreatorRoles, canCreateForms } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { FormEditor } from "@/components/forms/form-editor";
 
@@ -12,7 +12,10 @@ export default async function EditFormPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  if (!session?.user || !isAdmin(session.user)) redirect("/dashboard");
+  if (!session?.user || session.user.status !== "APPROVED") redirect("/login");
+
+  const creatorRoles = await getFormCreatorRoles();
+  if (!canCreateForms(session.user, creatorRoles)) redirect("/dashboard");
 
   const { id } = await params;
   const form = await prisma.publicForm.findUnique({ where: { id } });

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/auth-helpers";
+import { getFormCreatorRoles, canCreateForms } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { headers } from "next/headers";
@@ -19,10 +19,14 @@ function canManageForm(
   return form.managerRoleSlugs.some((slug) => user.roleSlugs?.includes(slug));
 }
 
-async function requireFormAdmin() {
+async function requireFormCreator() {
   const session = await auth();
-  if (!session?.user || !isAdmin(session.user)) {
+  if (!session?.user || session.user.status !== "APPROVED") {
     throw new Error("Unauthorized");
+  }
+  const creatorRoles = await getFormCreatorRoles();
+  if (!canCreateForms(session.user, creatorRoles)) {
+    throw new Error("Unauthorized: requires form creator role");
   }
   return session.user;
 }
@@ -49,11 +53,12 @@ export async function createForm(data: {
   title: string;
   slug: string;
   description?: string;
-  fields: string; // JSON string
+  fields: string;
+  heroImageUrl?: string;
   managerRoleSlugs: string[];
 }) {
-  const user = await requireFormAdmin();
-  JSON.parse(data.fields); // validate
+  const user = await requireFormCreator();
+  JSON.parse(data.fields);
 
   const form = await prisma.publicForm.create({
     data: {
@@ -61,6 +66,7 @@ export async function createForm(data: {
       slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
       description: data.description || null,
       fields: JSON.parse(data.fields),
+      heroImageUrl: data.heroImageUrl || null,
       managerRoleSlugs: data.managerRoleSlugs,
       createdBy: user.id,
     },
@@ -86,11 +92,12 @@ export async function updateForm(
     slug: string;
     description?: string;
     fields: string;
+    heroImageUrl?: string;
     published: boolean;
     managerRoleSlugs: string[];
   },
 ) {
-  const user = await requireFormAdmin();
+  const user = await requireFormCreator();
   JSON.parse(data.fields);
 
   await prisma.publicForm.update({
@@ -100,6 +107,7 @@ export async function updateForm(
       slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
       description: data.description || null,
       fields: JSON.parse(data.fields),
+      heroImageUrl: data.heroImageUrl || null,
       published: data.published,
       managerRoleSlugs: data.managerRoleSlugs,
     },
@@ -109,7 +117,7 @@ export async function updateForm(
 }
 
 export async function closeForm(formId: string) {
-  const user = await requireFormAdmin();
+  const user = await requireFormCreator();
   await prisma.publicForm.update({
     where: { id: formId },
     data: { closedAt: new Date() },
@@ -118,7 +126,7 @@ export async function closeForm(formId: string) {
 }
 
 export async function deleteForm(formId: string) {
-  const user = await requireFormAdmin();
+  const user = await requireFormCreator();
   const form = await prisma.publicForm.findUnique({
     where: { id: formId },
     select: { title: true },

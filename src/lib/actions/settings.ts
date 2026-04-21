@@ -143,6 +143,19 @@ export async function updatePollManagerRoles(rolesJson: string) {
   });
 }
 
+export async function updateFormCreatorRoles(rolesJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(rolesJson);
+  await setConfig("forms.creatorRoles", rolesJson);
+  invalidateConfigCache("forms.creatorRoles");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.formCreatorRoles.update",
+  });
+}
+
 export async function updateAnnouncementManagerRoles(rolesJson: string) {
   const admin = await requireAdmin();
   JSON.parse(rolesJson);

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth-helpers";
+import { getFormCreatorRoles, canCreateForms } from "@/lib/config";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ export default async function FormsPage() {
   if (!session?.user || session.user.status !== "APPROVED") redirect("/login");
 
   const admin = isAdmin(session.user);
+  const creatorRoles = await getFormCreatorRoles();
+  const canCreate = canCreateForms(session.user, creatorRoles);
 
   const forms = await prisma.publicForm.findMany({
     orderBy: { createdAt: "desc" },
@@ -34,7 +37,7 @@ export default async function FormsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Forms</h1>
-        {admin && (
+        {canCreate && (
           <Button asChild size="sm">
             <Link href="/forms/manage/create">
               <Plus className="mr-1 h-4 w-4" />
@@ -87,7 +90,7 @@ export default async function FormsPage() {
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/forms/${form.slug}/submissions`}>Submissions</Link>
                       </Button>
-                      {admin && (
+                      {canCreate && (
                         <Button asChild variant="ghost" size="sm">
                           <Link href={`/forms/manage/${form.id}/edit`}>Edit</Link>
                         </Button>

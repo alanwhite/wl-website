@@ -370,6 +370,7 @@ model PublicForm {
   slug               String           @unique
   description        String?          @db.Text
   fields             Json             @default("[]")
+  heroImageUrl       String?
   published          Boolean          @default(false)
   closedAt           DateTime?
   managerRoleSlugs   String[]         @default([])

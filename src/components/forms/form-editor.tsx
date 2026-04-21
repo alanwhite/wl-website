@@ -19,6 +19,7 @@ interface FormEditorProps {
     slug: string;
     description: string | null;
     fields: unknown;
+    heroImageUrl: string | null;
     published: boolean;
     managerRoleSlugs: string[];
   };
@@ -34,6 +35,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
   const [fieldsJson, setFieldsJson] = useState(
     form ? JSON.stringify(form.fields, null, 2) : "[]",
   );
+  const [heroImageUrl, setHeroImageUrl] = useState(form?.heroImageUrl ?? "");
   const [published, setPublished] = useState(form?.published ?? false);
   const [managerSlugs, setManagerSlugs] = useState<string[]>(form?.managerRoleSlugs ?? []);
 
@@ -54,6 +56,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
           slug,
           description,
           fields: fieldsJson,
+          heroImageUrl: heroImageUrl || undefined,
           published,
           managerRoleSlugs: managerSlugs,
         });
@@ -64,6 +67,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
           slug,
           description,
           fields: fieldsJson,
+          heroImageUrl: heroImageUrl || undefined,
           managerRoleSlugs: managerSlugs,
         });
         toast.success("Form created");
@@ -108,6 +112,17 @@ export function FormEditor({ roles, form }: FormEditorProps) {
         <div className="space-y-2">
           <Label>Description (optional)</Label>
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+        </div>
+        <div className="space-y-2">
+          <Label>Hero Image URL (optional)</Label>
+          <Input
+            value={heroImageUrl}
+            onChange={(e) => setHeroImageUrl(e.target.value)}
+            placeholder="/uploads/media/your-image.jpg"
+          />
+          <p className="text-xs text-muted-foreground">
+            Upload an image via Media first, then paste the URL here. Displays as a full-screen background behind the form with Ken Burns effect.
+          </p>
         </div>
         <div className="space-y-2">
           <Label>Fields (JSON)</Label>

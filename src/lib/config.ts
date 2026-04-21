@@ -250,6 +250,20 @@ export function canManageAnnouncements(
   return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
 }
 
+export async function getFormCreatorRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("forms.creatorRoles");
+  return roles ?? [];
+}
+
+export function canCreateForms(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  creatorRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (creatorRoles.length === 0) return false;
+  return creatorRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
 export async function getCalendarManagerRoles(): Promise<string[]> {
   const roles = await getConfigJson<string[]>("calendar.managerRoles");
   return roles ?? [];
