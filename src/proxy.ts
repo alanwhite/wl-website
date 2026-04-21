@@ -15,10 +15,10 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // Public form pages: /forms/[slug] (but not /forms/manage or /forms/[slug]/submissions)
+  // Public form pages: /forms/[slug] and /forms/[slug]/print (but not /forms/manage or /forms/[slug]/submissions)
   if (pathname.startsWith("/forms/") && !pathname.includes("/submissions") && !pathname.startsWith("/forms/manage")) {
-    const segments = pathname.replace("/forms/", "").split("/");
-    if (segments.length === 1 && segments[0]) {
+    const segments = pathname.replace("/forms/", "").split("/").filter(Boolean);
+    if (segments.length === 1 || (segments.length === 2 && segments[1] === "print")) {
       return NextResponse.next();
     }
   }
