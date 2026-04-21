@@ -36,7 +36,8 @@ export default async function PrintFormPage({
         <title>{form.title} — {siteInfo.name}</title>
         <style>{`
           @page { size: A4; margin: 20mm; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #111; line-height: 1.5; }
+          html { color-scheme: light !important; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #111; background: #fff; line-height: 1.5; }
           h1 { font-size: 20px; text-align: center; margin-bottom: 4px; }
           h2 { font-size: 16px; margin-top: 20px; margin-bottom: 8px; }
           h3 { font-size: 14px; margin-top: 16px; margin-bottom: 6px; }
