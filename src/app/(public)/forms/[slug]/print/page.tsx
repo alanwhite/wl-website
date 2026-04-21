@@ -52,11 +52,11 @@ export default async function PrintFormPage({
           .checkbox-text { font-size: 10px; }
           .options { font-size: 10px; color: #444; margin-top: 1px; }
           .divider { border-top: 1.5px solid #333; margin: 12px 0; }
-          .terms { font-size: 9px; line-height: 1.4; }
-          .terms h3 { font-size: 11px; margin-top: 6px; margin-bottom: 2px; }
-          .terms ol, .terms ul { padding-left: 16px; margin: 2px 0; }
-          .terms li { margin-bottom: 1px; }
-          .terms p { margin: 2px 0; }
+          .terms { font-size: 10px; line-height: 1.6; }
+          .terms h3 { font-size: 12px; margin-top: 10px; margin-bottom: 4px; }
+          .terms ol, .terms ul { padding-left: 18px; margin: 4px 0; }
+          .terms li { margin-bottom: 3px; }
+          .terms p { margin: 4px 0; }
           .terms strong { font-weight: 600; }
           .signature { margin-top: 16px; display: flex; gap: 40px; }
           .sig-field { flex: 1; }
