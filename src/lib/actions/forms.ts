@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { getFormCreatorRoles, canCreateForms } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
+import { deleteFile } from "@/lib/upload";
 import { headers } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -110,6 +111,16 @@ export async function updateForm(
   const user = await requireFormCreator();
   JSON.parse(data.fields);
 
+  // Clean up old hero image if it's being changed or removed
+  const existing = await prisma.publicForm.findUnique({
+    where: { id: formId },
+    select: { heroImageUrl: true },
+  });
+  const newHeroUrl = data.heroImageUrl || null;
+  if (existing?.heroImageUrl && existing.heroImageUrl !== newHeroUrl) {
+    await deleteFile(existing.heroImageUrl).catch(() => {});
+  }
+
   await prisma.publicForm.update({
     where: { id: formId },
     data: {
@@ -117,7 +128,7 @@ export async function updateForm(
       slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
       description: data.description || null,
       fields: JSON.parse(data.fields),
-      heroImageUrl: data.heroImageUrl || null,
+      heroImageUrl: newHeroUrl,
       published: data.published,
       managerRoleSlugs: data.managerRoleSlugs,
     },
@@ -139,8 +150,13 @@ export async function deleteForm(formId: string) {
   const user = await requireFormCreator();
   const form = await prisma.publicForm.findUnique({
     where: { id: formId },
-    select: { title: true },
+    select: { title: true, heroImageUrl: true },
   });
+
+  // Clean up hero image file
+  if (form?.heroImageUrl) {
+    await deleteFile(form.heroImageUrl).catch(() => {});
+  }
 
   await prisma.publicForm.delete({ where: { id: formId } });
 
