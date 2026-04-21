@@ -71,7 +71,7 @@ export default async function PublicFormPage({
                   </CardContent>
                 </Card>
               ) : (
-                <div className="[&_[data-slot=card]]:bg-background/85 [&_[data-slot=card]]:backdrop-blur-sm [&_[data-slot=card]]:shadow-xl">
+                <div className="[&_[data-slot=card]]:bg-background/85 [&_[data-slot=card]]:backdrop-blur-sm [&_[data-slot=card]]:shadow-xl [&_input]:bg-background [&_input]:border-border [&_textarea]:bg-background [&_textarea]:border-border [&_button[role=combobox]]:bg-background [&_button[role=combobox]]:border-border [&_button[role=checkbox]]:bg-background [&_button[role=checkbox]]:border-2 [&_button[role=checkbox]]:border-foreground/40">
                   <PublicFormComponent
                     formId={form.id}
                     title={form.title}
