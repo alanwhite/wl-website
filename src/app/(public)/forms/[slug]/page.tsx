@@ -45,10 +45,17 @@ export default async function PublicFormPage({
               transparent
             />
           </div>
-          <HeroSlideshow images={[form.heroImageUrl!]} fullScreen>
-            <div className="container mx-auto max-w-2xl px-4">
+          <div className="relative min-h-screen overflow-hidden">
+            {/* Hero background — covers full page including below the form */}
+            <div className="absolute inset-0">
+              <HeroSlideshow images={[form.heroImageUrl!]} fullScreen>
+                <div />
+              </HeroSlideshow>
+            </div>
+            {/* Form content floating above */}
+            <div className="relative z-10 container mx-auto max-w-2xl px-4 pt-24 pb-12">
               {isClosed ? (
-                <Card className="bg-background/95 backdrop-blur">
+                <Card className="bg-background/85 backdrop-blur-sm shadow-xl">
                   <CardContent className="py-12 text-center">
                     <h2 className="text-xl font-semibold">{form.title}</h2>
                     <p className="mt-2 text-muted-foreground">
@@ -57,7 +64,7 @@ export default async function PublicFormPage({
                   </CardContent>
                 </Card>
               ) : (
-                <div className="[&_[data-slot=card]]:bg-background/95 [&_[data-slot=card]]:backdrop-blur">
+                <div className="[&_[data-slot=card]]:bg-background/85 [&_[data-slot=card]]:backdrop-blur-sm [&_[data-slot=card]]:shadow-xl">
                   <PublicFormComponent
                     formId={form.id}
                     title={form.title}
@@ -69,7 +76,7 @@ export default async function PublicFormPage({
                 </div>
               )}
             </div>
-          </HeroSlideshow>
+          </div>
         </div>
       </Providers>
     );
