@@ -47,13 +47,13 @@ export default async function PublicFormPage({
               />
             </div>
           )}
-          {/* Fixed hero background */}
-          <div className="fixed inset-0 z-0">
+          {/* Fixed hero background — negative z-index keeps it behind portals (dropdowns etc) */}
+          <div className="fixed inset-0 -z-10 pointer-events-none">
             <HeroSlideshow images={[form.heroImageUrl!]} fullScreen>
               <div />
             </HeroSlideshow>
           </div>
-          <div className="relative z-10 min-h-screen">
+          <div className="relative min-h-screen">
             <div className="container mx-auto max-w-2xl px-4 pt-16 pb-12">
               {/* Hero title — big heading above the form */}
               {form.heroTitle && (
