@@ -68,6 +68,7 @@ model User {
   eventsCreated     CalendarEvent[]   @relation("EventCreator")
   eventRsvps        EventRsvp[]
   transactionsCreated Transaction[]   @relation("TransactionCreator")
+  formSubmissions   FormSubmission[]
   newsletterOptIn   Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -360,5 +361,41 @@ model Transaction {
 
   @@index([date])
   @@index([type])
+  @@index([createdAt])
+}
+
+model PublicForm {
+  id                 String           @id @default(cuid())
+  title              String
+  slug               String           @unique
+  description        String?          @db.Text
+  fields             Json             @default("[]")
+  published          Boolean          @default(false)
+  closedAt           DateTime?
+  managerRoleSlugs   String[]         @default([])
+  createdBy          String?
+  submissions        FormSubmission[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model FormSubmission {
+  id          String     @id @default(cuid())
+  formId      String
+  form        PublicForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name        String
+  email       String
+  data        Json       @default("{}")
+  status      String     @default("pending")
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  reviewNotes String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([formId])
+  @@index([status])
   @@index([createdAt])
 }

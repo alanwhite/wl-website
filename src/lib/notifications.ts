@@ -35,5 +35,23 @@ export async function getNotificationCounts(user: {
     counts["/polls"] = unvotedPolls.length;
   }
 
+  // Pending form submissions for forms the user manages
+  const isAdmin = (user.tierLevel ?? 0) >= 999;
+  if (isAdmin || (user.roleSlugs && user.roleSlugs.length > 0)) {
+    const forms = await prisma.publicForm.findMany({
+      where: isAdmin
+        ? undefined
+        : { managerRoleSlugs: { hasSome: user.roleSlugs ?? [] } },
+      select: {
+        _count: { select: { submissions: { where: { status: "pending" } } } },
+      },
+    });
+
+    const pendingSubmissions = forms.reduce((sum, f) => sum + f._count.submissions, 0);
+    if (pendingSubmissions > 0) {
+      counts["/forms"] = pendingSubmissions;
+    }
+  }
+
   return counts;
 }

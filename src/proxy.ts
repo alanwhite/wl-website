@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 
 const publicPaths = ["/", "/login", "/register", "/about", "/contact", "/p", "/api/auth", "/api/health", "/api/postcode-check", "/api/calendar.ics", "/api/export"];
-const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members", "/calendar", "/financials", "/announcements"];
+const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members", "/calendar", "/financials", "/announcements", "/forms"];
 const adminPaths = ["/admin"];
 
 export default auth((req) => {
@@ -13,6 +13,14 @@ export default auth((req) => {
   // Allow public paths
   if (publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
+  }
+
+  // Public form pages: /forms/[slug] (but not /forms/manage or /forms/[slug]/submissions)
+  if (pathname.startsWith("/forms/") && !pathname.includes("/submissions") && !pathname.startsWith("/forms/manage")) {
+    const segments = pathname.replace("/forms/", "").split("/");
+    if (segments.length === 1 && segments[0]) {
+      return NextResponse.next();
+    }
   }
 
   // Not logged in -> login

@@ -23,6 +23,7 @@ import {
   Newspaper,
   Wallet,
   TrendingUp,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ const iconMap: Record<string, LucideIcon> = {
   Newspaper,
   Wallet,
   TrendingUp,
+  ClipboardList,
 };
 
 export function getIcon(name: string | undefined): LucideIcon | null {
