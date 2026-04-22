@@ -1,8 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { canAccessPoll } from "@/lib/config";
+import { canAccessPoll, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
 import { CategoryCard } from "@/components/library/category-card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -10,12 +13,18 @@ export default async function DocumentsPage() {
   const session = await auth();
   if (!session?.user || session.user.status !== "APPROVED") redirect("/login");
 
+  const managerRoles = await getDocumentManagerRoles();
+  const canManage = canManageDocuments(session.user, managerRoles);
+
+  // Only show top-level categories (no parent)
   const categories = await prisma.libraryCategory.findMany({
+    where: { parentId: null },
     orderBy: { sortOrder: "asc" },
-    include: { _count: { select: { documents: true } } },
+    include: {
+      _count: { select: { documents: true, children: true } },
+    },
   });
 
-  // Filter categories by access (reuse canAccessPoll — same shape)
   const isAdmin = (session.user.tierLevel ?? 0) >= 999;
   const accessible = isAdmin
     ? categories
@@ -23,7 +32,17 @@ export default async function DocumentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Documents</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Documents</h1>
+        {canManage && (
+          <Button asChild size="sm">
+            <Link href="/admin/documents/new">
+              <Plus className="mr-1 h-4 w-4" />
+              New Category
+            </Link>
+          </Button>
+        )}
+      </div>
 
       {accessible.length === 0 ? (
         <p className="text-muted-foreground">No document categories available.</p>
@@ -36,6 +55,7 @@ export default async function DocumentsPage() {
               name={cat.name}
               description={cat.description}
               documentCount={cat._count.documents}
+              childCount={cat._count.children}
             />
           ))}
         </div>

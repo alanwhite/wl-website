@@ -24,9 +24,10 @@ interface CategoryFormProps {
   };
   roles: { id: string; name: string; slug: string }[];
   tiers: { id: string; name: string; level: number }[];
+  parentId?: string;
 }
 
-export function CategoryForm({ category, roles, tiers }: CategoryFormProps) {
+export function CategoryForm({ category, roles, tiers, parentId }: CategoryFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(category?.name ?? "");
@@ -51,6 +52,10 @@ export function CategoryForm({ category, roles, tiers }: CategoryFormProps) {
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
+    // Append parentId if creating a sub-category
+    if (parentId && !category) {
+      formData.set("parentId", parentId);
+    }
     // Append role slugs
     for (const s of targetRoleSlugs) {
       formData.append("targetRoleSlugs", s);

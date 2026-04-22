@@ -76,6 +76,7 @@ export default async function AdminSettingsPage() {
             : null,
           heroImages,
           memberManagerRoles: (await getConfigJson<string[]>("members.managerRoles")) ?? [],
+          documentManagerRoles: (await getConfigJson<string[]>("documents.managerRoles")) ?? [],
           formCreatorRoles: (await getConfigJson<string[]>("forms.creatorRoles")) ?? [],
           announcementManagerRoles: (await getConfigJson<string[]>("announcements.managerRoles")) ?? [],
           calendarManagerRoles: (await getConfigJson<string[]>("calendar.managerRoles")) ?? [],

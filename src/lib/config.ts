@@ -236,6 +236,20 @@ export function canManageMembers(
   return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
 }
 
+export async function getDocumentManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("documents.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageDocuments(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
 export async function getAnnouncementManagerRoles(): Promise<string[]> {
   const roles = await getConfigJson<string[]>("announcements.managerRoles");
   return roles ?? [];

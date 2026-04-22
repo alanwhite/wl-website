@@ -2,16 +2,19 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/auth-helpers";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
-import { canUploadToCategory } from "@/lib/config";
+import { canUploadToCategory, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
 import { saveDocument, deleteFile } from "@/lib/upload";
 
-async function requireAdmin() {
+async function requireDocumentManager() {
   const session = await auth();
-  if (!session?.user || !isAdmin(session.user)) {
+  if (!session?.user || session.user.status !== "APPROVED") {
     throw new Error("Unauthorized");
+  }
+  const managerRoles = await getDocumentManagerRoles();
+  if (!canManageDocuments(session.user, managerRoles)) {
+    throw new Error("Unauthorized: requires document manager role");
   }
   return session.user;
 }
@@ -24,15 +27,16 @@ async function requireApprovedMember() {
   return session.user;
 }
 
-// ── Category management (admin only) ──────────────────────────────────────
+// ── Category management (role-gated) ──
 
 export async function createCategory(formData: FormData) {
-  const admin = await requireAdmin();
+  const user = await requireDocumentManager();
 
   const name = (formData.get("name") as string)?.trim();
   const slug = (formData.get("slug") as string)?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
   const description = (formData.get("description") as string)?.trim() || null;
   const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
+  const parentId = (formData.get("parentId") as string) || null;
   const targetRoleSlugs = formData.getAll("targetRoleSlugs") as string[];
   const targetMinTierLevelRaw = formData.get("targetMinTierLevel") as string;
   const targetMinTierLevel = targetMinTierLevelRaw ? parseInt(targetMinTierLevelRaw, 10) : null;
@@ -48,6 +52,7 @@ export async function createCategory(formData: FormData) {
       slug,
       description,
       sortOrder,
+      parentId,
       targetRoleSlugs: targetRoleSlugs.filter(Boolean),
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
       uploaderRoleSlugs: uploaderRoleSlugs.filter(Boolean),
@@ -56,12 +61,12 @@ export async function createCategory(formData: FormData) {
   });
 
   await logAudit({
-    userId: admin.id,
-    userName: admin.name ?? "Admin",
+    userId: user.id,
+    userName: user.name ?? "Manager",
     action: "library.category.create",
     targetType: "LibraryCategory",
     targetId: category.id,
-    details: { name, slug },
+    details: { name, slug, parentId },
   });
 
   revalidatePath("/documents");
@@ -69,7 +74,7 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function updateCategory(id: string, formData: FormData) {
-  const admin = await requireAdmin();
+  const user = await requireDocumentManager();
 
   const name = (formData.get("name") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
@@ -97,8 +102,8 @@ export async function updateCategory(id: string, formData: FormData) {
   });
 
   await logAudit({
-    userId: admin.id,
-    userName: admin.name ?? "Admin",
+    userId: user.id,
+    userName: user.name ?? "Manager",
     action: "library.category.update",
     targetType: "LibraryCategory",
     targetId: id,
@@ -109,34 +114,51 @@ export async function updateCategory(id: string, formData: FormData) {
 }
 
 export async function deleteCategory(id: string) {
-  const admin = await requireAdmin();
+  const user = await requireDocumentManager();
 
+  // Get all documents in this category and children (cascade will handle DB but we need file cleanup)
   const category = await prisma.libraryCategory.findUnique({
     where: { id },
-    include: { documents: { select: { filePath: true } } },
+    include: {
+      documents: { select: { filePath: true } },
+      children: {
+        include: {
+          documents: { select: { filePath: true } },
+          children: { include: { documents: { select: { filePath: true } } } },
+        },
+      },
+    },
   });
   if (!category) throw new Error("Category not found");
 
+  // Collect all file paths recursively
+  const filePaths: string[] = [];
+  function collectFiles(cat: { documents: { filePath: string }[]; children?: any[] }) {
+    for (const doc of cat.documents) filePaths.push(doc.filePath);
+    for (const child of cat.children ?? []) collectFiles(child);
+  }
+  collectFiles(category);
+
   // Delete files from disk
-  for (const doc of category.documents) {
-    await deleteFile(`/uploads/library/${doc.filePath}`).catch(() => {});
+  for (const fp of filePaths) {
+    await deleteFile(`/uploads/library/${fp}`).catch(() => {});
   }
 
   await prisma.libraryCategory.delete({ where: { id } });
 
   await logAudit({
-    userId: admin.id,
-    userName: admin.name ?? "Admin",
+    userId: user.id,
+    userName: user.name ?? "Manager",
     action: "library.category.delete",
     targetType: "LibraryCategory",
     targetId: id,
-    details: { name: category.name, documentCount: category.documents.length },
+    details: { name: category.name, documentCount: filePaths.length },
   });
 
   revalidatePath("/documents");
 }
 
-// ── Document management (per-category upload permissions) ─────────────────
+// ── Document management (per-category upload permissions) ──
 
 export async function uploadDocument(categoryId: string, formData: FormData) {
   const user = await requireApprovedMember();
@@ -207,5 +229,4 @@ export async function deleteDocument(id: string) {
   });
 
   revalidatePath(`/documents/${doc.category.slug}`);
-  revalidatePath(`/admin/documents/${doc.category.id}`);
 }

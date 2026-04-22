@@ -28,6 +28,7 @@ import {
   updateTierRules,
   updateAddressData,
   updateMemberManagerRoles,
+  updateDocumentManagerRoles,
   updateFormCreatorRoles,
   updateAnnouncementManagerRoles,
   updateCalendarManagerRoles,
@@ -65,6 +66,7 @@ interface SettingsFormProps {
     financialYearStartMonth: number;
     announcementManagerRoles: string[];
     formCreatorRoles: string[];
+    documentManagerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -84,6 +86,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
   const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
+  const [documentManagerRoleSlugs, setDocumentManagerRoleSlugs] = useState<string[]>(settings.documentManagerRoles);
   const [formCreatorRoleSlugs, setFormCreatorRoleSlugs] = useState<string[]>(settings.formCreatorRoles);
   const [announcementManagerRoleSlugs, setAnnouncementManagerRoleSlugs] = useState<string[]>(settings.announcementManagerRoles);
   const [calendarManagerRoleSlugs, setCalendarManagerRoleSlugs] = useState<string[]>(settings.calendarManagerRoles);
@@ -153,6 +156,18 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     try {
       await updatePollManagerRoles(JSON.stringify(pollManagerRoleSlugs));
       toast.success("Poll manager roles saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveDocumentManagerRoles() {
+    setLoading(true);
+    try {
+      await updateDocumentManagerRoles(JSON.stringify(documentManagerRoleSlugs));
+      toast.success("Document manager roles saved");
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -381,6 +396,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
         <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
         <TabsTrigger value="memberMgmt" className="justify-start">Member Mgmt</TabsTrigger>
+        <TabsTrigger value="documents" className="justify-start">Documents</TabsTrigger>
         <TabsTrigger value="forms" className="justify-start">Forms</TabsTrigger>
         <TabsTrigger value="announcements" className="justify-start">Announcements</TabsTrigger>
         <TabsTrigger value="calendar" className="justify-start">Calendar</TabsTrigger>
@@ -780,6 +796,44 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               </>
             )}
             <Button onClick={handleSaveTerms} disabled={loading}>Save Terms Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="documents">
+        <Card>
+          <CardHeader>
+            <CardTitle>Document Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which roles can create and manage document categories and folders.
+            </p>
+            <div className="space-y-2">
+              <Label>Document Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No roles defined yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`doc-role-${role.slug}`}
+                        checked={documentManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) setDocumentManagerRoleSlugs([...documentManagerRoleSlugs, role.slug]);
+                          else setDocumentManagerRoleSlugs(documentManagerRoleSlugs.filter((s) => s !== role.slug));
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`doc-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSaveDocumentManagerRoles} disabled={loading}>Save Document Settings</Button>
           </CardContent>
         </Card>
       </TabsContent>

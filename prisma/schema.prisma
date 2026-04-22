@@ -283,6 +283,9 @@ model LibraryCategory {
   slug                 String            @unique
   description          String?
   sortOrder            Int               @default(0)
+  parentId             String?
+  parent               LibraryCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children             LibraryCategory[] @relation("CategoryTree")
   targetRoleSlugs      String[]          @default([])
   targetMinTierLevel   Int?
   uploaderRoleSlugs    String[]          @default([])
