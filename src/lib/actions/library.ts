@@ -158,6 +158,44 @@ export async function deleteCategory(id: string) {
   revalidatePath("/documents");
 }
 
+// ── Reorder categories ──
+
+export async function reorderCategory(categoryId: string, direction: "up" | "down") {
+  await requireDocumentManager();
+
+  const category = await prisma.libraryCategory.findUnique({
+    where: { id: categoryId },
+    select: { sortOrder: true, parentId: true },
+  });
+  if (!category) throw new Error("Category not found");
+
+  const sibling = await prisma.libraryCategory.findFirst({
+    where: {
+      parentId: category.parentId,
+      sortOrder: direction === "up"
+        ? { lt: category.sortOrder }
+        : { gt: category.sortOrder },
+    },
+    orderBy: { sortOrder: direction === "up" ? "desc" : "asc" },
+    select: { id: true, sortOrder: true },
+  });
+
+  if (!sibling) return;
+
+  await prisma.$transaction([
+    prisma.libraryCategory.update({
+      where: { id: categoryId },
+      data: { sortOrder: sibling.sortOrder },
+    }),
+    prisma.libraryCategory.update({
+      where: { id: sibling.id },
+      data: { sortOrder: category.sortOrder },
+    }),
+  ]);
+
+  revalidatePath("/documents");
+}
+
 // ── Move operations (role-gated) ──
 
 export async function moveDocument(documentId: string, targetCategoryId: string) {

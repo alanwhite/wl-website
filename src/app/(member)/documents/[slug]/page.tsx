@@ -9,6 +9,7 @@ import Link from "next/link";
 import { DocumentList } from "@/components/library/document-list";
 import { DocumentUpload } from "@/components/library/document-upload";
 import { MoveDialog } from "@/components/library/move-dialog";
+import { ReorderButtons } from "@/components/library/reorder-buttons";
 import { buildFolderTree } from "@/lib/folder-tree";
 import { CategoryCard } from "@/components/library/category-card";
 import { ChevronRight, Plus } from "lucide-react";
@@ -105,8 +106,15 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {/* Sub-categories */}
       {accessibleChildren.length > 0 && (
         <div className="space-y-3">
-          {accessibleChildren.map((child) => (
+          {accessibleChildren.map((child, index) => (
             <div key={child.id} className="flex items-center gap-2">
+              {canManageCats && (
+                <ReorderButtons
+                  categoryId={child.id}
+                  isFirst={index === 0}
+                  isLast={index === accessibleChildren.length - 1}
+                />
+              )}
               <div className="flex-1">
                 <CategoryCard
                   slug={child.slug}
