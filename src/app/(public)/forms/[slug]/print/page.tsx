@@ -67,7 +67,6 @@ export default async function PrintFormPage({
       </head>
       <body>
         <h1>{form.heroTitle ?? form.title}</h1>
-        <div className="subtitle">{siteInfo.name}</div>
 
         {/* Name and Email — always present */}
         <div className="field">
