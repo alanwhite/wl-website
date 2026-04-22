@@ -13,6 +13,48 @@ import { RsvpButton } from "@/components/calendar/rsvp-button";
 
 export const dynamic = "force-dynamic";
 
+interface RsvpWithUser {
+  userId: string;
+  status: string;
+  user: {
+    id: string;
+    name: string | null;
+    userRoles: { role: { slug: string; name: string } }[];
+  };
+}
+
+function groupByRole(
+  rsvps: RsvpWithUser[],
+  targetRoleSlugs: string[],
+  roleNames: Record<string, string>,
+) {
+  const groups: Record<string, string[]> = {};
+  const assigned = new Set<string>();
+
+  // Initialise groups for each targeted role
+  for (const slug of targetRoleSlugs) {
+    groups[slug] = [];
+  }
+
+  // Assign each RSVP to their first matching targeted role
+  for (const r of rsvps) {
+    const userSlugs = r.user.userRoles.map((ur) => ur.role.slug);
+    const matchingSlug = targetRoleSlugs.find((s) => userSlugs.includes(s));
+    if (matchingSlug && !assigned.has(r.userId)) {
+      groups[matchingSlug].push(r.user.name ?? "Unknown");
+      assigned.add(r.userId);
+    }
+  }
+
+  // Anyone not assigned to a targeted role goes to "Other"
+  const unassigned = rsvps.filter((r) => !assigned.has(r.userId));
+  if (unassigned.length > 0) {
+    groups["_other"] = unassigned.map((r) => r.user.name ?? "Unknown");
+  }
+
+  return groups;
+}
+
 export default async function EventDetailPage({
   params,
 }: {
@@ -27,7 +69,15 @@ export default async function EventDetailPage({
     include: {
       creator: { select: { name: true } },
       rsvps: {
-        include: { user: { select: { id: true, name: true } } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              userRoles: { include: { role: { select: { slug: true, name: true } } } },
+            },
+          },
+        },
         orderBy: { createdAt: "asc" },
       },
     },
@@ -42,6 +92,74 @@ export default async function EventDetailPage({
   const accepted = event.rsvps.filter((r) => r.status === "accepted");
   const maybe = event.rsvps.filter((r) => r.status === "maybe");
   const declined = event.rsvps.filter((r) => r.status === "declined");
+
+  const hasRoleTargeting = event.targetRoleSlugs.length > 0;
+
+  // Get role display names for targeted slugs
+  let roleNames: Record<string, string> = {};
+  if (hasRoleTargeting) {
+    const roles = await prisma.role.findMany({
+      where: { slug: { in: event.targetRoleSlugs } },
+      select: { slug: true, name: true },
+    });
+    roleNames = Object.fromEntries(roles.map((r) => [r.slug, r.name]));
+  }
+
+  const targetSlugs = event.targetRoleSlugs;
+
+  function renderRsvpGroup(
+    rsvps: RsvpWithUser[],
+    label: string,
+    icon: React.ReactNode,
+    colorClass: string,
+  ) {
+    if (rsvps.length === 0) return null;
+
+    if (hasRoleTargeting) {
+      const groups = groupByRole(rsvps, targetSlugs, roleNames);
+      return (
+        <div>
+          <p className={`flex items-center gap-1 text-sm font-medium ${colorClass}`}>
+            {icon}
+            {label} ({rsvps.length})
+          </p>
+          <div className="ml-5 mt-1 space-y-1">
+            {targetSlugs.map((slug) => {
+              const names = groups[slug] ?? [];
+              return (
+                <p key={slug} className="text-sm">
+                  <span className="font-medium">{roleNames[slug] ?? slug}</span>
+                  <span className="text-muted-foreground">
+                    {" "}({names.length}){names.length > 0 ? `: ${names.join(", ")}` : ""}
+                  </span>
+                </p>
+              );
+            })}
+            {groups["_other"] && groups["_other"].length > 0 && (
+              <p className="text-sm">
+                <span className="font-medium">Other</span>
+                <span className="text-muted-foreground">
+                  {" "}({groups["_other"].length}): {groups["_other"].join(", ")}
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <p className={`flex items-center gap-1 text-sm font-medium ${colorClass}`}>
+          {icon}
+          {label} ({rsvps.length})
+        </p>
+        <p className="ml-5 text-sm text-muted-foreground">
+          {rsvps.map((r) => r.user.name ?? "Unknown").join(", ")}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -113,38 +231,23 @@ export default async function EventDetailPage({
 
           {event.rsvps.length > 0 && (
             <div className="space-y-3 pt-2">
-              {accepted.length > 0 && (
-                <div>
-                  <p className="flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400">
-                    <Check className="h-3.5 w-3.5" />
-                    Accepted ({accepted.length})
-                  </p>
-                  <p className="ml-5 text-sm text-muted-foreground">
-                    {accepted.map((r) => r.user.name ?? "Unknown").join(", ")}
-                  </p>
-                </div>
+              {renderRsvpGroup(
+                accepted,
+                "Accepted",
+                <Check className="h-3.5 w-3.5" />,
+                "text-green-600 dark:text-green-400",
               )}
-              {maybe.length > 0 && (
-                <div>
-                  <p className="flex items-center gap-1 text-sm font-medium text-amber-600 dark:text-amber-400">
-                    <HelpCircle className="h-3.5 w-3.5" />
-                    Maybe ({maybe.length})
-                  </p>
-                  <p className="ml-5 text-sm text-muted-foreground">
-                    {maybe.map((r) => r.user.name ?? "Unknown").join(", ")}
-                  </p>
-                </div>
+              {renderRsvpGroup(
+                maybe,
+                "Maybe",
+                <HelpCircle className="h-3.5 w-3.5" />,
+                "text-amber-600 dark:text-amber-400",
               )}
-              {declined.length > 0 && (
-                <div>
-                  <p className="flex items-center gap-1 text-sm font-medium text-red-600 dark:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                    Declined ({declined.length})
-                  </p>
-                  <p className="ml-5 text-sm text-muted-foreground">
-                    {declined.map((r) => r.user.name ?? "Unknown").join(", ")}
-                  </p>
-                </div>
+              {renderRsvpGroup(
+                declined,
+                "Declined",
+                <X className="h-3.5 w-3.5" />,
+                "text-red-600 dark:text-red-400",
               )}
             </div>
           )}
