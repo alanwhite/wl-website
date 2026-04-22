@@ -65,7 +65,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const canManageCats = canManageDocuments(session.user, managerRoles);
 
   const breadcrumbs = await getBreadcrumbs(category.id);
-  const folderTree = canManageCats ? await buildFolderTree() : [];
+  const folderTree = canManageCats ? await buildFolderTree(session.user) : [];
 
   // Filter children by access
   const accessibleChildren = isAdmin
