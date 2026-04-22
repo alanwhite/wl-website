@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { deleteDocument } from "@/lib/actions/library";
+import { MoveDialog } from "./move-dialog";
 import { toast } from "sonner";
+import type { FolderNode } from "@/lib/folder-tree";
 
 interface DocumentItem {
   id: string;
@@ -20,6 +22,9 @@ interface DocumentItem {
 interface DocumentListProps {
   documents: DocumentItem[];
   canManage: boolean;
+  canMove?: boolean;
+  categoryId?: string;
+  folders?: FolderNode[];
 }
 
 function formatFileSize(bytes: number): string {
@@ -42,7 +47,7 @@ function fileTypeLabel(type: string): string {
   return labels[type] ?? type.split("/").pop()?.toUpperCase() ?? "FILE";
 }
 
-export function DocumentList({ documents: initialDocs, canManage }: DocumentListProps) {
+export function DocumentList({ documents: initialDocs, canManage, canMove, categoryId, folders }: DocumentListProps) {
   const [documents, setDocuments] = useState(initialDocs);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -94,6 +99,15 @@ export function DocumentList({ documents: initialDocs, canManage }: DocumentList
                 Download
               </a>
             </Button>
+            {canMove && folders && categoryId && (
+              <MoveDialog
+                itemId={doc.id}
+                itemName={doc.title}
+                itemType="document"
+                currentCategoryId={categoryId}
+                folders={folders}
+              />
+            )}
             {canManage && (
               <Button
                 variant="outline"

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DocumentList } from "@/components/library/document-list";
 import { DocumentUpload } from "@/components/library/document-upload";
+import { MoveDialog } from "@/components/library/move-dialog";
+import { buildFolderTree } from "@/lib/folder-tree";
 import { CategoryCard } from "@/components/library/category-card";
 import { ChevronRight, Plus } from "lucide-react";
 
@@ -63,6 +65,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const canManageCats = canManageDocuments(session.user, managerRoles);
 
   const breadcrumbs = await getBreadcrumbs(category.id);
+  const folderTree = canManageCats ? await buildFolderTree() : [];
 
   // Filter children by access
   const accessibleChildren = isAdmin
@@ -103,14 +106,26 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {accessibleChildren.length > 0 && (
         <div className="space-y-3">
           {accessibleChildren.map((child) => (
-            <CategoryCard
-              key={child.id}
-              slug={child.slug}
-              name={child.name}
-              description={child.description}
-              documentCount={child._count.documents}
-              childCount={child._count.children}
-            />
+            <div key={child.id} className="flex items-center gap-2">
+              <div className="flex-1">
+                <CategoryCard
+                  slug={child.slug}
+                  name={child.name}
+                  description={child.description}
+                  documentCount={child._count.documents}
+                  childCount={child._count.children}
+                />
+              </div>
+              {canManageCats && (
+                <MoveDialog
+                  itemId={child.id}
+                  itemName={child.name}
+                  itemType="category"
+                  currentCategoryId={category.id}
+                  folders={folderTree}
+                />
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -138,6 +153,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 createdAt: d.createdAt,
               }))}
               canManage={canUpload}
+              canMove={canManageCats}
+              categoryId={category.id}
+              folders={folderTree}
             />
           </CardContent>
         </Card>

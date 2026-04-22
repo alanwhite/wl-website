@@ -158,6 +158,82 @@ export async function deleteCategory(id: string) {
   revalidatePath("/documents");
 }
 
+// ── Move operations (role-gated) ──
+
+export async function moveDocument(documentId: string, targetCategoryId: string) {
+  const user = await requireDocumentManager();
+
+  const doc = await prisma.libraryDocument.findUnique({
+    where: { id: documentId },
+    include: { category: { select: { name: true, slug: true } } },
+  });
+  if (!doc) throw new Error("Document not found");
+
+  const target = await prisma.libraryCategory.findUnique({
+    where: { id: targetCategoryId },
+    select: { name: true, slug: true },
+  });
+  if (!target) throw new Error("Target category not found");
+
+  await prisma.libraryDocument.update({
+    where: { id: documentId },
+    data: { categoryId: targetCategoryId },
+  });
+
+  await logAudit({
+    userId: user.id,
+    userName: user.name ?? "Manager",
+    action: "library.document.move",
+    targetType: "LibraryDocument",
+    targetId: documentId,
+    details: { title: doc.title, from: doc.category.name, to: target.name },
+  });
+
+  revalidatePath(`/documents/${doc.category.slug}`);
+  revalidatePath(`/documents/${target.slug}`);
+}
+
+export async function moveCategory(categoryId: string, targetParentId: string | null) {
+  const user = await requireDocumentManager();
+
+  const category = await prisma.libraryCategory.findUnique({
+    where: { id: categoryId },
+    select: { name: true, parentId: true },
+  });
+  if (!category) throw new Error("Category not found");
+
+  // Prevent moving a category into itself or its own descendants
+  if (targetParentId) {
+    let checkId: string | null = targetParentId;
+    while (checkId) {
+      if (checkId === categoryId) {
+        throw new Error("Cannot move a folder into itself or its sub-folders");
+      }
+      const parent = await prisma.libraryCategory.findUnique({
+        where: { id: checkId },
+        select: { parentId: true },
+      }) as { parentId: string | null } | null;
+      checkId = parent?.parentId ?? null;
+    }
+  }
+
+  await prisma.libraryCategory.update({
+    where: { id: categoryId },
+    data: { parentId: targetParentId },
+  });
+
+  await logAudit({
+    userId: user.id,
+    userName: user.name ?? "Manager",
+    action: "library.category.move",
+    targetType: "LibraryCategory",
+    targetId: categoryId,
+    details: { name: category.name, targetParentId },
+  });
+
+  revalidatePath("/documents");
+}
+
 // ── Document management (per-category upload permissions) ──
 
 export async function uploadDocument(categoryId: string, formData: FormData) {
