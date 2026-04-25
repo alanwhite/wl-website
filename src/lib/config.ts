@@ -347,6 +347,20 @@ export async function getFinancialCategories(): Promise<{ name: string; type: st
   ];
 }
 
+export interface CsvMapping {
+  dateColumn: number;
+  descriptionColumn: number;
+  amountColumn: number;
+  creditColumn?: number;  // if bank uses separate credit/debit columns
+  debitColumn?: number;
+  dateFormat: string;     // "DD/MM/YYYY", "YYYY-MM-DD", etc.
+  hasHeader: boolean;
+}
+
+export async function getCsvMapping(): Promise<CsvMapping | null> {
+  return getConfigJson<CsvMapping>("financials.csvMapping");
+}
+
 export async function getAddressData(): Promise<AddressData | null> {
   return getConfigJson<AddressData>("registration.addressData");
 }

@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getFinancialManagerRoles, canManageFinancials } from "@/lib/config";
+import { getFinancialManagerRoles, canManageFinancials, setConfig, invalidateConfigCache } from "@/lib/config";
+import type { CsvMapping } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 
@@ -124,4 +125,55 @@ export async function deleteTransaction(transactionId: string) {
   });
 
   revalidatePath("/financials");
+}
+
+// ── CSV Import ──
+
+export async function saveCsvMapping(mapping: CsvMapping) {
+  const user = await requireFinancialManager();
+  await setConfig("financials.csvMapping", JSON.stringify(mapping));
+  invalidateConfigCache("financials.csvMapping");
+
+  await logAudit({
+    userId: user.id,
+    userName: user.name ?? "Treasurer",
+    action: "financial.csvMapping.update",
+  });
+}
+
+export async function importTransactions(transactions: {
+  date: string;
+  type: string;
+  category: string;
+  description: string;
+  amount: number;
+  reference?: string;
+}[]) {
+  const user = await requireFinancialManager();
+
+  const created = await prisma.$transaction(
+    transactions.map((tx) =>
+      prisma.transaction.create({
+        data: {
+          date: new Date(tx.date),
+          type: tx.type,
+          category: tx.category,
+          description: tx.description,
+          amount: tx.amount,
+          reference: tx.reference || null,
+          createdBy: user.id,
+        },
+      }),
+    ),
+  );
+
+  await logAudit({
+    userId: user.id,
+    userName: user.name ?? "Treasurer",
+    action: "financial.import",
+    details: { count: created.length },
+  });
+
+  revalidatePath("/financials");
+  return created.length;
 }

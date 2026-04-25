@@ -66,6 +66,11 @@ export default async function FinancialsPage() {
             <Link href="/financials/transactions">All Transactions</Link>
           </Button>
           {canManage && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/financials/import">Import CSV</Link>
+            </Button>
+          )}
+          {canManage && (
             <Button asChild size="sm">
               <Link href="/financials/add">
                 <Plus className="mr-1 h-4 w-4" />
