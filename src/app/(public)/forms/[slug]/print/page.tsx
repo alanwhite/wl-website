@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { getSiteInfo } from "@/lib/config";
 import Markdown from "react-markdown";
+import QRCode from "qrcode";
 import type { RegistrationField } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,15 @@ export default async function PrintFormPage({
     });
     termsContent = termsPage?.content ?? null;
   }
+
+  // Generate QR code linking to the online form
+  const formUrl = `${process.env.AUTH_URL}/forms/${slug}`;
+  const qrSvg = await QRCode.toString(formUrl, {
+    type: "svg",
+    width: 80,
+    margin: 0,
+    color: { dark: "#111", light: "#fff" },
+  });
 
   return (
     <html>
@@ -62,6 +72,9 @@ export default async function PrintFormPage({
           .sig-field { flex: 1; }
           .sig-line { border-bottom: 1px solid #999; min-height: 24px; margin-top: 20px; }
           .sig-label { font-size: 10px; color: #666; margin-top: 4px; }
+          .qr-section { margin-top: 16px; display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #ccc; }
+          .qr-code { flex-shrink: 0; }
+          .qr-text { font-size: 9px; color: #666; }
           @media screen { body { max-width: 700px; margin: 40px auto; padding: 0 20px; } }
         `}</style>
       </head>
@@ -145,6 +158,15 @@ export default async function PrintFormPage({
           <div className="sig-field">
             <div className="sig-line" />
             <div className="sig-label">Date</div>
+          </div>
+        </div>
+
+        {/* QR code linking to online form */}
+        <div className="qr-section">
+          <div className="qr-code" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+          <div className="qr-text">
+            Scan to fill in this form online at<br />
+            {formUrl}
           </div>
         </div>
       </body>
