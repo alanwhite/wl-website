@@ -61,8 +61,17 @@ function parseCSV(text: string): string[][] {
   });
 }
 
+const MONTH_MAP: Record<string, string> = {
+  jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+  jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+  january: "01", february: "02", march: "03", april: "04",
+  june: "06", july: "07", august: "08", september: "09",
+  october: "10", november: "11", december: "12",
+};
+
 function parseDate(value: string, format: string): string | null {
   const cleaned = value.trim();
+  if (!cleaned) return null;
   try {
     if (format === "DD/MM/YYYY") {
       const [d, m, y] = cleaned.split("/");
@@ -73,7 +82,22 @@ function parseDate(value: string, format: string): string | null {
       const [m, d, y] = cleaned.split("/");
       return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
     }
-    // Try native parsing
+    if (format === "DD MMM YYYY" || format === "auto") {
+      // Handle "05 Jan 2026", "5 January 2026", etc.
+      const parts = cleaned.split(/[\s-]+/);
+      if (parts.length === 3) {
+        const d = parts[0].padStart(2, "0");
+        const m = MONTH_MAP[parts[1].toLowerCase()];
+        const y = parts[2];
+        if (m && y.length === 4) return `${y}-${m}-${d}`;
+      }
+    }
+    // Auto-detect: try native Date parsing as last resort
+    if (format === "auto" || format === "DD MMM YYYY") {
+      const d = new Date(cleaned);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+    // Try native parsing for any format
     const d = new Date(cleaned);
     if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
   } catch {}
@@ -95,7 +119,7 @@ export function CsvImport({ existingMapping, categories, existingTransactions }:
       dateColumn: 0,
       descriptionColumn: 1,
       amountColumn: 2,
-      dateFormat: "DD/MM/YYYY",
+      dateFormat: "auto",
       hasHeader: true,
     },
   );
@@ -337,6 +361,8 @@ export function CsvImport({ existingMapping, categories, existingTransactions }:
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="auto">Auto-detect</SelectItem>
+                  <SelectItem value="DD MMM YYYY">DD MMM YYYY (e.g. 05 Jan 2026)</SelectItem>
                   <SelectItem value="DD/MM/YYYY">DD/MM/YYYY (UK)</SelectItem>
                   <SelectItem value="YYYY-MM-DD">YYYY-MM-DD (ISO)</SelectItem>
                   <SelectItem value="MM/DD/YYYY">MM/DD/YYYY (US)</SelectItem>
