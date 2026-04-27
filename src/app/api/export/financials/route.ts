@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       tx.type,
       escapeCsv(tx.category),
       escapeCsv(tx.description),
-      (tx.amount / 100).toFixed(2),
+      ((tx.type === "expense" ? -tx.amount : tx.amount) / 100).toFixed(2),
       escapeCsv(tx.reference ?? ""),
     ].join(","),
   );

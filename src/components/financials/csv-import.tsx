@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { saveCsvMapping, importTransactions } from "@/lib/actions/financials";
+import { saveCsvMapping, resetCsvMapping, importTransactions } from "@/lib/actions/financials";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { CsvMapping } from "@/lib/config";
@@ -295,9 +295,24 @@ export function CsvImport({ existingMapping, categories, existingTransactions }:
             className="hidden"
             onChange={handleFileUpload}
           />
-          <Button onClick={() => fileRef.current?.click()}>
-            Choose CSV File
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => fileRef.current?.click()}>
+              Choose CSV File
+            </Button>
+            {existingMapping && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await resetCsvMapping();
+                  toast.success("Column mapping cleared — upload a file to re-map.");
+                  router.refresh();
+                }}
+              >
+                Reset Column Mapping
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );

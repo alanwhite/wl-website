@@ -129,6 +129,13 @@ export async function deleteTransaction(transactionId: string) {
 
 // ── CSV Import ──
 
+export async function resetCsvMapping() {
+  await requireFinancialManager();
+  await prisma.siteConfig.delete({ where: { key: "financials.csvMapping" } }).catch(() => {});
+  invalidateConfigCache("financials.csvMapping");
+  revalidatePath("/financials/import");
+}
+
 export async function saveCsvMapping(mapping: CsvMapping) {
   const user = await requireFinancialManager();
   await setConfig("financials.csvMapping", JSON.stringify(mapping));
