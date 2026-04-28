@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -113,20 +112,22 @@ export function DynamicFormFields({ fields, defaultValues }: DynamicFormProps) {
             )}
 
             {field.type === "checkbox" && (
-              <div className="flex items-center gap-2">
-                <Checkbox
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
                   id={field.name}
                   name={field.name}
                   defaultChecked={
                     (defaultValues?.[field.name] as boolean) ?? false
                   }
-                  onCheckedChange={(checked) =>
-                    updateValue(field.name, checked)
+                  onChange={(e) =>
+                    updateValue(field.name, e.target.checked)
                   }
+                  className="mt-1 h-4 w-4 rounded border"
                 />
-                <Label htmlFor={field.name} className="font-normal">
+                <label htmlFor={field.name} className="text-sm font-normal">
                   {field.helpText ?? field.label}
-                </Label>
+                </label>
               </div>
             )}
 
