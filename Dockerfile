@@ -26,7 +26,7 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
-RUN mkdir -p uploads && chown nextjs:nodejs uploads
+RUN mkdir -p uploads .next/cache && chown -R nextjs:nodejs uploads .next/cache
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadDocument } from "@/lib/actions/library";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface DocumentUploadProps {
   categoryId: string;
@@ -14,6 +15,7 @@ interface DocumentUploadProps {
 export function DocumentUpload({ categoryId }: DocumentUploadProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -21,6 +23,7 @@ export function DocumentUpload({ categoryId }: DocumentUploadProps) {
       await uploadDocument(categoryId, formData);
       toast.success("Document uploaded");
       setOpen(false);
+      router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
