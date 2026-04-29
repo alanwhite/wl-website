@@ -376,13 +376,12 @@ export interface NotificationType {
   slug: string;
   label: string;
   description: string;
-  channels: ("push" | "email" | "newsletter")[];
+  channels: ("push" | "email")[];
 }
 
 export interface NotificationDefaults {
   push: boolean;
   email: boolean;
-  newsletter: boolean;
 }
 
 export async function getNotificationTypes(): Promise<NotificationType[]> {
@@ -391,11 +390,10 @@ export async function getNotificationTypes(): Promise<NotificationType[]> {
     { slug: "polls", label: "New polls", description: "When a new poll is published", channels: ["push", "email"] },
     { slug: "announcements", label: "Announcements", description: "New announcements posted", channels: ["push", "email"] },
     { slug: "events", label: "Calendar events", description: "New events added to the calendar", channels: ["push", "email"] },
-    { slug: "newsletter", label: "Newsletter", description: "Periodic newsletter updates", channels: ["email", "newsletter"] },
   ];
 }
 
 export async function getNotificationDefaults(): Promise<NotificationDefaults> {
   const defaults = await getConfigJson<NotificationDefaults>("notifications.defaults");
-  return defaults ?? { push: true, email: true, newsletter: false };
+  return defaults ?? { push: true, email: true };
 }

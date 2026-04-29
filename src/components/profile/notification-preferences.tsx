@@ -10,7 +10,6 @@ import type { NotificationType, NotificationDefaults } from "@/lib/config";
 const CHANNEL_LABELS: Record<string, string> = {
   push: "Push",
   email: "Email",
-  newsletter: "Newsletter",
 };
 
 interface NotificationPreferencesProps {
@@ -98,7 +97,7 @@ export function NotificationPreferences({
                   </td>
                   {allChannels.map((ch) => (
                     <td key={ch} className="px-3 py-3 text-center">
-                      {t.channels.includes(ch as "push" | "email" | "newsletter") ? (
+                      {t.channels.includes(ch as "push" | "email") ? (
                         <input
                           type="checkbox"
                           checked={prefs[`${ch}:${t.slug}`] ?? false}

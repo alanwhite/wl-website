@@ -100,7 +100,6 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [notifTypesJson, setNotifTypesJson] = useState(JSON.stringify(settings.notificationTypes, null, 2));
   const [notifDefaultPush, setNotifDefaultPush] = useState(settings.notificationDefaults.push);
   const [notifDefaultEmail, setNotifDefaultEmail] = useState(settings.notificationDefaults.email);
-  const [notifDefaultNewsletter, setNotifDefaultNewsletter] = useState(settings.notificationDefaults.newsletter);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -1218,16 +1217,6 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                 />
                 <Label htmlFor="notifDefaultEmail">Email notifications enabled by default</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="notifDefaultNewsletter"
-                  checked={notifDefaultNewsletter}
-                  onChange={(e) => setNotifDefaultNewsletter(e.target.checked)}
-                  className="h-4 w-4 rounded border"
-                />
-                <Label htmlFor="notifDefaultNewsletter">Newsletter enabled by default</Label>
-              </div>
             </div>
             <Button
               disabled={loading}
@@ -1235,7 +1224,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                 setLoading(true);
                 try {
                   await updateNotificationDefaults(
-                    JSON.stringify({ push: notifDefaultPush, email: notifDefaultEmail, newsletter: notifDefaultNewsletter }),
+                    JSON.stringify({ push: notifDefaultPush, email: notifDefaultEmail }),
                   );
                   toast.success("Defaults saved");
                 } catch {
