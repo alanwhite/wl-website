@@ -17,7 +17,7 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [profile, userRoles, authenticators, notifTypes, notifDefaults, savedPrefs] = await Promise.all([
+  const [profile, userRoles, authenticators, notifTypes, notifDefaults, savedPrefs, user] = await Promise.all([
     prisma.userProfile.findUnique({
       where: { userId: session.user.id },
     }),
@@ -41,6 +41,10 @@ export default async function ProfilePage() {
     prisma.notificationPreference.findMany({
       where: { userId: session.user.id },
       select: { channel: true, type: true, enabled: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { newsletterOptIn: true },
     }),
   ]);
 
@@ -170,6 +174,14 @@ export default async function ProfilePage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="mt-3 flex items-center gap-2 border-t pt-3">
+              <span className="text-sm font-medium">Newsletter</span>
+              {user?.newsletterOptIn ? (
+                <span className="text-sm text-green-600">Subscribed</span>
+              ) : (
+                <span className="text-sm text-muted-foreground">Not subscribed</span>
+              )}
             </div>
           </CardContent>
         </Card>

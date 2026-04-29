@@ -41,7 +41,7 @@ export async function updateProfile(formData: FormData) {
 
   const updateData: { name?: string; newsletterOptIn?: boolean } = {};
   if (name) updateData.name = name;
-  if (isNewsletterEnabled()) updateData.newsletterOptIn = newsletterOptIn;
+  updateData.newsletterOptIn = newsletterOptIn;
 
   if (Object.keys(updateData).length > 0) {
     await prisma.user.update({

@@ -69,18 +69,16 @@ export default async function EditProfilePage() {
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" name="bio" rows={4} defaultValue={profile?.bio ?? ""} />
             </div>
-            {showNewsletter && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="newsletterOptIn"
-                  name="newsletterOptIn"
-                  defaultChecked={user?.newsletterOptIn ?? false}
-                  className="h-4 w-4 rounded border"
-                />
-                <Label htmlFor="newsletterOptIn">Subscribe to email updates and newsletters</Label>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="newsletterOptIn"
+                name="newsletterOptIn"
+                defaultChecked={user?.newsletterOptIn ?? false}
+                className="h-4 w-4 rounded border"
+              />
+              <Label htmlFor="newsletterOptIn">Subscribe to email updates and newsletters</Label>
+            </div>
             <div className="flex gap-4">
               <Button type="submit">Save Changes</Button>
               <Button variant="outline" asChild>
