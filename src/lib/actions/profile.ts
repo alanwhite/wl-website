@@ -67,6 +67,31 @@ export async function updateProfile(formData: FormData) {
   redirect("/profile");
 }
 
+export async function updateNewsletterOptIn(optIn: boolean) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated");
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { newsletterOptIn: optIn },
+  });
+
+  // Sync with EmailOctopus if configured
+  if (isNewsletterEnabled() && session.user.email) {
+    try {
+      if (optIn) {
+        await subscribeContact(session.user.email, session.user.name);
+      } else {
+        await unsubscribeContact(session.user.email);
+      }
+    } catch (e) {
+      console.error("Newsletter sync failed:", e);
+    }
+  }
+
+  revalidatePath("/profile");
+}
+
 export async function updateNotificationPreferences(
   preferences: { channel: string; type: string; enabled: boolean }[],
 ) {

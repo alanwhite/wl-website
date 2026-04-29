@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PasskeyManager } from "@/components/auth/passkey-manager";
 import { getNotificationTypes, getNotificationDefaults } from "@/lib/config";
+import { NotificationPreferences } from "@/components/profile/notification-preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -48,16 +49,6 @@ export default async function ProfilePage() {
     }),
   ]);
 
-  // Build a lookup of effective preferences (defaults + overrides)
-  const prefLookup: Record<string, boolean> = {};
-  for (const t of notifTypes) {
-    for (const ch of t.channels) {
-      prefLookup[`${ch}:${t.slug}`] = notifDefaults[ch as keyof typeof notifDefaults] ?? true;
-    }
-  }
-  for (const s of savedPrefs) {
-    prefLookup[`${s.channel}:${s.type}`] = s.enabled;
-  }
 
   const initials = session.user.name
     ?.split(" ")
@@ -134,57 +125,12 @@ export default async function ProfilePage() {
       </Card>
 
       {notifTypes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notification Preferences</CardTitle>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/profile/edit">Change</Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-2 pr-4 text-left font-medium" />
-                    <th className="px-3 py-2 text-center font-medium">Push</th>
-                    <th className="px-3 py-2 text-center font-medium">Email</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {notifTypes.map((t) => (
-                    <tr key={t.slug} className="border-b last:border-0">
-                      <td className="py-2 pr-4 font-medium">{t.label}</td>
-                      {(["push", "email"] as const).map((ch) => (
-                        <td key={ch} className="px-3 py-2 text-center">
-                          {t.channels.includes(ch) ? (
-                            prefLookup[`${ch}:${t.slug}`] ? (
-                              <span className="text-green-600">On</span>
-                            ) : (
-                              <span className="text-muted-foreground">Off</span>
-                            )
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-3 flex items-center gap-2 border-t pt-3">
-              <span className="text-sm font-medium">Newsletter</span>
-              {user?.newsletterOptIn ? (
-                <span className="text-sm text-green-600">Subscribed</span>
-              ) : (
-                <span className="text-sm text-muted-foreground">Not subscribed</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <NotificationPreferences
+          types={notifTypes}
+          defaults={notifDefaults}
+          saved={savedPrefs}
+          newsletterOptIn={user?.newsletterOptIn ?? false}
+        />
       )}
 
       {passkeysEnabled && (

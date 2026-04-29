@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { updateNotificationPreferences } from "@/lib/actions/profile";
+import { updateNotificationPreferences, updateNewsletterOptIn } from "@/lib/actions/profile";
 import { toast } from "sonner";
 import type { NotificationType, NotificationDefaults } from "@/lib/config";
 
@@ -16,62 +16,63 @@ interface NotificationPreferencesProps {
   types: NotificationType[];
   defaults: NotificationDefaults;
   saved: { channel: string; type: string; enabled: boolean }[];
+  newsletterOptIn: boolean;
 }
 
 export function NotificationPreferences({
   types,
   defaults,
   saved,
+  newsletterOptIn: initialNewsletter,
 }: NotificationPreferencesProps) {
   const [prefs, setPrefs] = useState(() => {
     const map: Record<string, boolean> = {};
-    // Set defaults for all type/channel combinations
     for (const t of types) {
       for (const ch of t.channels) {
         map[`${ch}:${t.slug}`] = defaults[ch as keyof NotificationDefaults] ?? true;
       }
     }
-    // Override with saved preferences
     for (const s of saved) {
       map[`${s.channel}:${s.type}`] = s.enabled;
     }
     return map;
   });
-  const [saving, setSaving] = useState(false);
+  const [newsletter, setNewsletter] = useState(initialNewsletter);
 
-  // Get all unique channels across all types
   const allChannels = Array.from(
     new Set(types.flatMap((t) => t.channels)),
   );
 
-  function toggle(channel: string, type: string) {
+  async function toggle(channel: string, type: string) {
     const key = `${channel}:${type}`;
-    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+    const newValue = !prefs[key];
+    setPrefs((prev) => ({ ...prev, [key]: newValue }));
+    try {
+      await updateNotificationPreferences([{ channel, type, enabled: newValue }]);
+    } catch {
+      setPrefs((prev) => ({ ...prev, [key]: !newValue }));
+      toast.error("Failed to update preference");
+    }
   }
 
-  async function handleSave() {
-    setSaving(true);
+  async function toggleNewsletter() {
+    const newValue = !newsletter;
+    setNewsletter(newValue);
     try {
-      const preferences = Object.entries(prefs).map(([key, enabled]) => {
-        const [channel, type] = key.split(":");
-        return { channel, type, enabled };
-      });
-      await updateNotificationPreferences(preferences);
-      toast.success("Notification preferences saved");
+      await updateNewsletterOptIn(newValue);
     } catch {
-      toast.error("Failed to save preferences");
-    } finally {
-      setSaving(false);
+      setNewsletter(!newValue);
+      toast.error("Failed to update preference");
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Notification Preferences</CardTitle>
+        <CardTitle className="text-lg">Notification Preferences</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
+      <CardContent>
+        <p className="mb-4 text-sm text-muted-foreground">
           Choose how you want to be notified about new items.
         </p>
         <div className="overflow-x-auto">
@@ -98,11 +99,10 @@ export function NotificationPreferences({
                   {allChannels.map((ch) => (
                     <td key={ch} className="px-3 py-3 text-center">
                       {t.channels.includes(ch as "push" | "email") ? (
-                        <input
-                          type="checkbox"
+                        <Switch
                           checked={prefs[`${ch}:${t.slug}`] ?? false}
-                          onChange={() => toggle(ch, t.slug)}
-                          className="h-4 w-4 rounded border"
+                          onCheckedChange={() => toggle(ch, t.slug)}
+                          size="sm"
                         />
                       ) : (
                         <span className="text-muted-foreground">—</span>
@@ -114,9 +114,17 @@ export function NotificationPreferences({
             </tbody>
           </table>
         </div>
-        <Button onClick={handleSave} disabled={saving} size="sm">
-          {saving ? "Saving..." : "Save Preferences"}
-        </Button>
+        <div className="mt-3 flex items-center justify-between border-t pt-3">
+          <div>
+            <div className="text-sm font-medium">Newsletter</div>
+            <div className="text-xs text-muted-foreground">Periodic email updates and newsletters</div>
+          </div>
+          <Switch
+            checked={newsletter}
+            onCheckedChange={toggleNewsletter}
+            size="sm"
+          />
+        </div>
       </CardContent>
     </Card>
   );

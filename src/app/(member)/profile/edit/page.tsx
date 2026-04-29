@@ -7,9 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfile } from "@/lib/actions/profile";
-import { isNewsletterEnabled } from "@/lib/emailoctopus";
-import { getNotificationTypes, getNotificationDefaults } from "@/lib/config";
-import { NotificationPreferences } from "@/components/profile/notification-preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -17,18 +14,7 @@ export default async function EditProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [profile, user, notificationTypes, notificationDefaults, savedPrefs] = await Promise.all([
-    prisma.userProfile.findUnique({ where: { userId: session.user.id } }),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { newsletterOptIn: true } }),
-    getNotificationTypes(),
-    getNotificationDefaults(),
-    prisma.notificationPreference.findMany({
-      where: { userId: session.user.id },
-      select: { channel: true, type: true, enabled: true },
-    }),
-  ]);
-
-  const showNewsletter = isNewsletterEnabled();
+  const profile = await prisma.userProfile.findUnique({ where: { userId: session.user.id } });
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -69,16 +55,6 @@ export default async function EditProfilePage() {
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" name="bio" rows={4} defaultValue={profile?.bio ?? ""} />
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="newsletterOptIn"
-                name="newsletterOptIn"
-                defaultChecked={user?.newsletterOptIn ?? false}
-                className="h-4 w-4 rounded border"
-              />
-              <Label htmlFor="newsletterOptIn">Subscribe to email updates and newsletters</Label>
-            </div>
             <div className="flex gap-4">
               <Button type="submit">Save Changes</Button>
               <Button variant="outline" asChild>
@@ -88,14 +64,6 @@ export default async function EditProfilePage() {
           </form>
         </CardContent>
       </Card>
-
-      <div className="mt-6">
-        <NotificationPreferences
-          types={notificationTypes}
-          defaults={notificationDefaults}
-          saved={savedPrefs}
-        />
-      </div>
     </div>
   );
 }
