@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfile } from "@/lib/actions/profile";
 import { isNewsletterEnabled } from "@/lib/emailoctopus";
+import { getNotificationTypes, getNotificationDefaults } from "@/lib/config";
+import { NotificationPreferences } from "@/components/profile/notification-preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +17,15 @@ export default async function EditProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [profile, user] = await Promise.all([
+  const [profile, user, notificationTypes, notificationDefaults, savedPrefs] = await Promise.all([
     prisma.userProfile.findUnique({ where: { userId: session.user.id } }),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { newsletterOptIn: true } }),
+    getNotificationTypes(),
+    getNotificationDefaults(),
+    prisma.notificationPreference.findMany({
+      where: { userId: session.user.id },
+      select: { channel: true, type: true, enabled: true },
+    }),
   ]);
 
   const showNewsletter = isNewsletterEnabled();
@@ -82,6 +90,14 @@ export default async function EditProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <NotificationPreferences
+          types={notificationTypes}
+          defaults={notificationDefaults}
+          saved={savedPrefs}
+        />
+      </div>
     </div>
   );
 }

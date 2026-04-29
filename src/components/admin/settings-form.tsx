@@ -35,10 +35,12 @@ import {
   updateFinancialRoles,
   addHeroImage,
   removeHeroImage,
+  updateNotificationTypes,
+  updateNotificationDefaults,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
-import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig } from "@/lib/config";
+import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, NotificationType, NotificationDefaults } from "@/lib/config";
 import { NavigationEditor } from "@/components/admin/navigation-editor";
 
 interface SettingsFormProps {
@@ -67,6 +69,8 @@ interface SettingsFormProps {
     announcementManagerRoles: string[];
     formCreatorRoles: string[];
     documentManagerRoles: string[];
+    notificationTypes: NotificationType[];
+    notificationDefaults: NotificationDefaults;
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -93,6 +97,10 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [financialManagerRoleSlugs, setFinancialManagerRoleSlugs] = useState<string[]>(settings.financialManagerRoles);
   const [financialViewerRoleSlugs, setFinancialViewerRoleSlugs] = useState<string[]>(settings.financialViewerRoles);
   const [financialYearStart, setFinancialYearStart] = useState(String(settings.financialYearStartMonth));
+  const [notifTypesJson, setNotifTypesJson] = useState(JSON.stringify(settings.notificationTypes, null, 2));
+  const [notifDefaultPush, setNotifDefaultPush] = useState(settings.notificationDefaults.push);
+  const [notifDefaultEmail, setNotifDefaultEmail] = useState(settings.notificationDefaults.email);
+  const [notifDefaultNewsletter, setNotifDefaultNewsletter] = useState(settings.notificationDefaults.newsletter);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -402,6 +410,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="calendar" className="justify-start">Calendar</TabsTrigger>
         <TabsTrigger value="financials" className="justify-start">Financials</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
+        <TabsTrigger value="notifications" className="justify-start">Notifications</TabsTrigger>
         <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
       </TabsList>
       <div className="flex-1 min-w-0">
@@ -1147,6 +1156,99 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       </TabsContent>
 
 
+      <TabsContent value="notifications">
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Types</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Define what members can be notified about. Each type has a slug, label, description, and which channels it supports.
+            </p>
+            <Textarea
+              value={notifTypesJson}
+              onChange={(e) => setNotifTypesJson(e.target.value)}
+              rows={12}
+              className="font-mono text-sm"
+            />
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  JSON.parse(notifTypesJson);
+                  await updateNotificationTypes(notifTypesJson);
+                  toast.success("Notification types saved");
+                } catch {
+                  toast.error("Invalid JSON");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Notification Types
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Default Preferences</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Default opt-in state for new members. Members can override these in their profile.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notifDefaultPush"
+                  checked={notifDefaultPush}
+                  onChange={(e) => setNotifDefaultPush(e.target.checked)}
+                  className="h-4 w-4 rounded border"
+                />
+                <Label htmlFor="notifDefaultPush">Push notifications enabled by default</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notifDefaultEmail"
+                  checked={notifDefaultEmail}
+                  onChange={(e) => setNotifDefaultEmail(e.target.checked)}
+                  className="h-4 w-4 rounded border"
+                />
+                <Label htmlFor="notifDefaultEmail">Email notifications enabled by default</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notifDefaultNewsletter"
+                  checked={notifDefaultNewsletter}
+                  onChange={(e) => setNotifDefaultNewsletter(e.target.checked)}
+                  className="h-4 w-4 rounded border"
+                />
+                <Label htmlFor="notifDefaultNewsletter">Newsletter enabled by default</Label>
+              </div>
+            </div>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await updateNotificationDefaults(
+                    JSON.stringify({ push: notifDefaultPush, email: notifDefaultEmail, newsletter: notifDefaultNewsletter }),
+                  );
+                  toast.success("Defaults saved");
+                } catch {
+                  toast.error("Failed to save");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Defaults
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
       <TabsContent value="integrations">
         <Card>
           <CardHeader>

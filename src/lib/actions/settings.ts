@@ -360,3 +360,31 @@ export interface NavLink {
   requiredRoleSlug: string | null;
   icon?: string;
 }
+
+export async function updateNotificationTypes(typesJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(typesJson); // validate JSON
+  await setConfig("notifications.types", typesJson);
+  invalidateConfigCache("notifications.types");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.notifications.types.update",
+  });
+}
+
+export async function updateNotificationDefaults(defaultsJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(defaultsJson); // validate JSON
+  await setConfig("notifications.defaults", defaultsJson);
+  invalidateConfigCache("notifications.defaults");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.notifications.defaults.update",
+  });
+}

@@ -66,3 +66,34 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/profile");
   redirect("/profile");
 }
+
+export async function updateNotificationPreferences(
+  preferences: { channel: string; type: string; enabled: boolean }[],
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated");
+
+  // Upsert each preference
+  await prisma.$transaction(
+    preferences.map((pref) =>
+      prisma.notificationPreference.upsert({
+        where: {
+          userId_channel_type: {
+            userId: session.user!.id,
+            channel: pref.channel,
+            type: pref.type,
+          },
+        },
+        update: { enabled: pref.enabled },
+        create: {
+          userId: session.user!.id,
+          channel: pref.channel,
+          type: pref.type,
+          enabled: pref.enabled,
+        },
+      }),
+    ),
+  );
+
+  revalidatePath("/profile");
+}

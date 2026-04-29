@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -84,6 +84,8 @@ export default async function AdminSettingsPage() {
           financialViewerRoles: (await getConfigJson<string[]>("financials.viewerRoles")) ?? [],
           financialYearStartMonth: parseInt((await getConfig("financials.yearStartMonth")) ?? "1"),
           pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
+          notificationTypes: await getNotificationTypes(),
+          notificationDefaults: await getNotificationDefaults(),
         }}
         tiers={tiers}
         roles={roles}

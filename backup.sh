@@ -69,6 +69,32 @@ else
 fi
 echo ""
 
+# ── Copy gateway config ──
+echo "── Copying gateway config ──"
+DOMAIN=""
+if [[ -f .env ]]; then
+  DOMAIN=$(grep -oP 'AUTH_URL="https://\K[^"]+' .env 2>/dev/null || true)
+fi
+GATEWAY_DIR="../wl-gateway"
+if [[ -n "$DOMAIN" && -d "$GATEWAY_DIR" ]]; then
+  mkdir -p "${TEMP_DIR}/gateway"
+  if [[ -f "${GATEWAY_DIR}/nginx/sites/${DOMAIN}.conf" ]]; then
+    cp "${GATEWAY_DIR}/nginx/sites/${DOMAIN}.conf" "${TEMP_DIR}/gateway/"
+    echo "Nginx config copied: ${DOMAIN}.conf"
+  else
+    echo "WARNING: No nginx config found for ${DOMAIN}"
+  fi
+  if [[ -d "${GATEWAY_DIR}/nginx/ssl/${DOMAIN}" ]]; then
+    cp -r "${GATEWAY_DIR}/nginx/ssl/${DOMAIN}" "${TEMP_DIR}/gateway/ssl/"
+    echo "SSL certs copied"
+  else
+    echo "WARNING: No SSL certs found for ${DOMAIN}"
+  fi
+else
+  echo "Skipped (no domain found or gateway directory missing)"
+fi
+echo ""
+
 # ── Create archive ──
 echo "── Creating archive ──"
 mkdir -p "$BACKUP_DIR"

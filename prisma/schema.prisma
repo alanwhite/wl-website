@@ -69,9 +69,10 @@ model User {
   eventRsvps        EventRsvp[]
   transactionsCreated Transaction[]   @relation("TransactionCreator")
   formSubmissions   FormSubmission[]
-  newsletterOptIn   Boolean           @default(false)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  newsletterOptIn           Boolean           @default(false)
+  notificationPreferences   NotificationPreference[]
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
 }
 
 model Account {
@@ -404,4 +405,18 @@ model FormSubmission {
   @@index([formId])
   @@index([status])
   @@index([createdAt])
+}
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   String   // "push", "email", "newsletter"
+  type      String   // "polls", "announcements", "events", etc.
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, channel, type])
+  @@index([userId])
 }
