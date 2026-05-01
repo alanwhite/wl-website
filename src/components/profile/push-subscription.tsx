@@ -36,7 +36,13 @@ export function PushSubscriptionManager({
     }
   }, []);
 
-  if (!supported) return null;
+  if (!supported) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Push notifications require this site to be added to your home screen. In your browser, tap the share button and choose &ldquo;Add to Home Screen&rdquo;, then open the site from there.
+      </p>
+    );
+  }
 
   async function handleSubscribe() {
     setLoading(true);
