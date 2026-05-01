@@ -6,6 +6,7 @@ import { isAdmin } from "@/lib/auth-helpers";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
+import { sendPushNotifications } from "@/lib/push";
 
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -42,6 +43,17 @@ export async function createAnnouncement(data: z.input<typeof announcementSchema
     targetId: announcement.id,
     details: { title: announcement.title },
   });
+
+  if (validated.published) {
+    sendPushNotifications({
+      type: "announcements",
+      title: announcement.title,
+      body: `New announcement: ${announcement.title}`,
+      url: "/announcements",
+      tag: `announcement-${announcement.id}`,
+      excludeUserId: admin.id,
+    }).catch((err) => console.error("[Push] Failed to send announcement notifications:", err));
+  }
 
   revalidatePath("/admin/announcements");
   revalidatePath("/dashboard");

@@ -47,6 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
         apple: faviconUrl,
       },
     } : {}),
+    manifest: "/manifest.json",
   };
 }
 

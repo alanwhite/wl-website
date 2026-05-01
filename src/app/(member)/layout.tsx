@@ -7,6 +7,7 @@ import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 import { getNotificationCounts } from "@/lib/notifications";
+import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,7 @@ export default async function MemberLayout({
           </main>
         </div>
         <MemberBottomNav items={memberLinks} notificationCounts={notificationCounts} />
+        <ServiceWorkerRegister />
       </div>
     </Providers>
   );

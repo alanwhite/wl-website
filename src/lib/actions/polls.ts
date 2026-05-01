@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { getPollManagerRoles, canManagePolls, canAccessPoll } from "@/lib/config";
+import { sendPushNotifications } from "@/lib/push";
 
 async function requireApprovedMember() {
   const session = await auth();
@@ -86,6 +87,18 @@ export async function createPoll(formData: FormData) {
     targetId: poll.id,
     details: { title: poll.title, isAnonymous, maxVotes, optionCount: options.length, targetRoleSlugs, targetMinTierLevel },
   });
+
+  // Send push notifications (non-blocking)
+  sendPushNotifications({
+    type: "polls",
+    title: poll.title,
+    body: `New poll: ${poll.title}`,
+    url: "/polls",
+    tag: `poll-${poll.id}`,
+    targetRoleSlugs: targetRoleSlugs.filter(Boolean),
+    targetMinTierLevel,
+    excludeUserId: user.id,
+  }).catch((err) => console.error("[Push] Failed to send poll notifications:", err));
 
   revalidatePath("/polls");
   return poll.id;

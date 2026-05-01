@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { PasskeyManager } from "@/components/auth/passkey-manager";
 import { getNotificationTypes, getNotificationDefaults } from "@/lib/config";
 import { NotificationPreferences } from "@/components/profile/notification-preferences";
+import { PushSubscriptionManager } from "@/components/profile/push-subscription";
+import { getVapidPublicKey } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,7 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [profile, userRoles, authenticators, notifTypes, notifDefaults, savedPrefs] = await Promise.all([
+  const [profile, userRoles, authenticators, notifTypes, notifDefaults, savedPrefs, pushSubCount] = await Promise.all([
     prisma.userProfile.findUnique({
       where: { userId: session.user.id },
     }),
@@ -43,7 +45,10 @@ export default async function ProfilePage() {
       where: { userId: session.user.id },
       select: { channel: true, type: true, enabled: true },
     }),
+    prisma.pushSubscription.count({ where: { userId: session.user.id } }),
   ]);
+
+  const vapidPublicKey = getVapidPublicKey();
 
 
   const initials = session.user.name
@@ -126,6 +131,23 @@ export default async function ProfilePage() {
           defaults={notifDefaults}
           saved={savedPrefs}
         />
+      )}
+
+      {vapidPublicKey && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Push Notifications</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Receive notifications on this device when new items are posted.
+            </p>
+            <PushSubscriptionManager
+              vapidPublicKey={vapidPublicKey}
+              hasSubscription={pushSubCount > 0}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {passkeysEnabled && (

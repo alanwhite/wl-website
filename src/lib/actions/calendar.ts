@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { getCalendarManagerRoles, canManageCalendar } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
+import { sendPushNotifications } from "@/lib/push";
 
 async function requireApprovedMember() {
   const session = await auth();
@@ -68,6 +69,18 @@ export async function createEvent(data: {
     targetId: event.id,
     details: { title: data.title },
   });
+
+  const dateStr = startDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  sendPushNotifications({
+    type: "events",
+    title: data.title,
+    body: `New event: ${data.title} on ${dateStr}`,
+    url: `/calendar/${event.id}`,
+    tag: `event-${event.id}`,
+    targetRoleSlugs: data.targetRoleSlugs,
+    targetMinTierLevel: data.targetMinTierLevel,
+    excludeUserId: user.id,
+  }).catch((err) => console.error("[Push] Failed to send event notifications:", err));
 
   revalidatePath("/calendar");
   return event;
