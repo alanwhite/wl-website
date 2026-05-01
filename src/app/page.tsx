@@ -21,6 +21,10 @@ export default async function HomePage() {
     getHeroImages(),
   ]);
 
+  // Stealth mode: redirect everyone to login, no public landing page
+  const stealthMode = await getConfig("site.stealthMode");
+  if (stealthMode === "true" && !session?.user) redirect("/login");
+
   // Redirect logged-in users to the appropriate page
   if (session?.user) {
     if (session.user.status === "APPROVED") redirect("/dashboard");
