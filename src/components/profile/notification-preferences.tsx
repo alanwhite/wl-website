@@ -3,27 +3,20 @@
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { updateNotificationPreferences, updateNewsletterOptIn } from "@/lib/actions/profile";
+import { updateNotificationPreferences } from "@/lib/actions/profile";
 import { toast } from "sonner";
 import type { NotificationType, NotificationDefaults } from "@/lib/config";
-
-const CHANNEL_LABELS: Record<string, string> = {
-  push: "Push",
-  email: "Email",
-};
 
 interface NotificationPreferencesProps {
   types: NotificationType[];
   defaults: NotificationDefaults;
   saved: { channel: string; type: string; enabled: boolean }[];
-  newsletterOptIn: boolean;
 }
 
 export function NotificationPreferences({
   types,
   defaults,
   saved,
-  newsletterOptIn: initialNewsletter,
 }: NotificationPreferencesProps) {
   const [prefs, setPrefs] = useState(() => {
     const map: Record<string, boolean> = {};
@@ -37,11 +30,6 @@ export function NotificationPreferences({
     }
     return map;
   });
-  const [newsletter, setNewsletter] = useState(initialNewsletter);
-
-  const allChannels = Array.from(
-    new Set(types.flatMap((t) => t.channels)),
-  );
 
   async function toggle(channel: string, type: string) {
     const key = `${channel}:${type}`;
@@ -55,17 +43,6 @@ export function NotificationPreferences({
     }
   }
 
-  async function toggleNewsletter() {
-    const newValue = !newsletter;
-    setNewsletter(newValue);
-    try {
-      await updateNewsletterOptIn(newValue);
-    } catch {
-      setNewsletter(!newValue);
-      toast.error("Failed to update preference");
-    }
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -73,57 +50,22 @@ export function NotificationPreferences({
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-sm text-muted-foreground">
-          Choose how you want to be notified about new items.
+          Choose what you want to be notified about.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2 pr-4 text-left font-medium" />
-                {allChannels.map((ch) => (
-                  <th key={ch} className="px-3 py-2 text-center font-medium">
-                    {CHANNEL_LABELS[ch] ?? ch}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {types.map((t) => (
-                <tr key={t.slug} className="border-b last:border-0">
-                  <td className="py-3 pr-4">
-                    <div className="font-medium">{t.label}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {t.description}
-                    </div>
-                  </td>
-                  {allChannels.map((ch) => (
-                    <td key={ch} className="px-3 py-3 text-center">
-                      {t.channels.includes(ch as "push" | "email") ? (
-                        <Switch
-                          checked={prefs[`${ch}:${t.slug}`] ?? false}
-                          onCheckedChange={() => toggle(ch, t.slug)}
-                          size="sm"
-                        />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 flex items-center justify-between border-t pt-3">
-          <div>
-            <div className="text-sm font-medium">Newsletter</div>
-            <div className="text-xs text-muted-foreground">Periodic email updates and newsletters</div>
-          </div>
-          <Switch
-            checked={newsletter}
-            onCheckedChange={toggleNewsletter}
-            size="sm"
-          />
+        <div className="space-y-3">
+          {types.map((t) => (
+            <div key={t.slug} className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">{t.label}</div>
+                <div className="text-xs text-muted-foreground">{t.description}</div>
+              </div>
+              <Switch
+                checked={prefs[`push:${t.slug}`] ?? false}
+                onCheckedChange={() => toggle("push", t.slug)}
+                size="sm"
+              />
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

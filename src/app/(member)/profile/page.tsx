@@ -18,7 +18,7 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [profile, userRoles, authenticators, notifTypes, notifDefaults, savedPrefs, user] = await Promise.all([
+  const [profile, userRoles, authenticators, notifTypes, notifDefaults, savedPrefs] = await Promise.all([
     prisma.userProfile.findUnique({
       where: { userId: session.user.id },
     }),
@@ -42,10 +42,6 @@ export default async function ProfilePage() {
     prisma.notificationPreference.findMany({
       where: { userId: session.user.id },
       select: { channel: true, type: true, enabled: true },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { newsletterOptIn: true },
     }),
   ]);
 
@@ -129,7 +125,6 @@ export default async function ProfilePage() {
           types={notifTypes}
           defaults={notifDefaults}
           saved={savedPrefs}
-          newsletterOptIn={user?.newsletterOptIn ?? false}
         />
       )}
 

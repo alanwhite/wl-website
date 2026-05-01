@@ -99,7 +99,6 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [financialYearStart, setFinancialYearStart] = useState(String(settings.financialYearStartMonth));
   const [notifTypesJson, setNotifTypesJson] = useState(JSON.stringify(settings.notificationTypes, null, 2));
   const [notifDefaultPush, setNotifDefaultPush] = useState(settings.notificationDefaults.push);
-  const [notifDefaultEmail, setNotifDefaultEmail] = useState(settings.notificationDefaults.email);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
   const [termsLabel, setTermsLabel] = useState(settings.registrationTerms.label);
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
@@ -1207,16 +1206,6 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                 />
                 <Label htmlFor="notifDefaultPush">Push notifications enabled by default</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="notifDefaultEmail"
-                  checked={notifDefaultEmail}
-                  onChange={(e) => setNotifDefaultEmail(e.target.checked)}
-                  className="h-4 w-4 rounded border"
-                />
-                <Label htmlFor="notifDefaultEmail">Email notifications enabled by default</Label>
-              </div>
             </div>
             <Button
               disabled={loading}
@@ -1224,7 +1213,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                 setLoading(true);
                 try {
                   await updateNotificationDefaults(
-                    JSON.stringify({ push: notifDefaultPush, email: notifDefaultEmail }),
+                    JSON.stringify({ push: notifDefaultPush, email: false }),
                   );
                   toast.success("Defaults saved");
                 } catch {

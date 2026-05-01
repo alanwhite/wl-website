@@ -387,13 +387,13 @@ export interface NotificationDefaults {
 export async function getNotificationTypes(): Promise<NotificationType[]> {
   const types = await getConfigJson<NotificationType[]>("notifications.types");
   return types ?? [
-    { slug: "polls", label: "New polls", description: "When a new poll is published", channels: ["push", "email"] },
-    { slug: "announcements", label: "Announcements", description: "New announcements posted", channels: ["push", "email"] },
-    { slug: "events", label: "Calendar events", description: "New events added to the calendar", channels: ["push", "email"] },
+    { slug: "polls", label: "New polls", description: "When a new poll is published", channels: ["push"] },
+    { slug: "announcements", label: "Announcements", description: "New announcements posted", channels: ["push"] },
+    { slug: "events", label: "Calendar events", description: "New events added to the calendar", channels: ["push"] },
   ];
 }
 
 export async function getNotificationDefaults(): Promise<NotificationDefaults> {
   const defaults = await getConfigJson<NotificationDefaults>("notifications.defaults");
-  return defaults ?? { push: true, email: true };
+  return defaults ?? { push: true, email: false };
 }
