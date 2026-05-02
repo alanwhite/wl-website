@@ -69,9 +69,9 @@ export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottom
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
     >
-      <div className="flex items-center justify-around">
+      <div className="flex items-center justify-around px-2">
         {visibleItems.map((item) => {
           const Icon = getIcon(item.icon) ?? LayoutDashboard;
           const count = notificationCounts[item.href] ?? 0;
@@ -80,7 +80,7 @@ export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottom
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
+                "relative flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors",
                 isActive(item.href) ? "text-primary" : "text-muted-foreground",
               )}
             >

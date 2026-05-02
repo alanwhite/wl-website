@@ -25,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(baseUrl),
+    viewport: { width: "device-width", initialScale: 1, viewportFit: "cover" as any },
     title: {
       default: siteInfo.name,
       template: `%s | ${siteInfo.name}`,
