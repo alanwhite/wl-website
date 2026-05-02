@@ -443,6 +443,8 @@ model Group {
   description  String?
   members      User[]        @relation("GroupMembers")
   groupMembers GroupMember[]
+  confirmedAt  DateTime?
+  confirmedBy  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -451,6 +453,7 @@ model GroupMember {
   id        String   @id @default(cuid())
   groupId   String
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String?
   name      String
   data      Json     @default("{}")
   addedBy   String?

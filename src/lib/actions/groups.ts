@@ -93,16 +93,32 @@ export async function deleteGroup(id: string) {
 }
 
 export async function assignUserToGroup(userId: string, groupId: string) {
-  const user = await requireGroupManager();
+  const manager = await requireGroupManager();
 
+  const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+  if (!targetUser) throw new Error("User not found");
+
+  // Connect user to group (many-to-many for access control)
   await prisma.group.update({
     where: { id: groupId },
     data: { members: { connect: { id: userId } } },
   });
 
+  // Auto-create a GroupMember record for their field data (meals etc.)
+  const existing = await prisma.groupMember.findFirst({ where: { groupId, userId } });
+  if (!existing) {
+    await prisma.groupMember.create({
+      data: {
+        groupId,
+        userId,
+        name: targetUser.name || targetUser.email || "Unknown",
+      },
+    });
+  }
+
   await logAudit({
-    userId: user.id,
-    userName: user.name ?? "Manager",
+    userId: manager.id,
+    userName: manager.name ?? "Manager",
     action: "group.assignUser",
     targetType: "Group",
     targetId: groupId,
@@ -111,6 +127,7 @@ export async function assignUserToGroup(userId: string, groupId: string) {
 
   revalidatePath("/members");
   revalidatePath("/admin/groups");
+  revalidatePath("/dashboard");
 }
 
 export async function removeUserFromGroup(userId: string, groupId: string) {
@@ -188,4 +205,49 @@ export async function removeGroupMember(memberId: string) {
   await prisma.groupMember.delete({ where: { id: memberId } });
 
   revalidatePath("/groups");
+  revalidatePath("/dashboard");
+}
+
+export async function confirmGroup(groupId: string) {
+  const user = await requireApprovedMember();
+
+  // Verify user belongs to this group
+  const group = await prisma.group.findFirst({
+    where: { id: groupId, members: { some: { id: user.id } } },
+  });
+  if (!group) throw new Error("You don't belong to this group");
+
+  await prisma.group.update({
+    where: { id: groupId },
+    data: { confirmedAt: new Date(), confirmedBy: user.id },
+  });
+
+  revalidatePath("/groups");
+  revalidatePath("/dashboard");
+}
+
+export async function updateMemberData(
+  memberId: string,
+  fieldData: Record<string, string>,
+) {
+  const user = await requireApprovedMember();
+
+  // Verify member belongs to a group the user is in
+  const member = await prisma.groupMember.findUnique({
+    where: { id: memberId },
+    include: { group: { include: { members: { where: { id: user.id }, select: { id: true } } } } },
+  });
+  if (!member || member.group.members.length === 0) throw new Error("Unauthorized");
+
+  // Merge new field data with existing
+  const existingData = (member.data as Record<string, string>) ?? {};
+  const merged = { ...existingData, ...fieldData };
+
+  await prisma.groupMember.update({
+    where: { id: memberId },
+    data: { data: merged },
+  });
+
+  revalidatePath("/groups");
+  revalidatePath("/dashboard");
 }

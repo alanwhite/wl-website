@@ -38,6 +38,7 @@ import {
   updateNotificationTypes,
   updateNotificationDefaults,
   updateGroupSettings,
+  updateGroupMemberFields,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
@@ -74,6 +75,8 @@ interface SettingsFormProps {
     notificationDefaults: NotificationDefaults;
     groupLabel: string;
     groupManagerRoles: string[];
+    groupMemberFields: import("@/lib/config").RegistrationField[];
+    groupConfirmLabel: string;
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -108,6 +111,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [financialYearStart, setFinancialYearStart] = useState(String(settings.financialYearStartMonth));
   const [groupLabelVal, setGroupLabelVal] = useState(settings.groupLabel);
   const [groupManagerRoleSlugs, setGroupManagerRoleSlugs] = useState<string[]>(settings.groupManagerRoles);
+  const [groupMemberFieldsJson, setGroupMemberFieldsJson] = useState(JSON.stringify(settings.groupMemberFields, null, 2));
+  const [groupConfirmLabelVal, setGroupConfirmLabelVal] = useState(settings.groupConfirmLabel);
   const [notifTypesJson, setNotifTypesJson] = useState(JSON.stringify(settings.notificationTypes, null, 2));
   const [notifDefaultPush, setNotifDefaultPush] = useState(settings.notificationDefaults.push);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
@@ -1256,6 +1261,49 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               }}
             >
               Save Group Settings
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Member Fields</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure fields collected per group member (e.g. meal choices, dietary requirements). Uses the same format as registration fields.
+            </p>
+            <Textarea
+              value={groupMemberFieldsJson}
+              onChange={(e) => setGroupMemberFieldsJson(e.target.value)}
+              rows={12}
+              className="font-mono text-sm"
+            />
+            <div className="space-y-2">
+              <Label>Confirm Button Label</Label>
+              <Input
+                value={groupConfirmLabelVal}
+                onChange={(e) => setGroupConfirmLabelVal(e.target.value)}
+                placeholder="Confirm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Text shown on the confirmation button (e.g. &quot;Confirm Attendance&quot;).
+              </p>
+            </div>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  JSON.parse(groupMemberFieldsJson);
+                  await updateGroupMemberFields(groupMemberFieldsJson, groupConfirmLabelVal || "Confirm");
+                  toast.success("Member fields saved");
+                } catch {
+                  toast.error("Invalid JSON");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Member Fields
             </Button>
           </CardContent>
         </Card>

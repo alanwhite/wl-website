@@ -404,3 +404,19 @@ export async function updateGroupSettings(label: string, managerRoleSlugsJson: s
     details: { label },
   });
 }
+
+export async function updateGroupMemberFields(fieldsJson: string, confirmLabel: string) {
+  const admin = await requireAdmin();
+  JSON.parse(fieldsJson); // validate
+  await setConfig("groups.memberFields", fieldsJson);
+  await setConfig("groups.confirmLabel", confirmLabel);
+  invalidateConfigCache("groups.memberFields");
+  invalidateConfigCache("groups.confirmLabel");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.groups.memberFields.update",
+  });
+}

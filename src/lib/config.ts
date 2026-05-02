@@ -416,6 +416,16 @@ export async function getGroupManagerRoles(): Promise<string[]> {
   return roles ?? [];
 }
 
+export async function getGroupMemberFields(): Promise<RegistrationField[]> {
+  const fields = await getConfigJson<RegistrationField[]>("groups.memberFields");
+  return fields ?? [];
+}
+
+export async function getGroupConfirmLabel(): Promise<string> {
+  const label = await getConfig("groups.confirmLabel");
+  return label ?? "Confirm";
+}
+
 export function canManageGroups(
   user: { roleSlugs?: string[]; tierLevel?: number },
   managerRoles: string[],
