@@ -7,6 +7,7 @@ import { buildRegistrationSchema } from "@/lib/validations/registration";
 import { sendEmail, shouldNotifyAdmin } from "@/lib/email";
 import { evaluateTierSuggestion } from "@/lib/tier-rules";
 import { redirect } from "next/navigation";
+import { sendPushToManagers } from "@/lib/push";
 
 export async function submitRegistration(formData: FormData) {
   const session = await auth();
@@ -100,6 +101,15 @@ export async function submitRegistration(formData: FormData) {
       },
     },
   });
+
+  // Send push notification to member managers
+  sendPushToManagers({
+    managerConfigKey: "members.managerRoles",
+    title: "New registration",
+    body: `${session.user.name ?? session.user.email ?? "Someone"} has registered`,
+    url: "/members/registrations",
+    tag: "registration",
+  }).catch((err) => console.error("[Push] Failed to send registration notification:", err));
 
   // Send admin notification
   if (await shouldNotifyAdmin()) {

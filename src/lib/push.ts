@@ -139,3 +139,86 @@ export async function sendPushNotifications({
     });
   }
 }
+
+/**
+ * Send push notifications to users with a specific manager role.
+ * Used for operational notifications (new registrations, form submissions, etc.)
+ * that go to managers rather than all members.
+ */
+export async function sendPushToManagers({
+  managerConfigKey,
+  title,
+  body,
+  url,
+  tag,
+}: {
+  managerConfigKey: string; // e.g. "members.managerRoles"
+  title: string;
+  body: string;
+  url: string;
+  tag?: string;
+}) {
+  if (!isPushEnabled()) return;
+
+  const [siteInfo, logoUrl, managerRoleSlugs] = await Promise.all([
+    getSiteInfo(),
+    getConfig("site.logoUrl"),
+    getConfig(managerConfigKey).then((v) => {
+      try { return v ? JSON.parse(v) as string[] : []; } catch { return []; }
+    }),
+  ]);
+
+  const baseUrl = process.env.AUTH_URL ?? "http://localhost:3000";
+  const iconUrl = logoUrl ? `${baseUrl}${logoUrl}` : undefined;
+
+  // Find admins + users with the manager role who have push subscriptions
+  const users = await prisma.user.findMany({
+    where: {
+      status: "APPROVED",
+      pushSubscriptions: { some: {} },
+      OR: [
+        { tierLevel: { gte: 999 } },
+        ...(managerRoleSlugs.length > 0
+          ? [{ userRoles: { some: { role: { slug: { in: managerRoleSlugs } } } } }]
+          : []),
+      ],
+    },
+    select: {
+      pushSubscriptions: {
+        select: { id: true, endpoint: true, p256dh: true, auth: true },
+      },
+    },
+  });
+
+  const payload = JSON.stringify({
+    title: siteInfo.name,
+    body,
+    url,
+    tag: tag ?? "manager",
+    icon: iconUrl,
+  });
+
+  const expiredIds: string[] = [];
+
+  for (const user of users) {
+    for (const sub of user.pushSubscriptions) {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload,
+        );
+      } catch (err: unknown) {
+        const statusCode = (err as { statusCode?: number }).statusCode;
+        if (statusCode === 410 || statusCode === 404) {
+          expiredIds.push(sub.id);
+        } else {
+          console.error(`[Push] Failed to send to manager:`, err);
+        }
+      }
+    }
+  }
+
+  if (expiredIds.length > 0) {
+    await prisma.pushSubscription.deleteMany({ where: { id: { in: expiredIds } } });
+  }
+}
