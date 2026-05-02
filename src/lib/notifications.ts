@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { canAccessPoll } from "./config";
+import { canAccessPoll, getMemberManagerRoles, canManageMembers } from "./config";
 
 /**
  * Count pending notifications per feature for a user.
@@ -50,6 +50,17 @@ export async function getNotificationCounts(user: {
     const pendingSubmissions = forms.reduce((sum, f) => sum + f._count.submissions, 0);
     if (pendingSubmissions > 0) {
       counts["/forms"] = pendingSubmissions;
+    }
+  }
+
+  // Pending registrations for member managers
+  const memberManagerRoles = await getMemberManagerRoles();
+  if (canManageMembers(user, memberManagerRoles)) {
+    const pendingRegistrations = await prisma.user.count({
+      where: { status: "PENDING_REVIEW" },
+    });
+    if (pendingRegistrations > 0) {
+      counts["/members/registrations"] = pendingRegistrations;
     }
   }
 
