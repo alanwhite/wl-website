@@ -37,6 +37,7 @@ import {
   removeHeroImage,
   updateNotificationTypes,
   updateNotificationDefaults,
+  updateGroupSettings,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
@@ -71,6 +72,8 @@ interface SettingsFormProps {
     documentManagerRoles: string[];
     notificationTypes: NotificationType[];
     notificationDefaults: NotificationDefaults;
+    groupLabel: string;
+    groupManagerRoles: string[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -103,6 +106,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [financialManagerRoleSlugs, setFinancialManagerRoleSlugs] = useState<string[]>(settings.financialManagerRoles);
   const [financialViewerRoleSlugs, setFinancialViewerRoleSlugs] = useState<string[]>(settings.financialViewerRoles);
   const [financialYearStart, setFinancialYearStart] = useState(String(settings.financialYearStartMonth));
+  const [groupLabelVal, setGroupLabelVal] = useState(settings.groupLabel);
+  const [groupManagerRoleSlugs, setGroupManagerRoleSlugs] = useState<string[]>(settings.groupManagerRoles);
   const [notifTypesJson, setNotifTypesJson] = useState(JSON.stringify(settings.notificationTypes, null, 2));
   const [notifDefaultPush, setNotifDefaultPush] = useState(settings.notificationDefaults.push);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
@@ -422,6 +427,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="calendar" className="justify-start">Calendar</TabsTrigger>
         <TabsTrigger value="financials" className="justify-start">Financials</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
+        <TabsTrigger value="groups" className="justify-start">Groups</TabsTrigger>
         <TabsTrigger value="notifications" className="justify-start">Notifications</TabsTrigger>
         <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
       </TabsList>
@@ -1197,6 +1203,63 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       </TabsContent>
 
 
+      <TabsContent value="groups">
+        <Card>
+          <CardHeader>
+            <CardTitle>Groups</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Group Label</Label>
+              <Input
+                value={groupLabelVal}
+                onChange={(e) => setGroupLabelVal(e.target.value)}
+                placeholder="Group"
+              />
+              <p className="text-xs text-muted-foreground">
+                What groups are called on this site (e.g. &quot;Household&quot;, &quot;Family&quot;, &quot;Team&quot;).
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Group Manager Roles</Label>
+              <div className="space-y-1">
+                {roles.map((role) => (
+                  <label key={role.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={groupManagerRoleSlugs.includes(role.slug)}
+                      onChange={(e) => {
+                        if (e.target.checked) setGroupManagerRoleSlugs([...groupManagerRoleSlugs, role.slug]);
+                        else setGroupManagerRoleSlugs(groupManagerRoleSlugs.filter((s) => s !== role.slug));
+                      }}
+                      className="h-4 w-4 rounded border"
+                    />
+                    {role.name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Roles that can create and manage all groups and assign users to them.
+              </p>
+            </div>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await updateGroupSettings(groupLabelVal || "Group", JSON.stringify(groupManagerRoleSlugs));
+                  toast.success("Group settings saved");
+                } catch {
+                  toast.error("Failed to save");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Group Settings
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
       <TabsContent value="notifications">
         <Card>
           <CardHeader>

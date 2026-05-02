@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getSiteInfo } from "@/lib/config";
+import { getSiteInfo, getConfig } from "@/lib/config";
 import { Clock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +14,19 @@ export default async function PendingPage() {
   if (session.user.status === "APPROVED") redirect("/dashboard");
   if (session.user.status === "REJECTED") redirect("/register/rejected");
 
-  const siteInfo = await getSiteInfo();
+  const [siteInfo, hideAuthHeader] = await Promise.all([getSiteInfo(), getConfig("site.hideAuthHeader")]);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="text-xl font-bold hover:opacity-80">
-            {siteInfo.name}
-          </Link>
-        </div>
-      </header>
+      {hideAuthHeader !== "true" && (
+        <header className="border-b">
+          <div className="container mx-auto flex h-16 items-center px-4">
+            <Link href="/" className="text-xl font-bold hover:opacity-80">
+              {siteInfo.name}
+            </Link>
+          </div>
+        </header>
+      )}
       <div className="flex flex-1 items-center justify-center px-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>

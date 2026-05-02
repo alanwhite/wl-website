@@ -403,3 +403,24 @@ export async function getNotificationDefaults(): Promise<NotificationDefaults> {
   const defaults = await getConfigJson<NotificationDefaults>("notifications.defaults");
   return defaults ?? { push: true, email: false };
 }
+
+// ── Groups ──
+
+export async function getGroupLabel(): Promise<string> {
+  const label = await getConfig("groups.label");
+  return label ?? "Group";
+}
+
+export async function getGroupManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("groups.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageGroups(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}

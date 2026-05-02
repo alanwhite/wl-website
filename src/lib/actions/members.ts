@@ -21,7 +21,7 @@ async function requireMemberManager() {
   return session.user;
 }
 
-export async function approveRegistration(registrationId: string, tierId?: string) {
+export async function approveRegistration(registrationId: string, tierId?: string, groupId?: string) {
   const manager = await requireMemberManager();
 
   let tier;
@@ -67,13 +67,21 @@ export async function approveRegistration(registrationId: string, tierId?: strin
     }).catch(console.error);
   }
 
+  // Assign to group if specified
+  if (groupId) {
+    await prisma.group.update({
+      where: { id: groupId },
+      data: { members: { connect: { id: registration.user.id } } },
+    }).catch(() => {}); // Ignore if group doesn't exist
+  }
+
   await logAudit({
     userId: manager.id,
     userName: manager.name ?? "Manager",
     action: "registration.approve",
     targetType: "Registration",
     targetId: registrationId,
-    details: { userEmail: registration.user.email, tierName: tier.name },
+    details: { userEmail: registration.user.email, tierName: tier.name, groupId },
   });
 
   revalidatePath("/members/registrations");

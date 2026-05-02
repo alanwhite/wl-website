@@ -30,7 +30,7 @@ export default async function LoginPage({
     }
   }
 
-  const [siteInfo, logoUrl] = await Promise.all([getSiteInfo(), getConfig("site.logoUrl")]);
+  const [siteInfo, logoUrl, hideAuthHeader] = await Promise.all([getSiteInfo(), getConfig("site.logoUrl"), getConfig("site.hideAuthHeader")]);
   const credentialsEnabled = process.env.AUTH_CREDENTIALS_TEST === "true";
   const passkeysEnabled = !credentialsEnabled;
 
@@ -42,14 +42,16 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
-            {logoUrl && <Image src={logoUrl} alt={siteInfo.name} width={32} height={32} className="h-8 w-auto" />}
-            {siteInfo.name}
-          </Link>
-        </div>
-      </header>
+      {hideAuthHeader !== "true" && (
+        <header className="border-b">
+          <div className="container mx-auto flex h-16 items-center px-4">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
+              {logoUrl && <Image src={logoUrl} alt={siteInfo.name} width={32} height={32} className="h-8 w-auto" />}
+              {siteInfo.name}
+            </Link>
+          </div>
+        </header>
+      )}
       <div className="flex flex-1 items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">

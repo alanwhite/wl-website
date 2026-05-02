@@ -23,18 +23,27 @@ interface Tier {
   level: number;
 }
 
+interface GroupOption {
+  id: string;
+  name: string;
+  memberCount: number;
+}
+
 interface MemberRegistrationActionsProps {
   registrationId: string;
   tiers: Tier[];
   suggestedTierId?: string | null;
+  groups?: GroupOption[];
+  groupLabel?: string;
 }
 
-export function MemberRegistrationActions({ registrationId, tiers, suggestedTierId }: MemberRegistrationActionsProps) {
+export function MemberRegistrationActions({ registrationId, tiers, suggestedTierId, groups, groupLabel }: MemberRegistrationActionsProps) {
   const [tierId, setTierId] = useState(
     suggestedTierId && tiers.some((t) => t.id === suggestedTierId)
       ? suggestedTierId
       : tiers[0]?.id ?? "",
   );
+  const [groupId, setGroupId] = useState("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -46,7 +55,7 @@ export function MemberRegistrationActions({ registrationId, tiers, suggestedTier
     }
     setLoading(true);
     try {
-      await approveRegistration(registrationId, tierId);
+      await approveRegistration(registrationId, tierId, groupId || undefined);
       toast.success("Registration approved");
       router.push("/members/registrations");
     } catch {
@@ -95,6 +104,23 @@ export function MemberRegistrationActions({ registrationId, tiers, suggestedTier
             </SelectContent>
           </Select>
         </div>
+        {groups && groups.length > 0 && (
+          <div className="space-y-2">
+            <Label>{groupLabel ?? "Group"} (optional)</Label>
+            <Select value={groupId} onValueChange={setGroupId}>
+              <SelectTrigger>
+                <SelectValue placeholder={`Assign to ${(groupLabel ?? "group").toLowerCase()}...`} />
+              </SelectTrigger>
+              <SelectContent>
+                {groups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}{g.memberCount > 0 ? ` (${g.memberCount} existing)` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="space-y-2">
           <Label>Rejection reason (optional)</Label>
           <Textarea

@@ -388,3 +388,19 @@ export async function updateNotificationDefaults(defaultsJson: string) {
     action: "settings.notifications.defaults.update",
   });
 }
+
+export async function updateGroupSettings(label: string, managerRoleSlugsJson: string) {
+  const admin = await requireAdmin();
+  await setConfig("groups.label", label);
+  await setConfig("groups.managerRoles", managerRoleSlugsJson);
+  invalidateConfigCache("groups.label");
+  invalidateConfigCache("groups.managerRoles");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.groups.update",
+    details: { label },
+  });
+}

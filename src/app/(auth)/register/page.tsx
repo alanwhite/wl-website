@@ -25,24 +25,27 @@ export default async function RegisterPage() {
   });
   if (existing) redirect("/register/pending");
 
-  const [fields, terms, guidance, siteInfo, logoUrl] = await Promise.all([
+  const [fields, terms, guidance, siteInfo, logoUrl, hideAuthHeader] = await Promise.all([
     getRegistrationFields(),
     getRegistrationTerms(),
     getRegistrationGuidance(),
     getSiteInfo(),
     getConfig("site.logoUrl"),
+    getConfig("site.hideAuthHeader"),
   ]);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center px-4">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
-            {logoUrl && <Image src={logoUrl} alt={siteInfo.name} width={32} height={32} className="h-8 w-auto" />}
-            {siteInfo.name}
-          </Link>
-        </div>
-      </header>
+      {hideAuthHeader !== "true" && (
+        <header className="border-b">
+          <div className="container mx-auto flex h-16 items-center px-4">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
+              {logoUrl && <Image src={logoUrl} alt={siteInfo.name} width={32} height={32} className="h-8 w-auto" />}
+              {siteInfo.name}
+            </Link>
+          </div>
+        </header>
+      )}
       <div className="flex flex-1 items-center justify-center px-4 py-8">
       <Card className="w-full max-w-lg">
         <CardHeader>

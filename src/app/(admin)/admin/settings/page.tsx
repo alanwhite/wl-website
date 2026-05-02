@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages, getNotificationTypes, getNotificationDefaults } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -86,6 +86,8 @@ export default async function AdminSettingsPage() {
           pollManagerRoles: (await getConfigJson<string[]>("polls.managerRoles")) ?? [],
           notificationTypes: await getNotificationTypes(),
           notificationDefaults: await getNotificationDefaults(),
+          groupLabel: await getGroupLabel(),
+          groupManagerRoles: await getGroupManagerRoles(),
         }}
         tiers={tiers}
         roles={roles}

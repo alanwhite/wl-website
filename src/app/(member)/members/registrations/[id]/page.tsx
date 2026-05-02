@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getMemberManagerRoles, canManageMembers } from "@/lib/config";
+import { getMemberManagerRoles, canManageMembers, getGroupLabel } from "@/lib/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -28,11 +28,24 @@ export default async function RegistrationReviewPage({
 
   if (!registration) notFound();
 
-  const tiers = await prisma.membershipTier.findMany({
-    where: { isSystem: false },
-    orderBy: { level: "asc" },
-    select: { id: true, name: true, level: true },
-  });
+  const [tiers, groups, groupLabel] = await Promise.all([
+    prisma.membershipTier.findMany({
+      where: { isSystem: false },
+      orderBy: { level: "asc" },
+      select: { id: true, name: true, level: true },
+    }),
+    prisma.group.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, _count: { select: { members: true } } },
+    }),
+    getGroupLabel(),
+  ]);
+
+  const groupOptions = groups.map((g) => ({
+    id: g.id,
+    name: g.name,
+    memberCount: g._count.members,
+  }));
 
   const customFields = registration.customFields as Record<string, unknown>;
 
@@ -137,6 +150,8 @@ export default async function RegistrationReviewPage({
           registrationId={registration.id}
           tiers={tiers}
           suggestedTierId={registration.suggestedTierId}
+          groups={groupOptions}
+          groupLabel={groupLabel}
         />
       )}
     </div>
