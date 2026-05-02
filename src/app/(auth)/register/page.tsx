@@ -51,7 +51,9 @@ export default async function RegisterPage() {
         <CardHeader>
           <CardTitle>Complete Your Registration</CardTitle>
           <CardDescription>
-            Welcome to {siteInfo.name}! Please fill out the form below to complete your registration.
+            {fields.length > 0
+              ? `Welcome to ${siteInfo.name}! Please fill out the form below to complete your registration.`
+              : `Welcome to ${siteInfo.name}! Click below to complete your registration.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
