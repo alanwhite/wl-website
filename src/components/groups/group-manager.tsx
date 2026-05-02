@@ -4,26 +4,40 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { createGroup, deleteGroup } from "@/lib/actions/groups";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { createGroup, deleteGroup, assignUserToGroup, removeUserFromGroup } from "@/lib/actions/groups";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+
+interface UserInfo {
+  id: string;
+  name: string | null;
+  email: string | null;
+}
 
 interface GroupData {
   id: string;
   name: string;
   description: string | null;
-  members: { id: string; name: string | null; email: string | null }[];
+  members: UserInfo[];
   groupMembers: { id: string; name: string }[];
 }
 
 interface GroupManagerProps {
   groups: GroupData[];
   groupLabel: string;
+  allUsers: UserInfo[];
 }
 
-export function GroupManager({ groups, groupLabel }: GroupManagerProps) {
+export function GroupManager({ groups, groupLabel, allUsers }: GroupManagerProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -58,6 +72,30 @@ export function GroupManager({ groups, groupLabel }: GroupManagerProps) {
     }
   }
 
+  async function handleAssignUser(groupId: string, userId: string) {
+    try {
+      await assignUserToGroup(userId, groupId);
+      toast.success("User added");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add user");
+    }
+  }
+
+  async function handleRemoveUser(groupId: string, userId: string, userName: string) {
+    if (!confirm(`Remove ${userName} from this ${groupLabel.toLowerCase()}?`)) return;
+    try {
+      await removeUserFromGroup(userId, groupId);
+      toast.success("User removed");
+      router.refresh();
+    } catch {
+      toast.error("Failed to remove user");
+    }
+  }
+
+  // Get IDs of all users already in any group
+  const assignedUserIds = new Set(groups.flatMap((g) => g.members.map((m) => m.id)));
+
   return (
     <div className="space-y-4">
       {!showCreate ? (
@@ -72,7 +110,7 @@ export function GroupManager({ groups, groupLabel }: GroupManagerProps) {
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder={`e.g. The Smith Family`}
+                placeholder="e.g. The Smith Family"
               />
             </div>
             <div className="space-y-2">
@@ -101,11 +139,21 @@ export function GroupManager({ groups, groupLabel }: GroupManagerProps) {
         <div className="space-y-3">
           {groups.map((group) => {
             const totalMembers = group.members.length + group.groupMembers.length;
+            // Users not in this group (available to assign)
+            const availableUsers = allUsers.filter(
+              (u) => !group.members.some((m) => m.id === u.id),
+            );
+
             return (
               <Card key={group.id}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{group.name}</CardTitle>
+                    <div>
+                      <CardTitle className="text-base">{group.name}</CardTitle>
+                      {group.description && (
+                        <CardDescription>{group.description}</CardDescription>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
                         {totalMembers} {totalMembers === 1 ? "member" : "members"}
@@ -121,24 +169,60 @@ export function GroupManager({ groups, groupLabel }: GroupManagerProps) {
                     </div>
                   </div>
                 </CardHeader>
-                {(group.members.length > 0 || group.groupMembers.length > 0) && (
-                  <CardContent className="pt-0">
-                    <div className="text-sm text-muted-foreground">
-                      {group.members.length > 0 && (
-                        <div>
-                          <span className="font-medium">Users:</span>{" "}
-                          {group.members.map((m) => m.name || m.email).join(", ")}
+                <CardContent className="space-y-3 pt-0">
+                  {/* System users */}
+                  {group.members.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Users</p>
+                      {group.members.map((m) => (
+                        <div key={m.id} className="flex items-center justify-between rounded border px-3 py-1.5">
+                          <span className="text-sm">{m.name || m.email}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-destructive hover:text-destructive"
+                            onClick={() => handleRemoveUser(group.id, m.id, m.name || m.email || "user")}
+                          >
+                            Remove
+                          </Button>
                         </div>
-                      )}
-                      {group.groupMembers.length > 0 && (
-                        <div>
-                          <span className="font-medium">Additional:</span>{" "}
-                          {group.groupMembers.map((m) => m.name).join(", ")}
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  </CardContent>
-                )}
+                  )}
+
+                  {/* Non-user members */}
+                  {group.groupMembers.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Additional members</p>
+                      {group.groupMembers.map((m) => (
+                        <div key={m.id} className="rounded border px-3 py-1.5 text-sm">
+                          {m.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Assign user */}
+                  {availableUsers.length > 0 && (
+                    <div className="pt-1">
+                      <Select onValueChange={(userId) => handleAssignUser(group.id, userId)}>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Add a user..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableUsers.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name || u.email}
+                              {assignedUserIds.has(u.id) && (
+                                <span className="ml-2 text-xs text-muted-foreground">(in another {groupLabel.toLowerCase()})</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             );
           })}
