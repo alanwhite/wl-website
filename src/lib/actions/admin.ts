@@ -240,6 +240,7 @@ export async function updateUserStatus(userId: string, status: UserStatus) {
 
 export async function deleteUser(userId: string) {
   const admin = await requireAdmin();
+  if (userId === admin.id) throw new Error("You cannot delete your own account");
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
   await prisma.user.delete({ where: { id: userId } });
 

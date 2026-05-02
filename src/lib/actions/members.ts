@@ -239,7 +239,9 @@ export async function updateUserStatus(userId: string, status: UserStatus) {
 
 export async function deleteUser(userId: string) {
   const manager = await requireMemberManager();
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (userId === manager.id) throw new Error("You cannot delete your own account");
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, tierLevel: true } });
+  if (user?.tierLevel && user.tierLevel >= 999) throw new Error("Cannot delete an admin account");
   await prisma.user.delete({ where: { id: userId } });
 
   await logAudit({
