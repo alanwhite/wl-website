@@ -48,6 +48,12 @@ export interface ThemeConfig {
   primary: string;
   primaryForeground: string;
   radius: string;
+  background?: string;
+  foreground?: string;
+  card?: string;
+  cardForeground?: string;
+  muted?: string;
+  mutedForeground?: string;
 }
 
 export interface SiteInfo {

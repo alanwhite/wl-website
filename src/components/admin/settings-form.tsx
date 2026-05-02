@@ -84,6 +84,12 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [primary, setPrimary] = useState(settings.theme.primary);
   const [primaryForeground, setPrimaryForeground] = useState(settings.theme.primaryForeground);
   const [radius, setRadius] = useState(settings.theme.radius);
+  const [themeBackground, setThemeBackground] = useState(settings.theme.background ?? "");
+  const [themeForeground, setThemeForeground] = useState(settings.theme.foreground ?? "");
+  const [themeCard, setThemeCard] = useState(settings.theme.card ?? "");
+  const [themeCardForeground, setThemeCardForeground] = useState(settings.theme.cardForeground ?? "");
+  const [themeMuted, setThemeMuted] = useState(settings.theme.muted ?? "");
+  const [themeMutedForeground, setThemeMutedForeground] = useState(settings.theme.mutedForeground ?? "");
   const [fieldsJson, setFieldsJson] = useState(JSON.stringify(settings.registrationFields, null, 2));
   const [logoPreview, setLogoPreview] = useState<string | null>(settings.logoUrl);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(settings.faviconUrl);
@@ -135,7 +141,15 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   async function handleSaveTheme() {
     setLoading(true);
     try {
-      await updateTheme({ primary, primaryForeground, radius });
+      await updateTheme({
+        primary, primaryForeground, radius,
+        ...(themeBackground ? { background: themeBackground } : {}),
+        ...(themeForeground ? { foreground: themeForeground } : {}),
+        ...(themeCard ? { card: themeCard } : {}),
+        ...(themeCardForeground ? { cardForeground: themeCardForeground } : {}),
+        ...(themeMuted ? { muted: themeMuted } : {}),
+        ...(themeMutedForeground ? { mutedForeground: themeMutedForeground } : {}),
+      });
       toast.success("Theme saved. Refresh to see changes.");
     } catch {
       toast.error("Failed to save");
@@ -591,6 +605,35 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
             <div className="space-y-2">
               <Label>Border Radius</Label>
               <Input value={radius} onChange={(e) => setRadius(e.target.value)} placeholder="0.625rem" />
+            </div>
+            <div className="mt-6 border-t pt-4">
+              <h3 className="mb-3 text-sm font-medium">Extended Colours (optional — leave blank for defaults)</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Background</Label>
+                  <Input value={themeBackground} onChange={(e) => setThemeBackground(e.target.value)} placeholder="oklch(1 0 0)" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Foreground</Label>
+                  <Input value={themeForeground} onChange={(e) => setThemeForeground(e.target.value)} placeholder="oklch(0.145 0 0)" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Card Background</Label>
+                  <Input value={themeCard} onChange={(e) => setThemeCard(e.target.value)} placeholder="oklch(1 0 0)" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Card Foreground</Label>
+                  <Input value={themeCardForeground} onChange={(e) => setThemeCardForeground(e.target.value)} placeholder="oklch(0.145 0 0)" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Muted Background</Label>
+                  <Input value={themeMuted} onChange={(e) => setThemeMuted(e.target.value)} placeholder="oklch(0.97 0 0)" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Muted Foreground</Label>
+                  <Input value={themeMutedForeground} onChange={(e) => setThemeMutedForeground(e.target.value)} placeholder="oklch(0.556 0 0)" />
+                </div>
+              </div>
             </div>
             <Button onClick={handleSaveTheme} disabled={loading}>Save Theme</Button>
           </CardContent>

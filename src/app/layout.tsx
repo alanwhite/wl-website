@@ -67,6 +67,12 @@ export default async function RootLayout({
             "--primary": theme.primary,
             "--primary-foreground": theme.primaryForeground,
             "--radius": theme.radius,
+            ...(theme.background ? { "--background": theme.background } : {}),
+            ...(theme.foreground ? { "--foreground": theme.foreground } : {}),
+            ...(theme.card ? { "--card": theme.card } : {}),
+            ...(theme.cardForeground ? { "--card-foreground": theme.cardForeground } : {}),
+            ...(theme.muted ? { "--muted": theme.muted } : {}),
+            ...(theme.mutedForeground ? { "--muted-foreground": theme.mutedForeground } : {}),
           } as React.CSSProperties
         }
       >
