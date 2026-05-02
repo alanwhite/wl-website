@@ -33,7 +33,7 @@ export function Header({ siteName, logoUrl, logoDarkUrl, navLinks, transparent }
     { label: "Contact", href: "/contact", isExternal: false, minTierLevel: null, requiredRoleSlug: null },
   ];
 
-  const links = navLinks && navLinks.length > 0 ? navLinks : defaultLinks;
+  const links = navLinks !== undefined ? navLinks : defaultLinks;
   const user = session?.user;
 
   const visibleLinks = links.filter((link) => {
