@@ -64,7 +64,7 @@ export default async function DashboardPage() {
         id: g.id,
         name: g.name,
         description: g.description,
-        confirmedAt: g.confirmedAt?.toISOString() ?? null,
+        rsvpStatus: g.rsvpStatus,
         groupMembers: g.groupMembers.map((m) => ({
           id: m.id,
           name: m.name,
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
       id: g.id,
       name: g.name,
       description: g.description,
-      confirmedAt: g.confirmedAt?.toISOString() ?? null,
+      rsvpStatus: g.rsvpStatus,
       groupMembers: g.groupMembers.map((m) => ({
         id: m.id,
         name: m.name,

@@ -443,6 +443,7 @@ model Group {
   description  String?
   members      User[]        @relation("GroupMembers")
   groupMembers GroupMember[]
+  rsvpStatus   String        @default("pending") // "pending", "attending", "declined"
   confirmedAt  DateTime?
   confirmedBy  String?
   createdAt    DateTime      @default(now())

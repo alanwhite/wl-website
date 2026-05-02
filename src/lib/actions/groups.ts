@@ -208,10 +208,9 @@ export async function removeGroupMember(memberId: string) {
   revalidatePath("/dashboard");
 }
 
-export async function confirmGroup(groupId: string) {
+export async function setGroupRsvp(groupId: string, status: "attending" | "declined") {
   const user = await requireApprovedMember();
 
-  // Verify user belongs to this group
   const group = await prisma.group.findFirst({
     where: { id: groupId, members: { some: { id: user.id } } },
   });
@@ -219,7 +218,11 @@ export async function confirmGroup(groupId: string) {
 
   await prisma.group.update({
     where: { id: groupId },
-    data: { confirmedAt: new Date(), confirmedBy: user.id },
+    data: {
+      rsvpStatus: status,
+      confirmedAt: new Date(),
+      confirmedBy: user.id,
+    },
   });
 
   revalidatePath("/groups");

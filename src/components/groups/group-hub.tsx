@@ -12,10 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addGroupMember, removeGroupMember, confirmGroup, updateMemberData } from "@/lib/actions/groups";
+import { addGroupMember, removeGroupMember, setGroupRsvp, updateMemberData } from "@/lib/actions/groups";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { RegistrationField } from "@/lib/config";
 
 interface MemberData {
@@ -29,7 +29,7 @@ interface GroupInfo {
   id: string;
   name: string;
   description: string | null;
-  confirmedAt: string | null;
+  rsvpStatus: string;
   groupMembers: MemberData[];
 }
 
@@ -58,6 +58,19 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
 
   const incompleteCount = group.groupMembers.filter((m) => !isMemberComplete(m)).length;
 
+  async function handleRsvp(status: "attending" | "declined") {
+    setLoading(true);
+    try {
+      await setGroupRsvp(group.id, status);
+      toast.success(status === "attending" ? "Great, see you there!" : "Sorry you can't make it");
+      router.refresh();
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleAdd() {
     if (!newName.trim()) return;
     setLoading(true);
@@ -74,26 +87,13 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
   }
 
   async function handleRemove(id: string, name: string) {
-    if (!confirm(`Remove ${name}? They will no longer be attending.`)) return;
+    if (!confirm(`Remove ${name}?`)) return;
     try {
       await removeGroupMember(id);
       toast.success("Member removed");
       router.refresh();
     } catch {
       toast.error("Failed to remove");
-    }
-  }
-
-  async function handleConfirm() {
-    setLoading(true);
-    try {
-      await confirmGroup(group.id);
-      toast.success("Attendance confirmed");
-      router.refresh();
-    } catch {
-      toast.error("Failed to confirm");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -106,9 +106,56 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
     }
   }
 
+  // Pending — show RSVP choice
+  if (group.rsvpStatus === "pending") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{group.name}</CardTitle>
+          {group.description && (
+            <p className="text-sm text-muted-foreground">{group.description}</p>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Will you be joining us?</p>
+          <div className="flex gap-3">
+            <Button onClick={() => handleRsvp("attending")} disabled={loading} className="flex-1">
+              <Check className="mr-2 h-4 w-4" />
+              {confirmLabel || "We'll be there"}
+            </Button>
+            <Button onClick={() => handleRsvp("declined")} disabled={loading} variant="outline" className="flex-1">
+              <X className="mr-2 h-4 w-4" />
+              Sorry, can&apos;t make it
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Declined
+  if (group.rsvpStatus === "declined") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{group.name}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            You&apos;ve let us know you can&apos;t make it. Changed your mind?
+          </p>
+          <Button onClick={() => handleRsvp("attending")} disabled={loading} variant="outline">
+            <Check className="mr-2 h-4 w-4" />
+            Actually, we&apos;ll be there!
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Attending — show household + meal choices
   return (
     <div className="space-y-6">
-      {/* Household / Attendance Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -118,18 +165,12 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                 <p className="text-sm text-muted-foreground">{group.description}</p>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {group.confirmedAt ? (
-                <Badge className="bg-green-600"><Check className="mr-1 h-3 w-3" /> Confirmed</Badge>
-              ) : (
-                <Badge variant="outline">Not yet confirmed</Badge>
-              )}
-            </div>
+            <Badge className="bg-green-600"><Check className="mr-1 h-3 w-3" /> Attending</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Everyone listed below is attending. Add or remove people as needed, then confirm your attendance.
+            Everyone listed is attending. Add or remove people as needed.
           </p>
 
           {/* Member list */}
@@ -176,16 +217,21 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
             </Button>
           </div>
 
-          {/* Confirm button */}
-          {!group.confirmedAt && group.groupMembers.length > 0 && (
-            <Button onClick={handleConfirm} disabled={loading} className="w-full">
-              {loading ? "Confirming..." : confirmLabel}
+          {/* Change RSVP */}
+          <div className="border-t pt-3">
+            <Button
+              onClick={() => handleRsvp("declined")}
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+            >
+              Can&apos;t make it after all?
             </Button>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Member Fields Card (meal choices etc.) */}
+      {/* Meal choices */}
       {memberFields.length > 0 && group.groupMembers.length > 0 && (
         <Card>
           <CardHeader>
@@ -196,54 +242,57 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {group.groupMembers.map((m) => (
-              <div key={m.id} className="space-y-3 rounded border p-4">
-                <div className="flex items-center justify-between">
+          <CardContent className="space-y-4">
+            {group.groupMembers.map((m, idx) => (
+              <div key={m.id}>
+                {idx > 0 && <div className="mb-4 border-t" />}
+                <div className="flex items-center gap-2 mb-3">
                   <h3 className="font-medium">
                     {m.name}{m.userId === currentUserId && <span className="text-muted-foreground"> (You)</span>}
                   </h3>
                   {isMemberComplete(m) && <Check className="h-4 w-4 text-green-600" />}
                 </div>
-                {memberFields.map((field) => {
-                  const currentValue = m.data[field.name] ?? "";
+                <div className="space-y-3">
+                  {memberFields.map((field) => {
+                    const currentValue = m.data[field.name] ?? "";
 
-                  if (field.type === "select" && field.options) {
+                    if (field.type === "select" && field.options) {
+                      return (
+                        <div key={field.name} className="space-y-1">
+                          <label className="text-sm font-medium">{field.label}</label>
+                          <Select
+                            value={currentValue}
+                            onValueChange={(val) => handleFieldChange(m.id, field.name, val)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {field.options.map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={field.name} className="space-y-1">
                         <label className="text-sm font-medium">{field.label}</label>
-                        <Select
-                          value={currentValue}
-                          onValueChange={(val) => handleFieldChange(m.id, field.name, val)}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.options.map((opt) => (
-                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          defaultValue={currentValue}
+                          placeholder={field.placeholder}
+                          onBlur={(e) => {
+                            if (e.target.value !== currentValue) {
+                              handleFieldChange(m.id, field.name, e.target.value);
+                            }
+                          }}
+                        />
                       </div>
                     );
-                  }
-
-                  return (
-                    <div key={field.name} className="space-y-1">
-                      <label className="text-sm font-medium">{field.label}</label>
-                      <Input
-                        defaultValue={currentValue}
-                        placeholder={field.placeholder}
-                        onBlur={(e) => {
-                          if (e.target.value !== currentValue) {
-                            handleFieldChange(m.id, field.name, e.target.value);
-                          }
-                        }}
-                      />
-                    </div>
-                  );
-                })}
+                  })}
+                </div>
               </div>
             ))}
           </CardContent>

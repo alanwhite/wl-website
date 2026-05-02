@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Check, Clock, AlertCircle, X, ChevronDown, ChevronRight } from "lucide-react";
 import type { RegistrationField } from "@/lib/config";
 
 interface MemberData {
@@ -16,7 +16,7 @@ interface GroupSummaryData {
   id: string;
   name: string;
   description: string | null;
-  confirmedAt: string | null;
+  rsvpStatus: string;
   groupMembers: MemberData[];
 }
 
@@ -47,59 +47,58 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
     });
   }
 
-  const confirmedGroups = groups.filter((g) => g.confirmedAt);
-  const unconfirmedGroups = groups.filter((g) => !g.confirmedAt);
-  const totalMembers = confirmedGroups.reduce((sum, g) => sum + g.groupMembers.length, 0);
-  const completeMembers = confirmedGroups.reduce(
+  const attending = groups.filter((g) => g.rsvpStatus === "attending");
+  const declined = groups.filter((g) => g.rsvpStatus === "declined");
+  const pending = groups.filter((g) => g.rsvpStatus === "pending");
+  const totalAttending = attending.reduce((sum, g) => sum + g.groupMembers.length, 0);
+  const completeMembers = attending.reduce(
     (sum, g) => sum + g.groupMembers.filter((m) => isMemberComplete(m)).length,
     0,
   );
-  const incompleteMembers = totalMembers - completeMembers;
+  const incompleteMembers = totalAttending - completeMembers;
 
   return (
     <div className="space-y-6">
       {/* Summary stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-4 text-center">
-            <div className="text-2xl font-bold">{groups.length}</div>
-            <div className="text-sm text-muted-foreground">{groupLabel}s</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <div className="text-2xl font-bold">{confirmedGroups.length}</div>
-            <div className="text-sm text-muted-foreground">Responded</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <div className="text-2xl font-bold">{totalMembers}</div>
+            <div className="text-2xl font-bold">{attending.length}</div>
             <div className="text-sm text-muted-foreground">Attending</div>
           </CardContent>
         </Card>
-        {requiredFields.length > 0 && (
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <div className="text-2xl font-bold">{incompleteMembers > 0 ? incompleteMembers : "All done"}</div>
-              <div className="text-sm text-muted-foreground">{incompleteMembers > 0 ? "Choices outstanding" : "Choices complete"}</div>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <div className="text-2xl font-bold">{totalAttending}</div>
+            <div className="text-sm text-muted-foreground">Total guests</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <div className="text-2xl font-bold">{declined.length}</div>
+            <div className="text-sm text-muted-foreground">Declined</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <div className="text-2xl font-bold">{pending.length}</div>
+            <div className="text-sm text-muted-foreground">Awaiting RSVP</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Not responded */}
-      {unconfirmedGroups.length > 0 && (
+      {/* Pending */}
+      {pending.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Clock className="h-4 w-4" />
-              Not Yet Responded ({unconfirmedGroups.length})
+              Awaiting RSVP ({pending.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {unconfirmedGroups.map((g) => (
+              {pending.map((g) => (
                 <Badge key={g.id} variant="outline">{g.name}</Badge>
               ))}
             </div>
@@ -107,17 +106,22 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
         </Card>
       )}
 
-      {/* Confirmed groups with expandable details */}
-      {confirmedGroups.length > 0 && (
+      {/* Attending with expandable details */}
+      {attending.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Check className="h-4 w-4" />
-              Responded ({confirmedGroups.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Check className="h-4 w-4" />
+                Attending ({attending.length})
+              </CardTitle>
+              {requiredFields.length > 0 && incompleteMembers > 0 && (
+                <Badge variant="destructive">{incompleteMembers} choices outstanding</Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {confirmedGroups.map((g) => {
+            {attending.map((g) => {
               const complete = g.groupMembers.filter((m) => isMemberComplete(m)).length;
               const total = g.groupMembers.length;
               const allComplete = complete === total;
@@ -133,7 +137,7 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
                       {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       <span className="text-sm font-medium">{g.name}</span>
                       <span className="text-xs text-muted-foreground">
-                        {total} {total === 1 ? "person" : "people"}
+                        {total} {total === 1 ? "guest" : "guests"}
                       </span>
                     </div>
                     {requiredFields.length > 0 && (
@@ -173,6 +177,25 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Declined */}
+      {declined.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <X className="h-4 w-4" />
+              Declined ({declined.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {declined.map((g) => (
+                <Badge key={g.id} variant="secondary">{g.name}</Badge>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
