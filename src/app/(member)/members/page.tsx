@@ -33,14 +33,15 @@ export default async function MembersPage({
   const query = params.q?.trim();
 
   const users = await prisma.user.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { email: { contains: query, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
+    where: {
+      status: { not: "PENDING_REVIEW" },
+      ...(query ? {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+        ],
+      } : {}),
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

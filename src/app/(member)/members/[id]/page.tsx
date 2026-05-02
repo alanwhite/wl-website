@@ -35,6 +35,13 @@ export default async function MemberDetailPage({
 
   if (!user) notFound();
 
+  // Pending users should be managed via the registrations page, not here
+  if (user.status === "PENDING_REVIEW") {
+    const reg = await prisma.registration.findUnique({ where: { userId: user.id }, select: { id: true } });
+    if (reg) redirect(`/members/registrations/${reg.id}`);
+    notFound();
+  }
+
   const [tiers, roles] = await Promise.all([
     prisma.membershipTier.findMany({
       where: { isSystem: false },
