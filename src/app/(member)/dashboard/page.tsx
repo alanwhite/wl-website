@@ -130,6 +130,7 @@ export default async function DashboardPage() {
           groupLabel={groupLabel}
           confirmLabel={confirmLabel}
           memberFields={memberFields}
+          currentUserId={session.user.id}
         />
       )}
 

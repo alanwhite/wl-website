@@ -38,9 +38,10 @@ interface GroupHubProps {
   groupLabel: string;
   confirmLabel: string;
   memberFields: RegistrationField[];
+  currentUserId: string;
 }
 
-export function GroupHub({ group, groupLabel, confirmLabel, memberFields }: GroupHubProps) {
+export function GroupHub({ group, groupLabel, confirmLabel, memberFields, currentUserId }: GroupHubProps) {
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -133,26 +134,33 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields }: Grou
 
           {/* Member list */}
           <div className="space-y-2">
-            {group.groupMembers.map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded border px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{m.name}</span>
-                  {isMemberComplete(m) ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : requiredFields.length > 0 ? (
-                    <Badge variant="outline" className="text-xs">Needs choices</Badge>
-                  ) : null}
+            {group.groupMembers.map((m) => {
+              const isCurrentUser = m.userId === currentUserId;
+              return (
+                <div key={m.id} className="flex items-center justify-between rounded border px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {m.name}{isCurrentUser && <span className="text-muted-foreground"> (You)</span>}
+                    </span>
+                    {isMemberComplete(m) ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : requiredFields.length > 0 ? (
+                      <Badge variant="outline" className="text-xs">Needs choices</Badge>
+                    ) : null}
+                  </div>
+                  {!isCurrentUser && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-destructive hover:text-destructive"
+                      onClick={() => handleRemove(m.id, m.name)}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-destructive hover:text-destructive"
-                  onClick={() => handleRemove(m.id, m.name)}
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Add member */}
@@ -192,7 +200,9 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields }: Grou
             {group.groupMembers.map((m) => (
               <div key={m.id} className="space-y-3 rounded border p-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{m.name}</h3>
+                  <h3 className="font-medium">
+                    {m.name}{m.userId === currentUserId && <span className="text-muted-foreground"> (You)</span>}
+                  </h3>
                   {isMemberComplete(m) && <Check className="h-4 w-4 text-green-600" />}
                 </div>
                 {memberFields.map((field) => {
