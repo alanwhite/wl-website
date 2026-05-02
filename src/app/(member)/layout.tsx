@@ -55,7 +55,7 @@ export default async function MemberLayout({
         <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={[]} />
         <div className="flex flex-1">
           <MemberSidebar items={memberLinks} notificationCounts={notificationCounts} />
-          <main className="flex-1 px-4 py-8 pb-20 md:px-6 md:pb-8">
+          <main className="min-w-0 flex-1 overflow-hidden px-4 py-8 pb-20 md:px-6 md:pb-8">
             {children}
           </main>
         </div>
