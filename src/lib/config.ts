@@ -416,6 +416,19 @@ export async function getGroupManagerRoles(): Promise<string[]> {
   return roles ?? [];
 }
 
+// ── Dashboard ──
+
+export interface DashboardCard {
+  type: "page" | "group-hub" | "admin-summary";
+  slug?: string;    // for page cards
+  title?: string;   // optional override title
+}
+
+export async function getDashboardCards(): Promise<DashboardCard[]> {
+  const cards = await getConfigJson<DashboardCard[]>("dashboard.cards");
+  return cards ?? [];
+}
+
 export async function getGroupMemberFields(): Promise<RegistrationField[]> {
   const fields = await getConfigJson<RegistrationField[]>("groups.memberFields");
   return fields ?? [];
