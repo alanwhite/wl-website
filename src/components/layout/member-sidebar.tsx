@@ -32,7 +32,9 @@ export function MemberSidebar({ items, notificationCounts = {} }: MemberSidebarP
         {allItems.map((item) => {
           const Icon = getIcon(item.icon) ?? LayoutDashboard;
           const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+            pathname === item.href ||
+            (pathname.startsWith(item.href + "/") &&
+              !allItems.some((other) => other.href !== item.href && other.href.length > item.href.length && pathname.startsWith(other.href)));
           const count = notificationCounts[item.href] ?? 0;
           return (
             <Link

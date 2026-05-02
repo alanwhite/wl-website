@@ -59,8 +59,11 @@ export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottom
     0,
   );
 
+  const allNavItems = [...visibleItems, ...overflowItems];
   function isActive(href: string) {
-    return pathname === href || pathname.startsWith(href + "/");
+    return pathname === href ||
+      (pathname.startsWith(href + "/") &&
+        !allNavItems.some((other) => other.href !== href && other.href.length > href.length && pathname.startsWith(other.href)));
   }
 
   return (
