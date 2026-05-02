@@ -420,3 +420,18 @@ export async function updateGroupMemberFields(fieldsJson: string, confirmLabel: 
     action: "settings.groups.memberFields.update",
   });
 }
+
+export async function updateDashboardCards(cardsJson: string) {
+  const admin = await requireAdmin();
+  JSON.parse(cardsJson); // validate
+  await setConfig("dashboard.cards", cardsJson);
+  invalidateConfigCache("dashboard.cards");
+  revalidatePath("/dashboard");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.dashboard.cards.update",
+  });
+}

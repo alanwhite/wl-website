@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getDashboardCards } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -90,6 +90,7 @@ export default async function AdminSettingsPage() {
           groupManagerRoles: await getGroupManagerRoles(),
           groupMemberFields: await getGroupMemberFields(),
           groupConfirmLabel: await getGroupConfirmLabel(),
+          dashboardCards: await getDashboardCards(),
         }}
         tiers={tiers}
         roles={roles}

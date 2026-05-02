@@ -39,10 +39,11 @@ import {
   updateNotificationDefaults,
   updateGroupSettings,
   updateGroupMemberFields,
+  updateDashboardCards,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
-import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, NotificationType, NotificationDefaults } from "@/lib/config";
+import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, NotificationType, NotificationDefaults, DashboardCard } from "@/lib/config";
 import { NavigationEditor } from "@/components/admin/navigation-editor";
 
 interface SettingsFormProps {
@@ -77,6 +78,7 @@ interface SettingsFormProps {
     groupManagerRoles: string[];
     groupMemberFields: import("@/lib/config").RegistrationField[];
     groupConfirmLabel: string;
+    dashboardCards: DashboardCard[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -113,6 +115,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [groupManagerRoleSlugs, setGroupManagerRoleSlugs] = useState<string[]>(settings.groupManagerRoles);
   const [groupMemberFieldsJson, setGroupMemberFieldsJson] = useState(JSON.stringify(settings.groupMemberFields, null, 2));
   const [groupConfirmLabelVal, setGroupConfirmLabelVal] = useState(settings.groupConfirmLabel);
+  const [dashboardCardsJson, setDashboardCardsJson] = useState(JSON.stringify(settings.dashboardCards, null, 2));
   const [notifTypesJson, setNotifTypesJson] = useState(JSON.stringify(settings.notificationTypes, null, 2));
   const [notifDefaultPush, setNotifDefaultPush] = useState(settings.notificationDefaults.push);
   const [termsEnabled, setTermsEnabled] = useState(settings.registrationTerms.enabled);
@@ -420,6 +423,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="hero" className="justify-start">Hero Images</TabsTrigger>
         <TabsTrigger value="theme" className="justify-start">Theme</TabsTrigger>
         <TabsTrigger value="navigation" className="justify-start">Navigation</TabsTrigger>
+        <TabsTrigger value="dashboard" className="justify-start">Dashboard</TabsTrigger>
         <TabsTrigger value="fields" className="justify-start">Registration Fields</TabsTrigger>
         <TabsTrigger value="guidance" className="justify-start">Reg. Guidance</TabsTrigger>
         <TabsTrigger value="tierRules" className="justify-start">Tier Rules</TabsTrigger>
@@ -658,6 +662,41 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
           </CardHeader>
           <CardContent>
             <NavigationEditor initialLinks={settings.navLinks} tiers={tiers} roles={roles} />
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="dashboard">
+        <Card>
+          <CardHeader>
+            <CardTitle>Dashboard Cards</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure which cards appear on the member dashboard, in order. Card types: &quot;page&quot; (renders a CMS page), &quot;group-hub&quot; (RSVP &amp; choices), &quot;admin-summary&quot; (manager view). Leave empty for the default dashboard.
+            </p>
+            <Textarea
+              value={dashboardCardsJson}
+              onChange={(e) => setDashboardCardsJson(e.target.value)}
+              rows={10}
+              className="font-mono text-sm"
+            />
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  JSON.parse(dashboardCardsJson);
+                  await updateDashboardCards(dashboardCardsJson);
+                  toast.success("Dashboard cards saved");
+                } catch {
+                  toast.error("Invalid JSON");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Dashboard Cards
+            </Button>
           </CardContent>
         </Card>
       </TabsContent>
