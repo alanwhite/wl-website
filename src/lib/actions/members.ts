@@ -72,7 +72,21 @@ export async function approveRegistration(registrationId: string, tierId?: strin
     await prisma.group.update({
       where: { id: groupId },
       data: { members: { connect: { id: registration.user.id } } },
-    }).catch(() => {}); // Ignore if group doesn't exist
+    }).catch(() => {});
+
+    // Auto-create GroupMember record for field data (meals etc.)
+    const existingMember = await prisma.groupMember.findFirst({
+      where: { groupId, userId: registration.user.id },
+    });
+    if (!existingMember) {
+      await prisma.groupMember.create({
+        data: {
+          groupId,
+          userId: registration.user.id,
+          name: registration.user.name || registration.user.email || "Unknown",
+        },
+      }).catch(() => {});
+    }
   }
 
   await logAudit({
