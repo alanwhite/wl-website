@@ -15,6 +15,7 @@ export default async function PendingPage() {
   if (session.user.status === "REJECTED") redirect("/register/rejected");
 
   const [siteInfo, hideAuthHeader] = await Promise.all([getSiteInfo(), getConfig("site.hideAuthHeader")]);
+  const hasEmail = !!process.env.RESEND_API_KEY;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -35,12 +36,16 @@ export default async function PendingPage() {
           </div>
           <CardTitle>Thank you for registering!</CardTitle>
           <CardDescription>
-            We&apos;ve received your registration and it&apos;s now being reviewed. We&apos;ll be in touch by email once it&apos;s been approved — this usually doesn&apos;t take long. We look forward to welcoming you!
+            {hasEmail
+              ? "We've received your registration and it's now being reviewed. We'll be in touch by email once it's been approved — this usually doesn't take long. We look forward to welcoming you!"
+              : "We've received your registration and it's now being reviewed. This usually doesn't take long — please check back soon!"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Keep an eye on your email — we&apos;ll send a confirmation to the address linked to your Google or Apple account. If you don&apos;t see it within a day or so, please check your junk or spam folder.
+            {hasEmail
+              ? "Keep an eye on your email — we'll send a confirmation to the address linked to your Google or Apple account. If you don't see it within a day or so, please check your junk or spam folder."
+              : "Once your registration has been approved, just sign in again and you'll have full access."}
           </p>
           <form
             action={async () => {
