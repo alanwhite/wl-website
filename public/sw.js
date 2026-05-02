@@ -12,7 +12,14 @@ self.addEventListener("push", (event) => {
     tag: data.tag || "default",
   };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  event.waitUntil(
+    self.registration.showNotification(data.title, options).then(() => {
+      // Set app badge count (supported on Android/desktop, iOS via PWA)
+      if (self.navigator && self.navigator.setAppBadge) {
+        self.navigator.setAppBadge(data.badgeCount || 1);
+      }
+    }),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -30,6 +37,11 @@ self.addEventListener("notificationclick", (event) => {
       }
       // Otherwise open a new window
       return clients.openWindow(url);
+    }).then(() => {
+      // Clear badge when notification is tapped
+      if (self.navigator && self.navigator.setAppBadge) {
+        self.navigator.clearAppBadge();
+      }
     }),
   );
 });
