@@ -165,7 +165,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                 <p className="text-sm text-muted-foreground">{group.description}</p>
               )}
             </div>
-            <Badge className="bg-green-600"><Check className="mr-1 h-3 w-3" /> Attending</Badge>
+            <Badge className="bg-emerald-600"><Check className="mr-1 h-3 w-3" /> Attending</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -178,22 +178,20 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
             {group.groupMembers.map((m) => {
               const isCurrentUser = m.userId === currentUserId;
               return (
-                <div key={m.id} className="flex items-center justify-between rounded border px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
-                      {m.name}{isCurrentUser && <span className="text-muted-foreground"> (You)</span>}
-                    </span>
-                    {isMemberComplete(m) ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : requiredFields.length > 0 ? (
-                      <Badge variant="outline" className="text-xs">Needs choices</Badge>
-                    ) : null}
-                  </div>
+                <div key={m.id} className="flex flex-wrap items-center gap-2 rounded border px-3 py-2">
+                  <span className="text-sm font-medium">
+                    {m.name}{isCurrentUser && <span className="text-muted-foreground"> (You)</span>}
+                  </span>
+                  {isMemberComplete(m) ? (
+                    <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  ) : requiredFields.length > 0 ? (
+                    <Badge variant="outline" className="text-xs">Needs choices</Badge>
+                  ) : null}
                   {!isCurrentUser && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-xs text-destructive hover:text-destructive"
+                      className="ml-auto h-7 text-xs text-destructive hover:text-destructive"
                       onClick={() => handleRemove(m.id, m.name)}
                     >
                       Remove
@@ -250,7 +248,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                   <h3 className="font-medium">
                     {m.name}{m.userId === currentUserId && <span className="text-muted-foreground"> (You)</span>}
                   </h3>
-                  {isMemberComplete(m) && <Check className="h-4 w-4 text-green-600" />}
+                  {isMemberComplete(m) && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 </div>
                 <div className="space-y-3">
                   {memberFields.map((field) => {
@@ -264,7 +262,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                             value={currentValue}
                             onValueChange={(val) => handleFieldChange(m.id, field.name, val)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="min-w-0 [&>span]:truncate">
                               <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
                             </SelectTrigger>
                             <SelectContent>

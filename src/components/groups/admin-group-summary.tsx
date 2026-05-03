@@ -142,7 +142,7 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
                     </div>
                     {requiredFields.length > 0 && (
                       allComplete ? (
-                        <Badge className="bg-green-600"><Check className="mr-1 h-3 w-3" />{complete}/{total}</Badge>
+                        <Badge className="bg-emerald-600"><Check className="mr-1 h-3 w-3" />{complete}/{total}</Badge>
                       ) : (
                         <Badge variant="destructive"><AlertCircle className="mr-1 h-3 w-3" />{complete}/{total}</Badge>
                       )
@@ -155,7 +155,7 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium">{m.name}</span>
                             {isMemberComplete(m) ? (
-                              <Check className="h-3 w-3 text-green-600" />
+                              <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                             ) : (
                               <AlertCircle className="h-3 w-3 text-destructive" />
                             )}
