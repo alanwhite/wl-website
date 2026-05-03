@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -160,6 +160,17 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      <form
+        action={async () => {
+          "use server";
+          await signOut({ redirectTo: "/" });
+        }}
+      >
+        <Button variant="outline" type="submit" className="w-full">
+          Sign Out
+        </Button>
+      </form>
     </div>
   );
 }
