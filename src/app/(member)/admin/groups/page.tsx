@@ -23,7 +23,7 @@ export default async function AdminGroupsPage() {
     }),
     getGroupLabel(),
     prisma.user.findMany({
-      where: { status: "APPROVED" },
+      where: { status: "APPROVED", tierLevel: { lt: 999 } },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true },
     }),

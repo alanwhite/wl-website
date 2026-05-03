@@ -35,6 +35,7 @@ export default async function MembersPage({
   const users = await prisma.user.findMany({
     where: {
       status: { not: "PENDING_REVIEW" },
+      tierLevel: { lt: 999 },
       ...(query ? {
         OR: [
           { name: { contains: query, mode: "insensitive" } },
