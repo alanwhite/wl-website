@@ -443,6 +443,11 @@ export async function getGroupConfirmLabel(): Promise<string> {
   return label ?? "Confirm";
 }
 
+export async function getGroupsLocked(): Promise<boolean> {
+  const locked = await getConfig("groups.locked");
+  return locked === "true";
+}
+
 export function canManageGroups(
   user: { roleSlugs?: string[]; tierLevel?: number },
   managerRoles: string[],

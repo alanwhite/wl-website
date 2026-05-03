@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, AlertCircle, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Check, Clock, AlertCircle, X, ChevronDown, ChevronRight, Lock, Unlock } from "lucide-react";
+import { toggleGroupsLocked } from "@/lib/actions/groups";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import type { RegistrationField } from "@/lib/config";
 
 interface MemberData {
@@ -24,10 +28,14 @@ interface AdminGroupSummaryProps {
   groups: GroupSummaryData[];
   groupLabel: string;
   memberFields: RegistrationField[];
+  locked: boolean;
+  exportUrl?: string;
 }
 
-export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGroupSummaryProps) {
+export function AdminGroupSummary({ groups, groupLabel, memberFields, locked, exportUrl }: AdminGroupSummaryProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [isLocked, setIsLocked] = useState(locked);
+  const router = useRouter();
   const requiredFields = memberFields.filter((f) => f.required);
 
   function isMemberComplete(member: MemberData): boolean {
@@ -57,8 +65,35 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields }: AdminGro
   );
   const incompleteMembers = totalAttending - completeMembers;
 
+  async function handleToggleLock() {
+    try {
+      const nowLocked = await toggleGroupsLocked();
+      setIsLocked(nowLocked);
+      toast.success(nowLocked ? "Choices locked" : "Choices unlocked");
+      router.refresh();
+    } catch {
+      toast.error("Failed to toggle lock");
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Lock toggle + export */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant={isLocked ? "destructive" : "outline"}
+          size="sm"
+          onClick={handleToggleLock}
+        >
+          {isLocked ? <><Lock className="mr-2 h-4 w-4" /> Unlock Choices</> : <><Unlock className="mr-2 h-4 w-4" /> Lock Choices</>}
+        </Button>
+        {exportUrl && (
+          <Button variant="outline" size="sm" asChild>
+            <a href={exportUrl} download>Export CSV</a>
+          </Button>
+        )}
+        {isLocked && <Badge variant="destructive">Choices are locked</Badge>}
+      </div>
       {/* Summary stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>

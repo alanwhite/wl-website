@@ -39,9 +39,10 @@ interface GroupHubProps {
   confirmLabel: string;
   memberFields: RegistrationField[];
   currentUserId: string;
+  locked?: boolean;
 }
 
-export function GroupHub({ group, groupLabel, confirmLabel, memberFields, currentUserId }: GroupHubProps) {
+export function GroupHub({ group, groupLabel, confirmLabel, memberFields, currentUserId, locked = false }: GroupHubProps) {
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -187,7 +188,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                   ) : requiredFields.length > 0 ? (
                     <Badge variant="outline" className="text-xs">Needs choices</Badge>
                   ) : null}
-                  {!isCurrentUser && (
+                  {!isCurrentUser && !locked && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -203,29 +204,37 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
           </div>
 
           {/* Add member */}
-          <div className="flex gap-2">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Add a person"
-              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-            />
-            <Button onClick={handleAdd} disabled={loading} size="sm">
-              Add
-            </Button>
-          </div>
+          {!locked && (
+            <div className="flex gap-2">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Add a person"
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              />
+              <Button onClick={handleAdd} disabled={loading} size="sm">
+                Add
+              </Button>
+            </div>
+          )}
+
+          {locked && (
+            <p className="text-sm text-muted-foreground italic">Choices have been locked and can no longer be changed.</p>
+          )}
 
           {/* Change RSVP */}
-          <div className="border-t pt-3">
-            <Button
-              onClick={() => handleRsvp("declined")}
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-            >
-              Can&apos;t make it after all?
-            </Button>
-          </div>
+          {!locked && (
+            <div className="border-t pt-3">
+              <Button
+                onClick={() => handleRsvp("declined")}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+              >
+                Can&apos;t make it after all?
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -261,6 +270,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                           <Select
                             value={currentValue}
                             onValueChange={(val) => handleFieldChange(m.id, field.name, val)}
+                            disabled={locked}
                           >
                             <SelectTrigger className="w-full min-w-0 [&>span]:min-w-0 [&>span]:truncate">
                               <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
@@ -281,6 +291,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                         <Input
                           defaultValue={currentValue}
                           placeholder={field.placeholder}
+                          disabled={locked}
                           onBlur={(e) => {
                             if (e.target.value !== currentValue) {
                               handleFieldChange(m.id, field.name, e.target.value);

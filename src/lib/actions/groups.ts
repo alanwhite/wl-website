@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getGroupManagerRoles, canManageGroups } from "@/lib/config";
+import { getGroupManagerRoles, canManageGroups, getGroupsLocked } from "@/lib/config";
+import { setConfig, invalidateConfigCache } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 
@@ -161,6 +162,7 @@ export async function removeUserFromGroup(userId: string, groupId: string) {
 
 export async function addGroupMember(groupId: string, name: string, data?: Record<string, string>) {
   const user = await requireApprovedMember();
+  if (await getGroupsLocked()) throw new Error("Choices are locked and can no longer be changed");
 
   // Verify user belongs to this group
   const group = await prisma.group.findFirst({
@@ -214,8 +216,28 @@ export async function removeGroupMember(memberId: string) {
   revalidatePath("/dashboard");
 }
 
+export async function toggleGroupsLocked() {
+  const manager = await requireGroupManager();
+  const currentlyLocked = await getGroupsLocked();
+  const newValue = currentlyLocked ? "false" : "true";
+  await setConfig("groups.locked", newValue);
+  invalidateConfigCache("groups.locked");
+  revalidatePath("/dashboard");
+  revalidatePath("/groups");
+  revalidatePath("/manage/groups");
+
+  await logAudit({
+    userId: manager.id,
+    userName: manager.name ?? "Manager",
+    action: `groups.${newValue === "true" ? "locked" : "unlocked"}`,
+  });
+
+  return newValue === "true";
+}
+
 export async function setGroupRsvp(groupId: string, status: "attending" | "declined") {
   const user = await requireApprovedMember();
+  if (await getGroupsLocked()) throw new Error("Choices are locked and can no longer be changed");
 
   const group = await prisma.group.findFirst({
     where: { id: groupId, members: { some: { id: user.id } } },
@@ -240,6 +262,7 @@ export async function updateMemberData(
   fieldData: Record<string, string>,
 ) {
   const user = await requireApprovedMember();
+  if (await getGroupsLocked()) throw new Error("Choices are locked and can no longer be changed");
 
   // Verify member belongs to a group the user is in
   const member = await prisma.groupMember.findUnique({

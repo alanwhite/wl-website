@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getGroupLabel, getGroupMemberFields, getGroupConfirmLabel } from "@/lib/config";
+import { getGroupLabel, getGroupMemberFields, getGroupConfirmLabel, getGroupsLocked } from "@/lib/config";
 import { Card, CardContent } from "@/components/ui/card";
 import { GroupHub } from "@/components/groups/group-hub";
 
@@ -11,10 +11,11 @@ export default async function MyGroupPage() {
   const session = await auth();
   if (!session?.user || session.user.status !== "APPROVED") redirect("/login");
 
-  const [groupLabel, memberFields, confirmLabel] = await Promise.all([
+  const [groupLabel, memberFields, confirmLabel, locked] = await Promise.all([
     getGroupLabel(),
     getGroupMemberFields(),
     getGroupConfirmLabel(),
+    getGroupsLocked(),
   ]);
 
   const userWithGroups = await prisma.user.findUnique({
@@ -69,6 +70,7 @@ export default async function MyGroupPage() {
         confirmLabel={confirmLabel}
         memberFields={memberFields}
         currentUserId={session.user.id}
+        locked={locked}
       />
     </div>
   );
