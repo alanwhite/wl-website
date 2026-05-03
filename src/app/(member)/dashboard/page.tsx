@@ -6,6 +6,7 @@ import { AnnouncementsPanel } from "@/components/shared/announcements-panel";
 import { PasskeyPrompt } from "@/components/auth/passkey-prompt";
 import { prisma } from "@/lib/prisma";
 import Markdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ export default async function DashboardPage() {
         {showPasskeyPrompt && <PasskeyPrompt />}
         {page ? (
           <div className="prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md prose-headings:tracking-tight">
-            <Markdown>{page.content}</Markdown>
+            <Markdown rehypePlugins={[rehypeRaw]}>{page.content}</Markdown>
           </div>
         ) : (
           <p className="text-center text-muted-foreground">Welcome page not found.</p>

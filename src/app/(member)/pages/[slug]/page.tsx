@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Markdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function MemberPage({
     <div className="mx-auto max-w-3xl">
       <h1 className="mb-6 text-3xl font-bold">{page.title}</h1>
       <div className="prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md">
-        <Markdown>{page.content}</Markdown>
+        <Markdown rehypePlugins={[rehypeRaw]}>{page.content}</Markdown>
       </div>
     </div>
   );
