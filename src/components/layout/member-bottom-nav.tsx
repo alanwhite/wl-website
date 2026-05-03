@@ -43,10 +43,12 @@ export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottom
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  const dashboardItem = items.find((i) => i.href === "/dashboard") ?? { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" };
+  const profileItem = items.find((i) => i.href === "/profile") ?? { label: "Profile", href: "/profile", icon: "User" };
   const allItems: MemberNavItem[] = [
-    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+    dashboardItem,
     ...items.filter((i) => i.href !== "/dashboard" && i.href !== "/profile"),
-    { label: "Profile", href: "/profile", icon: "User" },
+    profileItem,
   ];
 
   const needsMore = allItems.length > MAX_VISIBLE + 1;

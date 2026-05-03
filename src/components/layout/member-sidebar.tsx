@@ -20,10 +20,12 @@ interface MemberSidebarProps {
 export function MemberSidebar({ items, notificationCounts = {} }: MemberSidebarProps) {
   const pathname = usePathname();
 
+  const dashboardItem = items.find((i) => i.href === "/dashboard") ?? { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" };
+  const profileItem = items.find((i) => i.href === "/profile") ?? { label: "Profile", href: "/profile", icon: "User" };
   const allItems: MemberNavItem[] = [
-    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+    dashboardItem,
     ...items.filter((i) => i.href !== "/dashboard" && i.href !== "/profile"),
-    { label: "Profile", href: "/profile", icon: "User" },
+    profileItem,
   ];
 
   return (
