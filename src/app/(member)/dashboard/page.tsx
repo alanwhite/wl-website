@@ -46,7 +46,7 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-2xl">
         {showPasskeyPrompt && <PasskeyPrompt />}
         {page ? (
-          <div className="prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md prose-headings:tracking-tight">
+          <div className="max-w-none">
             <Markdown rehypePlugins={[rehypeRaw]}>{page.content}</Markdown>
           </div>
         ) : (
