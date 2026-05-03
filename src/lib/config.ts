@@ -424,6 +424,10 @@ export interface DashboardCard {
   title?: string;   // optional override title
 }
 
+export async function getDashboardWelcomePageSlug(): Promise<string | null> {
+  return getConfig("dashboard.welcomePageSlug");
+}
+
 export async function getDashboardCards(): Promise<DashboardCard[]> {
   const cards = await getConfigJson<DashboardCard[]>("dashboard.cards");
   return cards ?? [];

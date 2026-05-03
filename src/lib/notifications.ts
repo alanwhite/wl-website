@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
-import { canAccessPoll, getMemberManagerRoles, canManageMembers } from "./config";
+import { canAccessPoll, getMemberManagerRoles, canManageMembers, getGroupMemberFields } from "./config";
+import type { RegistrationField } from "./config";
 
 /**
  * Count pending notifications per feature for a user.
@@ -61,6 +62,41 @@ export async function getNotificationCounts(user: {
     });
     if (pendingRegistrations > 0) {
       counts["/members/registrations"] = pendingRegistrations;
+    }
+  }
+
+  // RSVP / group member field completion for /groups
+  const memberFields = await getGroupMemberFields();
+  if (memberFields.length > 0) {
+    const userWithGroup = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        groups: {
+          take: 1,
+          select: {
+            rsvpStatus: true,
+            groupMembers: { select: { data: true } },
+          },
+        },
+      },
+    });
+
+    const group = userWithGroup?.groups[0];
+    if (group) {
+      if (group.rsvpStatus === "pending") {
+        counts["/groups"] = 1; // needs RSVP
+      } else if (group.rsvpStatus === "attending") {
+        const requiredFields = memberFields.filter((f: RegistrationField) => f.required);
+        if (requiredFields.length > 0) {
+          const incomplete = group.groupMembers.filter((m) => {
+            const data = (m.data as Record<string, string>) ?? {};
+            return !requiredFields.every((f: RegistrationField) => data[f.name] && data[f.name] !== "");
+          }).length;
+          if (incomplete > 0) {
+            counts["/groups"] = incomplete;
+          }
+        }
+      }
     }
   }
 
