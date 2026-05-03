@@ -37,10 +37,14 @@ export default async function MemberPage({
 
   if (!page) notFound();
 
+  const contentHasHtml = page.content.trimStart().startsWith("<");
+
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-3xl font-bold">{page.title}</h1>
-      <div className="prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md">
+      {!contentHasHtml && (
+        <h1 className="mb-6 text-3xl font-bold">{page.title}</h1>
+      )}
+      <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
         <Markdown rehypePlugins={[rehypeRaw]}>{page.content}</Markdown>
       </div>
     </div>
