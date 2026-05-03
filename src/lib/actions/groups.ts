@@ -133,9 +133,15 @@ export async function assignUserToGroup(userId: string, groupId: string) {
 export async function removeUserFromGroup(userId: string, groupId: string) {
   const user = await requireGroupManager();
 
+  // Remove the User↔Group relation
   await prisma.group.update({
     where: { id: groupId },
     data: { members: { disconnect: { id: userId } } },
+  });
+
+  // Also remove their GroupMember record (meal data etc.)
+  await prisma.groupMember.deleteMany({
+    where: { groupId, userId },
   });
 
   await logAudit({
