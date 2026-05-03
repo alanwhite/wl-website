@@ -262,7 +262,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                             value={currentValue}
                             onValueChange={(val) => handleFieldChange(m.id, field.name, val)}
                           >
-                            <SelectTrigger className="w-full min-w-0 whitespace-normal">
+                            <SelectTrigger className="w-full min-w-0 [&>span]:min-w-0 [&>span]:truncate">
                               <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
                             </SelectTrigger>
                             <SelectContent>
