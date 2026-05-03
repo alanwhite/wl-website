@@ -52,7 +52,9 @@ export default async function MemberLayout({
   return (
     <Providers session={session}>
       <div className="flex min-h-screen flex-col">
-        <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={[]} />
+        <div className={process.env.STEALTH_MODE === "true" ? "hidden md:block" : ""}>
+          <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={[]} />
+        </div>
         <div className="flex flex-1">
           <MemberSidebar items={memberLinks} notificationCounts={notificationCounts} />
           <main className="min-w-0 flex-1 overflow-hidden px-4 py-8 pb-20 md:px-6 md:pb-8">

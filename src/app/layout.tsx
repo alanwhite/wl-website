@@ -79,8 +79,9 @@ export default async function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme={process.env.FORCE_LIGHT_MODE === "true" ? "light" : "system"}
+          enableSystem={process.env.FORCE_LIGHT_MODE !== "true"}
+          forcedTheme={process.env.FORCE_LIGHT_MODE === "true" ? "light" : undefined}
           disableTransitionOnChange
         >
           {children}
