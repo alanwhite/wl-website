@@ -4,7 +4,7 @@ import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 
 const alwaysPublicPaths = ["/login", "/register", "/api/auth", "/api/health", "/api/postcode-check", "/api/manifest", "/api/export"];
 const publicContentPaths = ["/", "/about", "/contact", "/p", "/api/calendar.ics"];
-const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members", "/calendar", "/financials", "/announcements", "/forms", "/groups", "/pages"];
+const memberPaths = ["/dashboard", "/profile", "/polls", "/documents", "/members", "/calendar", "/financials", "/announcements", "/forms", "/groups", "/pages", "/manage"];
 const adminPaths = ["/admin"];
 
 const stealthMode = process.env.STEALTH_MODE === "true";
