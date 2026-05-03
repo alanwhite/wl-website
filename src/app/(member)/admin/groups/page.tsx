@@ -18,7 +18,7 @@ export default async function AdminGroupsPage() {
       orderBy: { name: "asc" },
       include: {
         members: { select: { id: true, name: true, email: true } },
-        groupMembers: { select: { id: true, name: true } },
+        groupMembers: { select: { id: true, name: true, userId: true } },
       },
     }),
     getGroupLabel(),

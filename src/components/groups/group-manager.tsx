@@ -28,7 +28,7 @@ interface GroupData {
   name: string;
   description: string | null;
   members: UserInfo[];
-  groupMembers: { id: string; name: string }[];
+  groupMembers: { id: string; name: string; userId: string | null }[];
 }
 
 interface GroupManagerProps {
@@ -138,7 +138,7 @@ export function GroupManager({ groups, groupLabel, allUsers }: GroupManagerProps
       ) : (
         <div className="space-y-3">
           {groups.map((group) => {
-            const totalMembers = group.members.length + group.groupMembers.length;
+            const totalMembers = group.groupMembers.length || group.members.length;
             // Users not in this group (available to assign)
             const availableUsers = allUsers.filter(
               (u) => !group.members.some((m) => m.id === u.id),
@@ -170,33 +170,25 @@ export function GroupManager({ groups, groupLabel, allUsers }: GroupManagerProps
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-0">
-                  {/* System users */}
-                  {group.members.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">Users</p>
-                      {group.members.map((m) => (
-                        <div key={m.id} className="flex items-center justify-between rounded border px-3 py-1.5">
-                          <span className="text-sm">{m.name || m.email}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-destructive hover:text-destructive"
-                            onClick={() => handleRemoveUser(group.id, m.id, m.name || m.email || "user")}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Non-user members */}
+                  {/* All members (unified view) */}
                   {group.groupMembers.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">Additional members</p>
                       {group.groupMembers.map((m) => (
-                        <div key={m.id} className="rounded border px-3 py-1.5 text-sm">
-                          {m.name}
+                        <div key={m.id} className="flex items-center justify-between rounded border px-3 py-1.5">
+                          <span className="text-sm">
+                            {m.name}
+                            {m.userId && <span className="ml-1 text-xs text-muted-foreground">(registered)</span>}
+                          </span>
+                          {m.userId ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveUser(group.id, m.userId!, m.name)}
+                            >
+                              Remove
+                            </Button>
+                          ) : null}
                         </div>
                       ))}
                     </div>
