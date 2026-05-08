@@ -6,6 +6,41 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { isNewsletterEnabled, subscribeContact, unsubscribeContact } from "@/lib/emailoctopus";
+import type { Prisma } from "@prisma/client";
+
+const SETUP_STEPS = {
+  passkey: "passkeyPromptDismissed",
+  notifications: "notificationsPromptDismissed",
+} as const;
+
+type SetupStep = keyof typeof SETUP_STEPS;
+
+export async function setProfileSetupDismissed(step: SetupStep, dismissed: boolean) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated");
+  if (!(step in SETUP_STEPS)) throw new Error("Unknown step");
+
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId: session.user.id },
+    select: { extra: true },
+  });
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  if (dismissed) {
+    extra[SETUP_STEPS[step]] = true;
+  } else {
+    delete extra[SETUP_STEPS[step]];
+  }
+  const extraValue = extra as Prisma.InputJsonValue;
+
+  await prisma.userProfile.upsert({
+    where: { userId: session.user.id },
+    update: { extra: extraValue },
+    create: { userId: session.user.id, extra: extraValue },
+  });
+
+  revalidatePath("/profile");
+  revalidatePath("/dashboard");
+}
 
 const profileSchema = z.object({
   bio: z.string().optional(),

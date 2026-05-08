@@ -11,8 +11,8 @@ import { getNotificationTypes, getNotificationDefaults } from "@/lib/config";
 import { NotificationPreferences } from "@/components/profile/notification-preferences";
 import { PushSubscriptionManager } from "@/components/profile/push-subscription";
 import { InstallApp } from "@/components/profile/install-app";
+import { SetupSummary, type SetupStep } from "@/components/profile/setup-summary";
 import { getVapidPublicKey, isPushEnabled } from "@/lib/push";
-import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -57,9 +57,9 @@ export default async function ProfilePage() {
   const passkeyPending = passkeysEnabled && authenticators.length === 0 && !extra.passkeyPromptDismissed;
   const pushPending =
     isPushEnabled() && pushSubCount === 0 && !extra.notificationsPromptDismissed;
-  const pendingItems: { label: string; anchor: string }[] = [];
-  if (passkeyPending) pendingItems.push({ label: "Set up a passkey", anchor: "passkeys" });
-  if (pushPending) pendingItems.push({ label: "Turn on notifications", anchor: "notifications" });
+  const pendingItems: { step: SetupStep; label: string; anchor: string }[] = [];
+  if (passkeyPending) pendingItems.push({ step: "passkey", label: "Set up a passkey", anchor: "passkeys" });
+  if (pushPending) pendingItems.push({ step: "notifications", label: "Turn on notifications", anchor: "notifications" });
 
   const initials = session.user.name
     ?.split(" ")
@@ -76,31 +76,7 @@ export default async function ProfilePage() {
         </Button>
       </div>
 
-      {pendingItems.length > 0 && (
-        <Card className="border-primary/40 bg-primary/5">
-          <CardContent className="flex items-start gap-3 py-4">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-            <div className="text-sm">
-              <p className="mb-1 font-medium">
-                {pendingItems.length === 1
-                  ? "One thing left to set up"
-                  : `${pendingItems.length} things left to set up`}
-              </p>
-              <p className="text-muted-foreground">
-                {pendingItems.map((item, i) => (
-                  <span key={item.anchor}>
-                    {i > 0 && (i === pendingItems.length - 1 ? " and " : ", ")}
-                    <a href={`#${item.anchor}`} className="font-medium text-primary underline">
-                      {item.label.toLowerCase()}
-                    </a>
-                  </span>
-                ))}
-                {" — scroll down or tap a link to jump straight to it."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <SetupSummary initialPending={pendingItems} />
 
       <Card>
         <CardHeader>
