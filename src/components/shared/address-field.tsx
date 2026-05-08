@@ -173,8 +173,8 @@ export function AddressField({
             {!eligibility.valid
               ? "Please enter a valid UK postcode."
               : eligibility.eligible
-                ? "Eligible for full membership."
-                : "This postcode is not in the eligible area. You can still apply as an Associate Member."}
+                ? "Great — your address is in the eligible area."
+                : "This postcode is outside the eligible area. You can still join — your registration will go through as normal."}
           </div>
         )}
       </div>
