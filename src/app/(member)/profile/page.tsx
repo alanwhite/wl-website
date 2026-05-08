@@ -10,6 +10,7 @@ import { PasskeyManager } from "@/components/auth/passkey-manager";
 import { getNotificationTypes, getNotificationDefaults } from "@/lib/config";
 import { NotificationPreferences } from "@/components/profile/notification-preferences";
 import { PushSubscriptionManager } from "@/components/profile/push-subscription";
+import { InstallApp } from "@/components/profile/install-app";
 import { getVapidPublicKey } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
@@ -132,6 +133,8 @@ export default async function ProfilePage() {
           saved={savedPrefs}
         />
       )}
+
+      <InstallApp />
 
       {vapidPublicKey && (
         <Card>

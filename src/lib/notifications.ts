@@ -1,6 +1,24 @@
 import { prisma } from "./prisma";
 import { canAccessPoll, getMemberManagerRoles, canManageMembers, getGroupMemberFields } from "./config";
 import type { RegistrationField } from "./config";
+import { isPushEnabled } from "./push";
+
+const passkeysEnabled = process.env.AUTH_CREDENTIALS_TEST !== "true";
+
+async function getProfileSetupPending(userId: string): Promise<number> {
+  const [passkeyCount, pushCount, profile] = await Promise.all([
+    passkeysEnabled
+      ? prisma.authenticator.count({ where: { userId } })
+      : Promise.resolve(1), // skip when passkeys disabled
+    prisma.pushSubscription.count({ where: { userId } }),
+    prisma.userProfile.findUnique({ where: { userId }, select: { extra: true } }),
+  ]);
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  let pending = 0;
+  if (passkeysEnabled && passkeyCount === 0 && !extra.passkeyPromptDismissed) pending += 1;
+  if (isPushEnabled() && pushCount === 0 && !extra.notificationsPromptDismissed) pending += 1;
+  return pending;
+}
 
 /**
  * Count pending notifications per feature for a user.
@@ -98,6 +116,12 @@ export async function getNotificationCounts(user: {
         }
       }
     }
+  }
+
+  // Account setup items: passkey, push notifications
+  const profileSetup = await getProfileSetupPending(user.id);
+  if (profileSetup > 0) {
+    counts["/profile"] = profileSetup;
   }
 
   return counts;
