@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSiteInfo, getDashboardWelcomePageSlug } from "@/lib/config";
 import { AnnouncementsPanel } from "@/components/shared/announcements-panel";
-import { PasskeyPrompt } from "@/components/auth/passkey-prompt";
+import { AccountSetupCard } from "@/components/auth/account-setup-card";
+import { isPushEnabled, getVapidPublicKey } from "@/lib/push";
 import { prisma } from "@/lib/prisma";
 import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
@@ -17,24 +18,32 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [siteInfo, welcomeSlug] = await Promise.all([
+  const [siteInfo, welcomeSlug, passkeyCount, profile, pushSubCount] = await Promise.all([
     getSiteInfo(),
     getDashboardWelcomePageSlug(),
+    passkeysEnabled
+      ? prisma.authenticator.count({ where: { userId: session.user.id } })
+      : Promise.resolve(0),
+    prisma.userProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { extra: true },
+    }),
+    prisma.pushSubscription.count({ where: { userId: session.user.id } }),
   ]);
 
-  // Check if we should show the passkey setup prompt
-  let showPasskeyPrompt = false;
-  if (passkeysEnabled) {
-    const [passkeyCount, profile] = await Promise.all([
-      prisma.authenticator.count({ where: { userId: session.user.id } }),
-      prisma.userProfile.findUnique({
-        where: { userId: session.user.id },
-        select: { extra: true },
-      }),
-    ]);
-    const extra = (profile?.extra as Record<string, unknown>) ?? {};
-    showPasskeyPrompt = passkeyCount === 0 && !extra.passkeyPromptDismissed;
-  }
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  const setupProps = {
+    hasPasskey: passkeyCount > 0,
+    hasPushSubscription: pushSubCount > 0,
+    pushAvailable: isPushEnabled(),
+    vapidPublicKey: getVapidPublicKey(),
+    passkeysEnabled,
+    dismissed: {
+      passkey: !!extra.passkeyPromptDismissed,
+      pwa: !!extra.pwaPromptDismissed,
+      notifications: !!extra.notificationsPromptDismissed,
+    },
+  };
 
   // Welcome page mode — render CMS page full-bleed
   if (welcomeSlug) {
@@ -48,7 +57,7 @@ export default async function DashboardPage() {
 
     return (
       <div className="mx-auto max-w-3xl">
-        {showPasskeyPrompt && <PasskeyPrompt />}
+        <AccountSetupCard {...setupProps} />
         {page ? (
           <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
             <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
@@ -68,7 +77,7 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground">Good to see you.</p>
       </div>
 
-      {showPasskeyPrompt && <PasskeyPrompt />}
+      <AccountSetupCard {...setupProps} />
 
       <AnnouncementsPanel />
 
