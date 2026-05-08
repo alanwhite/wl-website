@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { getSiteInfo, getConfig } from "@/lib/config";
 import { Github } from "lucide-react";
 import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
+import { ProviderSignInButton } from "@/components/auth/provider-signin-button";
 
 export const dynamic = "force-dynamic";
 
@@ -113,10 +114,9 @@ export default async function LoginPage({
                 await signIn(provider.id, { redirectTo: params.callbackUrl ?? "/dashboard" });
               }}
             >
-              <Button type="submit" variant="outline" className="w-full" size="lg">
+              <ProviderSignInButton label={provider.name}>
                 {provider.icon && <provider.icon className="mr-2 h-5 w-5" />}
-                Continue with {provider.name}
-              </Button>
+              </ProviderSignInButton>
             </form>
           ))}
           {providers.length > 0 && (
