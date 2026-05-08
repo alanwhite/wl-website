@@ -7,6 +7,7 @@ import { PasskeyPrompt } from "@/components/auth/passkey-prompt";
 import { prisma } from "@/lib/prisma";
 import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import { collapseBlankLinesBetweenTags } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -43,13 +44,14 @@ export default async function DashboardPage() {
     });
 
     const contentHasHtml = page?.content.trimStart().startsWith("<") ?? false;
+    const renderContent = page && contentHasHtml ? collapseBlankLinesBetweenTags(page.content) : page?.content;
 
     return (
       <div className="mx-auto max-w-3xl">
         {showPasskeyPrompt && <PasskeyPrompt />}
         {page ? (
           <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
-            <Markdown rehypePlugins={[rehypeRaw]}>{page.content}</Markdown>
+            <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
           </div>
         ) : (
           <p className="text-center text-muted-foreground">Welcome page not found.</p>
