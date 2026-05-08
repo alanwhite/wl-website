@@ -34,11 +34,11 @@ export default async function PendingPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
             <Clock className="h-8 w-8" />
           </div>
-          <CardTitle>Thank you for registering!</CardTitle>
+          <CardTitle>Thanks for signing up!</CardTitle>
           <CardDescription>
             {hasEmail
-              ? "We've received your registration and it's now being reviewed. We'll be in touch by email once it's been approved — this usually doesn't take long. We look forward to welcoming you!"
-              : "We've received your registration and it's now being reviewed. This usually doesn't take long — please check back soon!"}
+              ? "We've got your details and someone will take a quick look — usually not long. We'll send you an email as soon as you're all set, and we're looking forward to welcoming you in."
+              : "We've got your details and someone will take a quick look — usually not long. Pop back shortly and you'll be ready to go."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

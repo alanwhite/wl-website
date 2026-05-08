@@ -49,11 +49,11 @@ export default async function RegisterPage() {
       <div className="flex flex-1 items-center justify-center px-4 py-8">
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Complete Your Registration</CardTitle>
+          <CardTitle>Just a few details</CardTitle>
           <CardDescription>
             {fields.length > 0
-              ? `Welcome to ${siteInfo.name}! Please fill out the form below to complete your registration.`
-              : `Welcome to ${siteInfo.name}! Click below to complete your registration.`}
+              ? `We're glad you'd like to join ${siteInfo.name}. Pop your details in below and we'll be in touch soon.`
+              : `We're glad you'd like to join ${siteInfo.name}. Click below to finish signing up.`}
           </CardDescription>
         </CardHeader>
         <CardContent>

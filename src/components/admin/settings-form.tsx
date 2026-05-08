@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import {
   updateFavicon,
   updateAnalyticsScript,
   updateRegistrationGuidance,
+  updateApprovalEmailBody,
   updateTierRules,
   updateAddressData,
   updateMemberManagerRoles,
@@ -40,6 +42,7 @@ import {
   updateGroupSettings,
   updateGroupMemberFields,
   updateDashboardCards,
+  updateDashboardWelcomePageSlug,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
@@ -60,6 +63,7 @@ interface SettingsFormProps {
     analyticsScript: string;
     registrationTerms: RegistrationTermsConfig;
     registrationGuidance: string;
+    approvalEmailBody: string;
     tierRules: TierRulesConfig | null;
     pollManagerRoles: string[];
     addressDataSummary: { postcodes: number; addresses: number } | null;
@@ -79,6 +83,8 @@ interface SettingsFormProps {
     groupMemberFields: import("@/lib/config").RegistrationField[];
     groupConfirmLabel: string;
     dashboardCards: DashboardCard[];
+    dashboardWelcomePageSlug: string;
+    publishedPages: { slug: string; title: string }[];
   };
   tiers: { id: string; name: string; level: number }[];
   roles: { id: string; name: string; slug: string }[];
@@ -123,6 +129,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [termsContent, setTermsContent] = useState(settings.registrationTerms.content);
   const [termsLinks, setTermsLinks] = useState(settings.registrationTerms.links);
   const [guidanceText, setGuidanceText] = useState(settings.registrationGuidance);
+  const [approvalEmailBody, setApprovalEmailBody] = useState(settings.approvalEmailBody);
+  const [welcomePageSlug, setWelcomePageSlug] = useState(settings.dashboardWelcomePageSlug);
   const [tierRulesJson, setTierRulesJson] = useState(
     settings.tierRules ? JSON.stringify(settings.tierRules, null, 2) : "",
   );
@@ -336,6 +344,30 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     }
   }
 
+  async function handleSaveApprovalEmailBody() {
+    setLoading(true);
+    try {
+      await updateApprovalEmailBody(approvalEmailBody);
+      toast.success("Approval email body saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveWelcomePageSlug() {
+    setLoading(true);
+    try {
+      await updateDashboardWelcomePageSlug(welcomePageSlug);
+      toast.success("Welcome page saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSaveTierRules() {
     setLoading(true);
     try {
@@ -426,6 +458,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="dashboard" className="justify-start">Dashboard</TabsTrigger>
         <TabsTrigger value="fields" className="justify-start">Registration Fields</TabsTrigger>
         <TabsTrigger value="guidance" className="justify-start">Reg. Guidance</TabsTrigger>
+        <TabsTrigger value="approvalEmail" className="justify-start">Approval Email</TabsTrigger>
         <TabsTrigger value="tierRules" className="justify-start">Tier Rules</TabsTrigger>
         <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
         <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
@@ -666,14 +699,46 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         </Card>
       </TabsContent>
 
-      <TabsContent value="dashboard">
+      <TabsContent value="dashboard" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome Page</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Pick a published CMS page to show as the dashboard for signed-in members. Leave as <em>None</em> to show the standard dashboard cards instead. The page rendered here replaces the default dashboard for everyone.
+            </p>
+            <div className="space-y-2 max-w-md">
+              <Label>Welcome page</Label>
+              <Select value={welcomePageSlug || "__none__"} onValueChange={(v) => setWelcomePageSlug(v === "__none__" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None — use standard dashboard" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None — use standard dashboard</SelectItem>
+                  {settings.publishedPages.map((p) => (
+                    <SelectItem key={p.slug} value={p.slug}>
+                      {p.title} <span className="text-muted-foreground">/ {p.slug}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {settings.publishedPages.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No published pages yet. Create one in <Link href="/admin/pages" className="underline">Admin → Pages</Link>.
+                </p>
+              )}
+            </div>
+            <Button onClick={handleSaveWelcomePageSlug} disabled={loading}>Save Welcome Page</Button>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Dashboard Cards</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Configure which cards appear on the member dashboard, in order. Card types: &quot;page&quot; (renders a CMS page), &quot;group-hub&quot; (RSVP &amp; choices), &quot;admin-summary&quot; (manager view). Leave empty for the default dashboard.
+              Configure which cards appear on the member dashboard, in order. Card types: &quot;page&quot; (renders a CMS page), &quot;group-hub&quot; (RSVP &amp; choices), &quot;admin-summary&quot; (manager view). Leave empty for the default dashboard. Ignored when a Welcome Page is set above.
             </p>
             <Textarea
               value={dashboardCardsJson}
@@ -737,6 +802,29 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               placeholder="e.g. To join as a Full Member, please provide your name, postcode and address..."
             />
             <Button onClick={handleSaveGuidance} disabled={loading}>Save Guidance</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="approvalEmail">
+        <Card>
+          <CardHeader>
+            <CardTitle>Approval Email Body</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Markdown content sent in the email when a registration is approved. Set the tone you want for new members. Leave blank to use the friendly default. The email automatically includes your site branding and a sign-in button below this content.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Supports headings (# ## ###), **bold**, *italic*, [links](url), and bullet lists. Blank lines start new paragraphs.
+            </p>
+            <Textarea
+              value={approvalEmailBody}
+              onChange={(e) => setApprovalEmailBody(e.target.value)}
+              rows={12}
+              placeholder={"## You're in — welcome!\n\nThanks for joining us..."}
+            />
+            <Button onClick={handleSaveApprovalEmailBody} disabled={loading}>Save Approval Email</Button>
           </CardContent>
         </Card>
       </TabsContent>

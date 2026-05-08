@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getDashboardCards } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getDashboardCards, getDashboardWelcomePageSlug } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -22,6 +22,7 @@ export default async function AdminSettingsPage() {
     analyticsScript,
     registrationTerms,
     registrationGuidance,
+    approvalEmailBody,
     tierRules,
     addressData,
     heroImages,
@@ -40,6 +41,7 @@ export default async function AdminSettingsPage() {
     getConfig("site.analyticsScript"),
     getConfigJson<RegistrationTermsConfig>("registration.terms"),
     getConfig("registration.guidance"),
+    getConfig("registration.approvalEmailBody"),
     getConfigJson<TierRulesConfig>("registration.tierRules"),
     getConfigJson<AddressData>("registration.addressData"),
     getHeroImages(),
@@ -64,6 +66,7 @@ export default async function AdminSettingsPage() {
           analyticsScript: analyticsScript ?? "",
           registrationTerms: registrationTerms ?? { enabled: false, label: "", content: "", links: [] },
           registrationGuidance: registrationGuidance ?? "",
+          approvalEmailBody: approvalEmailBody ?? "",
           tierRules: tierRules ?? null,
           addressDataSummary: addressData
             ? {
@@ -91,6 +94,12 @@ export default async function AdminSettingsPage() {
           groupMemberFields: await getGroupMemberFields(),
           groupConfirmLabel: await getGroupConfirmLabel(),
           dashboardCards: await getDashboardCards(),
+          dashboardWelcomePageSlug: (await getDashboardWelcomePageSlug()) ?? "",
+          publishedPages: await prisma.page.findMany({
+            where: { published: true },
+            orderBy: { title: "asc" },
+            select: { slug: true, title: true },
+          }),
         }}
         tiers={tiers}
         roles={roles}

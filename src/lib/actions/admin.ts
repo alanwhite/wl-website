@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { sendBrandedEmail } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 import { approvalEmailHtml, rejectionEmailHtml } from "@/lib/email-template";
+import { getApprovalEmailBody } from "@/lib/config";
 
 async function requireAdmin() {
   const session = await auth();
@@ -60,10 +61,11 @@ export async function approveRegistration(registrationId: string, tierId?: strin
   });
 
   if (registration.user.email) {
+    const customBody = await getApprovalEmailBody();
     await sendBrandedEmail({
       to: registration.user.email,
-      subject: "Registration Approved",
-      bodyHtml: approvalEmailHtml(`${process.env.AUTH_URL}/dashboard`),
+      subject: "Welcome — your registration has been approved",
+      bodyHtml: approvalEmailHtml(`${process.env.AUTH_URL}/dashboard`, customBody),
     }).catch(console.error);
   }
 

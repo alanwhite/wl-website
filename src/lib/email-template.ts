@@ -9,6 +9,45 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Minimal markdown → email-safe HTML. Supports paragraphs, headings,
+// **bold**, *italic*, [text](url), unordered lists, and single line breaks.
+// Inline styles are added because most email clients ignore <style> blocks.
+export function markdownToEmailHtml(md: string): string {
+  const blocks = md.replace(/\r\n/g, "\n").trim().split(/\n{2,}/);
+  const renderInline = (text: string): string => {
+    let out = escapeHtml(text);
+    out = out.replace(
+      /\[([^\]]+)\]\(([^)\s]+)\)/g,
+      (_m, label, url) =>
+        `<a href="${url}" style="color:#2563eb;text-decoration:underline;">${label}</a>`,
+    );
+    out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+    out = out.replace(/\n/g, "<br/>");
+    return out;
+  };
+  return blocks
+    .map((block) => {
+      const trimmed = block.trim();
+      const heading = /^(#{1,3})\s+(.*)$/.exec(trimmed);
+      if (heading) {
+        const level = heading[1].length;
+        const size = level === 1 ? 22 : level === 2 ? 18 : 16;
+        return `<h${level} style="margin:0 0 12px;color:#18181b;font-size:${size}px;">${renderInline(heading[2])}</h${level}>`;
+      }
+      const lines = trimmed.split("\n");
+      if (lines.every((l) => /^\s*[-*]\s+/.test(l))) {
+        const items = lines
+          .map((l) => l.replace(/^\s*[-*]\s+/, ""))
+          .map((l) => `<li style="margin:4px 0;">${renderInline(l)}</li>`)
+          .join("");
+        return `<ul style="margin:0 0 16px 20px;padding:0;color:#3f3f46;line-height:1.6;">${items}</ul>`;
+      }
+      return `<p style="margin:0 0 16px;color:#3f3f46;line-height:1.6;">${renderInline(trimmed)}</p>`;
+    })
+    .join("");
+}
+
 interface BrandingOptions {
   siteName: string;
   logoUrl: string | null;
@@ -79,15 +118,21 @@ export function wrapEmailHtml({
 </html>`.trim();
 }
 
-export function approvalEmailHtml(dashboardUrl: string): string {
+const DEFAULT_APPROVAL_BODY = `## You're in — welcome!
+
+Thanks for joining us. Your registration has been approved and you can now sign in to the member area.
+
+Becoming a member doesn't sign you up for any obligations — it's simply how we keep in touch and how you get access to what's going on, when you'd like to take part.
+
+We're glad to have you with us.`;
+
+export function approvalEmailHtml(dashboardUrl: string, customBody?: string | null): string {
+  const body = (customBody && customBody.trim()) || DEFAULT_APPROVAL_BODY;
   return `
-<h2 style="margin:0 0 16px;color:#18181b;">Registration Approved!</h2>
-<p style="color:#3f3f46;line-height:1.6;">
-  Great news! Your registration has been approved. You can now access the member area and all its resources.
-</p>
+${markdownToEmailHtml(body)}
 <p style="margin:24px 0;text-align:center;">
   <a href="${dashboardUrl}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fafafa;text-decoration:none;border-radius:6px;font-weight:500;">
-    Go to Dashboard
+    Sign in
   </a>
 </p>`;
 }

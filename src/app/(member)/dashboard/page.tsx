@@ -42,11 +42,13 @@ export default async function DashboardPage() {
       select: { content: true },
     });
 
+    const contentHasHtml = page?.content.trimStart().startsWith("<") ?? false;
+
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-3xl">
         {showPasskeyPrompt && <PasskeyPrompt />}
         {page ? (
-          <div className="max-w-none">
+          <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
             <Markdown rehypePlugins={[rehypeRaw]}>{page.content}</Markdown>
           </div>
         ) : (
@@ -60,10 +62,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {session.user.name ?? "Member"}!
-        </p>
+        <h1 className="text-2xl font-bold">Hello, {session.user.name ?? "there"}</h1>
+        <p className="text-muted-foreground">Good to see you.</p>
       </div>
 
       {showPasskeyPrompt && <PasskeyPrompt />}
@@ -74,26 +74,26 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Welcome to {siteInfo.name}</CardTitle>
-            <CardDescription>You are an approved member</CardDescription>
+            <CardDescription>Glad to have you with us</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              You have access to all member resources. Use the navigation menu to explore.
+              Have a look around using the menu — being a member is about staying in touch and being part of what&apos;s going on, no obligation attached.
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Your Profile</CardTitle>
-            <CardDescription>Manage your account information</CardDescription>
+            <CardDescription>Update your details any time</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Keep your profile up to date. Visit the{" "}
+              You can review or change your details on your{" "}
               <a href="/profile" className="text-primary underline">
                 profile page
-              </a>{" "}
-              to make changes.
+              </a>
+              .
             </p>
           </CardContent>
         </Card>

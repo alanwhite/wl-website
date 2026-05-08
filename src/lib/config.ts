@@ -203,6 +203,10 @@ export async function getRegistrationGuidance(): Promise<string | null> {
   return getConfig("registration.guidance");
 }
 
+export async function getApprovalEmailBody(): Promise<string | null> {
+  return getConfig("registration.approvalEmailBody");
+}
+
 export interface TierRule {
   field: string;
   operator: "starts-with" | "matches" | "equals" | "in";

@@ -268,6 +268,18 @@ export async function updateRegistrationGuidance(guidance: string) {
   });
 }
 
+export async function updateApprovalEmailBody(body: string) {
+  const admin = await requireAdmin();
+  await setConfig("registration.approvalEmailBody", body);
+  invalidateConfigCache("registration.approvalEmailBody");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.approvalEmailBody.update",
+  });
+}
+
 export async function updateTierRules(rules: string) {
   const admin = await requireAdmin();
   JSON.parse(rules); // validate
@@ -433,5 +445,18 @@ export async function updateDashboardCards(cardsJson: string) {
     userId: admin.id,
     userName: admin.name ?? "Admin",
     action: "settings.dashboard.cards.update",
+  });
+}
+
+export async function updateDashboardWelcomePageSlug(slug: string) {
+  const admin = await requireAdmin();
+  await setConfig("dashboard.welcomePageSlug", slug);
+  invalidateConfigCache("dashboard.welcomePageSlug");
+  revalidatePath("/dashboard");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.dashboard.welcomePageSlug.update",
   });
 }
