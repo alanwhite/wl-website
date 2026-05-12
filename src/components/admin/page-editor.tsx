@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 import { createPage, updatePage, deletePage } from "@/lib/actions/pages";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,8 @@ interface PageEditorProps {
     title: string;
     content: string;
     published: boolean;
+    hideHeader: boolean;
+    hideFooter: boolean;
     sortOrder: number;
   };
 }
@@ -29,6 +32,8 @@ export function PageEditor({ page }: PageEditorProps) {
   const [title, setTitle] = useState(page?.title ?? "");
   const [content, setContent] = useState(page?.content ?? "");
   const [published, setPublished] = useState(page?.published ?? false);
+  const [hideHeader, setHideHeader] = useState(page?.hideHeader ?? false);
+  const [hideFooter, setHideFooter] = useState(page?.hideFooter ?? false);
   const [sortOrder, setSortOrder] = useState(page?.sortOrder ?? 0);
   const [loading, setLoading] = useState(false);
   const [mediaPicker, setMediaPicker] = useState(false);
@@ -37,7 +42,7 @@ export function PageEditor({ page }: PageEditorProps) {
   async function handleSave() {
     setLoading(true);
     try {
-      const data = { slug, title, content, published, sortOrder };
+      const data = { slug, title, content, published, hideHeader, hideFooter, sortOrder };
       if (page) {
         await updatePage(page.id, data);
         toast.success("Page updated");
@@ -118,10 +123,18 @@ export function PageEditor({ page }: PageEditorProps) {
             className="font-mono text-sm"
           />
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <Switch id="published" checked={published} onCheckedChange={setPublished} />
             <Label htmlFor="published">Published</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch id="hideHeader" checked={hideHeader} onCheckedChange={setHideHeader} />
+            <Label htmlFor="hideHeader">Hide site header</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch id="hideFooter" checked={hideFooter} onCheckedChange={setHideFooter} />
+            <Label htmlFor="hideFooter">Hide site footer</Label>
           </div>
           <div className="flex items-center gap-2">
             <Label htmlFor="sortOrder">Sort Order</Label>
@@ -144,7 +157,7 @@ export function PageEditor({ page }: PageEditorProps) {
             </Button>
           )}
           <Button variant="outline" asChild>
-            <a href="/admin/pages">Cancel</a>
+            <Link href="/admin/pages">Cancel</Link>
           </Button>
         </div>
       </CardContent>

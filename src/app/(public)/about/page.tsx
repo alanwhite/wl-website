@@ -36,7 +36,9 @@ export default async function AboutPage() {
   return (
     <Providers>
       <div className="flex min-h-screen flex-col">
-        <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)} />
+        {!page?.hideHeader && (
+          <Header siteName={siteInfo.name} logoUrl={logoUrl} navLinks={navLinks.filter((l) => l.minTierLevel === null && !l.requiredRoleSlug)} />
+        )}
         <main className={contentHasHtml ? "flex-1" : "container mx-auto max-w-3xl flex-1 px-4 py-12"}>
           {!contentHasHtml && (
             <h1 className="mb-6 text-3xl font-bold">{page?.title ?? "About Us"}</h1>
@@ -45,7 +47,7 @@ export default async function AboutPage() {
             <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
           </div>
         </main>
-        <Footer siteName={siteInfo.name} />
+        {!page?.hideFooter && <Footer siteName={siteInfo.name} />}
       </div>
     </Providers>
   );

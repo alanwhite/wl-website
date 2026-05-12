@@ -13,6 +13,8 @@ const pageSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string(),
   published: z.boolean(),
+  hideHeader: z.boolean().default(false),
+  hideFooter: z.boolean().default(false),
   sortOrder: z.number().int(),
 });
 
