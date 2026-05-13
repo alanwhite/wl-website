@@ -124,5 +124,29 @@ export async function getNotificationCounts(user: {
     counts["/profile"] = profileSetup;
   }
 
+  // Active announcements the user hasn't viewed yet
+  const announcementsUnseen = await getUnseenAnnouncementsCount(user.id);
+  if (announcementsUnseen > 0) {
+    counts["/announcements"] = announcementsUnseen;
+  }
+
   return counts;
+}
+
+async function getUnseenAnnouncementsCount(userId: string): Promise<number> {
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId },
+    select: { extra: true },
+  });
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  const lastViewedRaw = extra.announcementsLastViewedAt;
+  const lastViewed = typeof lastViewedRaw === "string" ? new Date(lastViewedRaw) : null;
+
+  return prisma.announcement.count({
+    where: {
+      published: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      ...(lastViewed ? { createdAt: { gt: lastViewed } } : {}),
+    },
+  });
 }

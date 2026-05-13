@@ -8,8 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Plus, Pin, Pencil } from "lucide-react";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+
+async function markAnnouncementsViewed(userId: string) {
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId },
+    select: { extra: true },
+  });
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  extra.announcementsLastViewedAt = new Date().toISOString();
+  const extraValue = extra as Prisma.InputJsonValue;
+  await prisma.userProfile.upsert({
+    where: { userId },
+    update: { extra: extraValue },
+    create: { userId, extra: extraValue },
+  });
+}
 
 export default async function AnnouncementsPage() {
   const session = await auth();
@@ -19,15 +35,19 @@ export default async function AnnouncementsPage() {
   const canManage = canManageAnnouncements(session.user, managerRoles);
 
   // Managers see all, regular members see published only
-  const announcements = await prisma.announcement.findMany({
-    where: canManage
-      ? undefined
-      : {
-          published: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-    orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-  });
+  const [announcements] = await Promise.all([
+    prisma.announcement.findMany({
+      where: canManage
+        ? undefined
+        : {
+            published: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+    }),
+    // Clear the unseen-announcements badge on the nav for this user
+    markAnnouncementsViewed(session.user.id),
+  ]);
 
   return (
     <div className="space-y-6">
