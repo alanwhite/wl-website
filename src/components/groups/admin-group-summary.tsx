@@ -9,6 +9,7 @@ import { toggleGroupsLocked } from "@/lib/actions/groups";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { RegistrationField } from "@/lib/config";
+import { isFieldVisible } from "@/lib/registration-fields";
 
 interface MemberData {
   id: string;
@@ -40,7 +41,9 @@ export function AdminGroupSummary({ groups, groupLabel, memberFields, locked, ex
 
   function isMemberComplete(member: MemberData): boolean {
     if (requiredFields.length === 0) return true;
-    return requiredFields.every((f) => {
+    return memberFields.every((f) => {
+      if (!f.required) return true;
+      if (!isFieldVisible(f, member.data)) return true; // conditional field hidden — don't insist on a value
       const val = member.data[f.name];
       return val !== undefined && val !== "";
     });
