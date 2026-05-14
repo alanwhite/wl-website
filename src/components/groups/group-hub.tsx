@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import type { RegistrationField } from "@/lib/config";
+import { isFieldVisible } from "@/lib/registration-fields";
 
 interface MemberData {
   id: string;
@@ -47,11 +48,13 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const requiredFields = memberFields.filter((f) => f.required);
+  function visibleFieldsFor(member: MemberData): RegistrationField[] {
+    return memberFields.filter((f) => isFieldVisible(f, member.data));
+  }
 
   function isMemberComplete(member: MemberData): boolean {
-    if (requiredFields.length === 0) return true;
-    return requiredFields.every((f) => {
+    return visibleFieldsFor(member).every((f) => {
+      if (!f.required) return true;
       const val = member.data[f.name];
       return val !== undefined && val !== "";
     });
@@ -185,7 +188,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                   </span>
                   {isMemberComplete(m) ? (
                     <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  ) : requiredFields.length > 0 ? (
+                  ) : memberFields.some((f) => f.required) ? (
                     <Badge variant="outline" className="text-xs">Needs choices</Badge>
                   ) : null}
                   {!isCurrentUser && !locked && (
@@ -260,7 +263,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                   {isMemberComplete(m) && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 </div>
                 <div className="space-y-3">
-                  {memberFields.map((field) => {
+                  {visibleFieldsFor(m).map((field) => {
                     const currentValue = m.data[field.name] ?? "";
 
                     if (field.type === "select" && field.options) {

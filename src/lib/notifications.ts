@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { canAccessPoll, getMemberManagerRoles, canManageMembers, getGroupMemberFields } from "./config";
 import type { RegistrationField } from "./config";
+import { isFieldVisible } from "./registration-fields";
 import { isPushEnabled } from "./push";
 
 const passkeysEnabled = process.env.AUTH_CREDENTIALS_TEST !== "true";
@@ -104,15 +105,17 @@ export async function getNotificationCounts(user: {
       if (group.rsvpStatus === "pending") {
         counts["/groups"] = 1; // needs RSVP
       } else if (group.rsvpStatus === "attending") {
-        const requiredFields = memberFields.filter((f: RegistrationField) => f.required);
-        if (requiredFields.length > 0) {
-          const incomplete = group.groupMembers.filter((m) => {
-            const data = (m.data as Record<string, string>) ?? {};
-            return !requiredFields.every((f: RegistrationField) => data[f.name] && data[f.name] !== "");
-          }).length;
-          if (incomplete > 0) {
-            counts["/groups"] = incomplete;
-          }
+        const incomplete = group.groupMembers.filter((m) => {
+          const data = (m.data as Record<string, string>) ?? {};
+          // Only required fields that are visible (passes their showWhen) count.
+          return !memberFields.every((f: RegistrationField) => {
+            if (!f.required) return true;
+            if (!isFieldVisible(f, data)) return true;
+            return data[f.name] !== undefined && data[f.name] !== "";
+          });
+        }).length;
+        if (incomplete > 0) {
+          counts["/groups"] = incomplete;
         }
       }
     }

@@ -11,32 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { RegistrationField, RegistrationFieldCondition } from "@/lib/config";
+import type { RegistrationField } from "@/lib/config";
+import { isFieldVisible } from "@/lib/registration-fields";
 import { AddressField } from "./address-field";
 
 interface DynamicFormProps {
   fields: RegistrationField[];
   defaultValues?: Record<string, unknown>;
-}
-
-function evaluateShowWhen(
-  condition: RegistrationFieldCondition | undefined,
-  values: Record<string, unknown>,
-): boolean {
-  if (!condition) return true;
-  const actual = String(values[condition.field] ?? "");
-  switch (condition.operator) {
-    case "equals":
-      return actual === condition.value;
-    case "not-equals":
-      return actual !== condition.value;
-    case "in":
-      return Array.isArray(condition.value) && condition.value.includes(actual);
-    case "not-in":
-      return Array.isArray(condition.value) && !condition.value.includes(actual);
-    default:
-      return true;
-  }
 }
 
 export function DynamicFormFields({ fields, defaultValues }: DynamicFormProps) {
@@ -57,7 +38,7 @@ export function DynamicFormFields({ fields, defaultValues }: DynamicFormProps) {
   return (
     <>
       {fields.map((field) => {
-        const visible = evaluateShowWhen(field.showWhen, formValues);
+        const visible = isFieldVisible(field, formValues);
         if (!visible) return null;
 
         return (
