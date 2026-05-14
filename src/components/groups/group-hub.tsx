@@ -19,6 +19,11 @@ import { Check, X } from "lucide-react";
 import type { RegistrationField } from "@/lib/config";
 import { isFieldVisible } from "@/lib/registration-fields";
 
+// Field name surfaced inline as a checkbox on the Add row and each member row,
+// rather than as a select in the choices section. Keeps the choices form focused
+// on meal/preferences while the age-band marker drives conditional visibility.
+const CHILD_FIELD = "isChild";
+
 interface MemberData {
   id: string;
   name: string;
@@ -45,8 +50,13 @@ interface GroupHubProps {
 
 export function GroupHub({ group, groupLabel, confirmLabel, memberFields, currentUserId, locked = false }: GroupHubProps) {
   const [newName, setNewName] = useState("");
+  const [newIsChild, setNewIsChild] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const hasChildField = memberFields.some((f) => f.name === CHILD_FIELD);
+  const renderableFields = (m: MemberData) =>
+    visibleFieldsFor(m).filter((f) => f.name !== CHILD_FIELD);
 
   function visibleFieldsFor(member: MemberData): RegistrationField[] {
     return memberFields.filter((f) => isFieldVisible(f, member.data));
@@ -79,14 +89,27 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
     if (!newName.trim()) return;
     setLoading(true);
     try {
-      await addGroupMember(group.id, newName);
+      const initialData = hasChildField
+        ? { [CHILD_FIELD]: newIsChild ? "Yes" : "No" }
+        : undefined;
+      await addGroupMember(group.id, newName, initialData);
       setNewName("");
-      toast.success("Member added");
+      setNewIsChild(false);
+      toast.success("Added");
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to add");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleChild(memberId: string, isChild: boolean) {
+    try {
+      await updateMemberData(memberId, { [CHILD_FIELD]: isChild ? "Yes" : "No" });
+      router.refresh();
+    } catch {
+      toast.error("Failed to save");
     }
   }
 
@@ -181,6 +204,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
           <div className="space-y-2">
             {group.groupMembers.map((m) => {
               const isCurrentUser = m.userId === currentUserId;
+              const isChild = m.data[CHILD_FIELD] === "Yes";
               return (
                 <div key={m.id} className="flex flex-wrap items-center gap-2 rounded border px-3 py-2">
                   <span className="text-sm font-medium">
@@ -191,11 +215,22 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                   ) : memberFields.some((f) => f.required) ? (
                     <Badge variant="outline" className="text-xs">Needs choices</Badge>
                   ) : null}
+                  {hasChildField && !locked && (
+                    <label className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 rounded border"
+                        checked={isChild}
+                        onChange={(e) => handleToggleChild(m.id, e.target.checked)}
+                      />
+                      Child
+                    </label>
+                  )}
                   {!isCurrentUser && !locked && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="ml-auto h-7 text-xs text-destructive hover:text-destructive"
+                      className={hasChildField ? "h-7 text-xs text-destructive hover:text-destructive" : "ml-auto h-7 text-xs text-destructive hover:text-destructive"}
                       onClick={() => handleRemove(m.id, m.name)}
                     >
                       Remove
@@ -208,13 +243,25 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
 
           {/* Add member */}
           {!locked && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Add a person"
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                className="min-w-0 flex-1"
               />
+              {hasChildField && (
+                <label className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border"
+                    checked={newIsChild}
+                    onChange={(e) => setNewIsChild(e.target.checked)}
+                  />
+                  Child
+                </label>
+              )}
               <Button onClick={handleAdd} disabled={loading} size="sm">
                 Add
               </Button>
@@ -242,7 +289,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
       </Card>
 
       {/* Meal choices */}
-      {memberFields.length > 0 && group.groupMembers.length > 0 && (
+      {memberFields.some((f) => f.name !== CHILD_FIELD) && group.groupMembers.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -263,7 +310,7 @@ export function GroupHub({ group, groupLabel, confirmLabel, memberFields, curren
                   {isMemberComplete(m) && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 </div>
                 <div className="space-y-3">
-                  {visibleFieldsFor(m).map((field) => {
+                  {renderableFields(m).map((field) => {
                     const currentValue = m.data[field.name] ?? "";
 
                     if (field.type === "select" && field.options) {
