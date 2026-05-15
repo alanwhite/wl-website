@@ -23,6 +23,7 @@ interface PageEditorProps {
     published: boolean;
     hideHeader: boolean;
     hideFooter: boolean;
+    vanityPath: string | null;
     sortOrder: number;
   };
 }
@@ -34,6 +35,7 @@ export function PageEditor({ page }: PageEditorProps) {
   const [published, setPublished] = useState(page?.published ?? false);
   const [hideHeader, setHideHeader] = useState(page?.hideHeader ?? false);
   const [hideFooter, setHideFooter] = useState(page?.hideFooter ?? false);
+  const [vanityPath, setVanityPath] = useState(page?.vanityPath ?? "");
   const [sortOrder, setSortOrder] = useState(page?.sortOrder ?? 0);
   const [loading, setLoading] = useState(false);
   const [mediaPicker, setMediaPicker] = useState(false);
@@ -42,7 +44,7 @@ export function PageEditor({ page }: PageEditorProps) {
   async function handleSave() {
     setLoading(true);
     try {
-      const data = { slug, title, content, published, hideHeader, hideFooter, sortOrder };
+      const data = { slug, title, content, published, hideHeader, hideFooter, vanityPath: vanityPath.trim() || null, sortOrder };
       if (page) {
         await updatePage(page.id, data);
         toast.success("Page updated");
@@ -100,7 +102,20 @@ export function PageEditor({ page }: PageEditorProps) {
           <div className="space-y-2">
             <Label htmlFor="slug">Slug</Label>
             <Input id="slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
+            <p className="text-xs text-muted-foreground">The page lives at <code className="rounded bg-muted px-1">/p/{slug || "..."}</code>.</p>
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="vanityPath">Short URL (optional)</Label>
+          <Input
+            id="vanityPath"
+            value={vanityPath}
+            onChange={(e) => setVanityPath(e.target.value)}
+            placeholder="e.g. gala"
+          />
+          <p className="text-xs text-muted-foreground">
+            Lowercase letters, numbers and hyphens. Leaves the page reachable at <code className="rounded bg-muted px-1">/{vanityPath || "your-short-url"}</code> as well as the full slug URL. Avoid names that match existing site routes (about, contact, login, etc.) — those won&apos;t resolve.
+          </p>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">

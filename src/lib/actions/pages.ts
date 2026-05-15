@@ -15,6 +15,12 @@ const pageSchema = z.object({
   published: z.boolean(),
   hideHeader: z.boolean().default(false),
   hideFooter: z.boolean().default(false),
+  vanityPath: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, "Vanity path must be lowercase alphanumeric with hyphens")
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
   sortOrder: z.number().int(),
 });
 

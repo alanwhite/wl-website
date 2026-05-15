@@ -175,6 +175,7 @@ model Page {
   published  Boolean  @default(false)
   hideHeader Boolean  @default(false)
   hideFooter Boolean  @default(false)
+  vanityPath String?  @unique
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
