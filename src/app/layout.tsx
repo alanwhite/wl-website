@@ -21,6 +21,7 @@ const geistMono = Geist_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const siteInfo = await getSiteInfo();
   const faviconUrl = await getConfig("site.faviconUrl");
+  const logoUrl = await getConfig("site.logoUrl");
   const baseUrl = process.env.AUTH_URL ?? "http://localhost:3000";
 
   return {
@@ -42,10 +43,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title: siteInfo.name,
       description: siteInfo.description,
     },
-    ...(faviconUrl ? {
+    ...((faviconUrl || logoUrl) ? {
       icons: {
-        icon: faviconUrl,
-        apple: faviconUrl,
+        // Browser tab favicon prefers the small favicon when set, with logo as fallback
+        icon: faviconUrl ?? logoUrl ?? undefined,
+        // iOS Add-to-Home-Screen reads apple-touch-icon; the larger brand logo
+        // works best here (iOS scales as needed), with favicon as fallback
+        apple: logoUrl ?? faviconUrl ?? undefined,
       },
     } : {}),
     manifest: "/api/manifest",

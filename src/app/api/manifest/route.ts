@@ -2,17 +2,23 @@ import { getSiteInfo, getConfig, getThemeConfig } from "@/lib/config";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const [siteInfo, faviconUrl, theme] = await Promise.all([
+  const [siteInfo, faviconUrl, logoUrl, theme] = await Promise.all([
     getSiteInfo(),
     getConfig("site.faviconUrl"),
+    getConfig("site.logoUrl"),
     getThemeConfig(),
   ]);
 
-  const icons = [];
+  // Icon sources, in order of preference for PWA install (home screen):
+  // 1. site.logoUrl — the brand logo at sizes that fit home-screen tiles (192/512)
+  // 2. site.faviconUrl — small fallback used by general "any" size hint
+  const icons: { src: string; sizes: string; type: string; purpose?: string }[] = [];
+  if (logoUrl) {
+    icons.push({ src: logoUrl, sizes: "192x192", type: "image/png", purpose: "any" });
+    icons.push({ src: logoUrl, sizes: "512x512", type: "image/png", purpose: "any" });
+  }
   if (faviconUrl) {
-    icons.push(
-      { src: faviconUrl, sizes: "any", type: "image/png" },
-    );
+    icons.push({ src: faviconUrl, sizes: "any", type: "image/png" });
   }
 
   const manifest = {
