@@ -31,6 +31,19 @@ export default auth((req) => {
     }
   }
 
+  // Vanity URLs — single-segment top-level paths that don't match a member/admin
+  // route are candidate CMS vanity paths. Let them through to the (public)/[vanity]
+  // catch-all, which renders the matching Page or returns notFound() if none.
+  // Examples: /gala, /agm, /rsvp. Excludes deeper paths like /foo/bar.
+  if (!stealthMode) {
+    const segments = pathname.split("/").filter(Boolean);
+    const reservedTopLevel = [...memberPaths, ...adminPaths, "/register"]
+      .map((p) => p.replace(/^\//, ""));
+    if (segments.length === 1 && !reservedTopLevel.includes(segments[0])) {
+      return NextResponse.next();
+    }
+  }
+
   // Not logged in -> login
   if (!user) {
     return NextResponse.redirect(new URL("/login", req.url));
