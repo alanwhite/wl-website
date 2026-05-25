@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getDashboardCards, getDashboardWelcomePageSlug } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getDashboardCards, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -95,6 +95,7 @@ export default async function AdminSettingsPage() {
           groupConfirmLabel: await getGroupConfirmLabel(),
           dashboardCards: await getDashboardCards(),
           dashboardWelcomePageSlug: (await getDashboardWelcomePageSlug()) ?? "",
+          dashboardWelcomeDismissible: await getDashboardWelcomeDismissible(),
           publishedPages: await prisma.page.findMany({
             where: { published: true },
             orderBy: { title: "asc" },

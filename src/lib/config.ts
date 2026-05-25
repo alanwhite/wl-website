@@ -432,6 +432,13 @@ export async function getDashboardWelcomePageSlug(): Promise<string | null> {
   return getConfig("dashboard.welcomePageSlug");
 }
 
+export async function getDashboardWelcomeDismissible(): Promise<boolean> {
+  const value = await getConfig("dashboard.welcomeDismissible");
+  // Default: true (allow members to dismiss). Some tenants (e.g. wedding sites where
+  // the welcome IS the invitation) opt out by setting this to "false".
+  return value !== "false";
+}
+
 export async function getDashboardCards(): Promise<DashboardCard[]> {
   const cards = await getConfigJson<DashboardCard[]>("dashboard.cards");
   return cards ?? [];

@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSiteInfo, getDashboardWelcomePageSlug } from "@/lib/config";
+import { getSiteInfo, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible } from "@/lib/config";
 import { DashboardActivity } from "@/components/dashboard/dashboard-activity";
 import { DismissWelcomeButton, ShowWelcomeAgainLink } from "@/components/dashboard/welcome-toggle";
 import { prisma } from "@/lib/prisma";
@@ -16,16 +16,17 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [siteInfo, welcomeSlug, profile] = await Promise.all([
+  const [siteInfo, welcomeSlug, welcomeDismissible, profile] = await Promise.all([
     getSiteInfo(),
     getDashboardWelcomePageSlug(),
+    getDashboardWelcomeDismissible(),
     prisma.userProfile.findUnique({
       where: { userId: session.user.id },
       select: { extra: true },
     }),
   ]);
   const extra = (profile?.extra as Record<string, unknown>) ?? {};
-  const welcomeDismissed = !!extra.dashboardWelcomeDismissed;
+  const welcomeDismissed = welcomeDismissible && !!extra.dashboardWelcomeDismissed;
 
   // Welcome page mode — render CMS page full-bleed (unless the member's hidden it)
   if (welcomeSlug) {
@@ -46,9 +47,11 @@ export default async function DashboardPage() {
                 <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
               </div>
             </div>
-            <div className="mx-auto mt-6 max-w-3xl px-4 text-center">
-              <DismissWelcomeButton />
-            </div>
+            {welcomeDismissible && (
+              <div className="mx-auto mt-6 max-w-3xl px-4 text-center">
+                <DismissWelcomeButton />
+              </div>
+            )}
           </>
         )}
         {welcomeDismissed && page && (

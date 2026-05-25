@@ -460,3 +460,17 @@ export async function updateDashboardWelcomePageSlug(slug: string) {
     action: "settings.dashboard.welcomePageSlug.update",
   });
 }
+
+export async function updateDashboardWelcomeDismissible(dismissible: boolean) {
+  const admin = await requireAdmin();
+  await setConfig("dashboard.welcomeDismissible", dismissible ? "true" : "false");
+  invalidateConfigCache("dashboard.welcomeDismissible");
+  revalidatePath("/dashboard");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.dashboard.welcomeDismissible.update",
+    details: { dismissible },
+  });
+}

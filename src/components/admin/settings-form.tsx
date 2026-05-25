@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   updateSiteSettings,
   updateTheme,
@@ -43,6 +44,7 @@ import {
   updateGroupMemberFields,
   updateDashboardCards,
   updateDashboardWelcomePageSlug,
+  updateDashboardWelcomeDismissible,
   type NavLink,
 } from "@/lib/actions/settings";
 import { toast } from "sonner";
@@ -84,6 +86,7 @@ interface SettingsFormProps {
     groupConfirmLabel: string;
     dashboardCards: DashboardCard[];
     dashboardWelcomePageSlug: string;
+    dashboardWelcomeDismissible: boolean;
     publishedPages: { slug: string; title: string }[];
   };
   tiers: { id: string; name: string; level: number }[];
@@ -131,6 +134,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [guidanceText, setGuidanceText] = useState(settings.registrationGuidance);
   const [approvalEmailBody, setApprovalEmailBody] = useState(settings.approvalEmailBody);
   const [welcomePageSlug, setWelcomePageSlug] = useState(settings.dashboardWelcomePageSlug);
+  const [welcomeDismissible, setWelcomeDismissible] = useState(settings.dashboardWelcomeDismissible);
   const [tierRulesJson, setTierRulesJson] = useState(
     settings.tierRules ? JSON.stringify(settings.tierRules, null, 2) : "",
   );
@@ -365,6 +369,17 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
       toast.error("Failed to save");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleWelcomeDismissible(next: boolean) {
+    setWelcomeDismissible(next);
+    try {
+      await updateDashboardWelcomeDismissible(next);
+      toast.success(next ? "Members can dismiss the welcome" : "Welcome will always show");
+    } catch {
+      toast.error("Failed to save");
+      setWelcomeDismissible(!next); // revert
     }
   }
 
@@ -730,6 +745,19 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               )}
             </div>
             <Button onClick={handleSaveWelcomePageSlug} disabled={loading}>Save Welcome Page</Button>
+            <div className="flex items-start gap-3 border-t pt-4">
+              <Switch
+                id="welcomeDismissible"
+                checked={welcomeDismissible}
+                onCheckedChange={handleToggleWelcomeDismissible}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="welcomeDismissible">Members can dismiss the welcome</Label>
+                <p className="text-xs text-muted-foreground">
+                  Adds a &ldquo;Got it, thanks&rdquo; button below the welcome content. Tapping it hides the welcome on subsequent sign-ins for that member, with a discreet &ldquo;Show welcome again&rdquo; link for anyone who changes their mind. Turn off for sites where the welcome <em>is</em> the point (e.g. an event invitation).
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         <Card>
