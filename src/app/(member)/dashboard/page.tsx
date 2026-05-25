@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSiteInfo, getDashboardWelcomePageSlug } from "@/lib/config";
 import { DashboardActivity } from "@/components/dashboard/dashboard-activity";
+import { DismissWelcomeButton, ShowWelcomeAgainLink } from "@/components/dashboard/welcome-toggle";
 import { prisma } from "@/lib/prisma";
 import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
@@ -15,12 +16,18 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [siteInfo, welcomeSlug] = await Promise.all([
+  const [siteInfo, welcomeSlug, profile] = await Promise.all([
     getSiteInfo(),
     getDashboardWelcomePageSlug(),
+    prisma.userProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { extra: true },
+    }),
   ]);
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  const welcomeDismissed = !!extra.dashboardWelcomeDismissed;
 
-  // Welcome page mode — render CMS page full-bleed
+  // Welcome page mode — render CMS page full-bleed (unless the member's hidden it)
   if (welcomeSlug) {
     const page = await prisma.page.findUnique({
       where: { slug: welcomeSlug, published: true },
@@ -32,15 +39,26 @@ export default async function DashboardPage() {
 
     return (
       <>
-        <div className="mx-auto max-w-3xl">
-          {page ? (
-            <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
-              <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
+        {!welcomeDismissed && page && (
+          <>
+            <div className="mx-auto max-w-3xl">
+              <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
+                <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
+              </div>
             </div>
-          ) : (
-            <p className="text-center text-muted-foreground">Welcome page not found.</p>
-          )}
-        </div>
+            <div className="mx-auto mt-6 max-w-3xl px-4 text-center">
+              <DismissWelcomeButton />
+            </div>
+          </>
+        )}
+        {welcomeDismissed && page && (
+          <div className="mx-auto max-w-3xl px-4 pt-4 text-right">
+            <ShowWelcomeAgainLink />
+          </div>
+        )}
+        {!page && (
+          <p className="text-center text-muted-foreground">Welcome page not found.</p>
+        )}
         <DashboardActivity user={session.user} standalone />
       </>
     );

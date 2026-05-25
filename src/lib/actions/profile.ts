@@ -15,6 +15,31 @@ const SETUP_STEPS = {
 
 type SetupStep = keyof typeof SETUP_STEPS;
 
+export async function setDashboardWelcomeDismissed(dismissed: boolean) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated");
+
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId: session.user.id },
+    select: { extra: true },
+  });
+  const extra = (profile?.extra as Record<string, unknown>) ?? {};
+  if (dismissed) {
+    extra.dashboardWelcomeDismissed = true;
+  } else {
+    delete extra.dashboardWelcomeDismissed;
+  }
+  const extraValue = extra as Prisma.InputJsonValue;
+
+  await prisma.userProfile.upsert({
+    where: { userId: session.user.id },
+    update: { extra: extraValue },
+    create: { userId: session.user.id, extra: extraValue },
+  });
+
+  revalidatePath("/dashboard");
+}
+
 export async function setProfileSetupDismissed(step: SetupStep, dismissed: boolean) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Not authenticated");
