@@ -49,11 +49,18 @@ export default async function MemberLayout({
     ? await getNotificationCounts(user)
     : {};
 
+  // Public nav links (visible to everyone, including logged-out visitors) are
+  // also surfaced in the logged-in header — so members can still reach things
+  // like About, Contact, and event landing pages without leaving the app shell.
+  const publicNavLinks = navLinks.filter(
+    (link) => !link.isExternal && link.minTierLevel === null && !link.requiredRoleSlug,
+  );
+
   return (
     <Providers session={session}>
       <div className="flex min-h-screen flex-col">
         <div className={process.env.STEALTH_MODE === "true" ? "hidden md:block" : ""}>
-          <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={[]} />
+          <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={publicNavLinks} />
         </div>
         <div className="flex flex-1">
           <MemberSidebar items={memberLinks} notificationCounts={notificationCounts} />
