@@ -192,16 +192,21 @@ export async function DashboardActivity({ user, standalone = false }: Props) {
                 href="/announcements"
                 className="block overflow-hidden rounded-md border bg-card transition-colors hover:bg-accent"
               >
-                {a.imageUrl && (
+                {a.imageUrls.length > 0 && (
                   <div className="relative mx-auto aspect-[2/1] w-full max-w-xl bg-muted">
                     <Image
-                      src={a.imageUrl}
+                      src={a.imageUrls[0]}
                       alt=""
                       fill
                       sizes="(max-width: 768px) 100vw, 576px"
                       className="object-cover"
                       unoptimized
                     />
+                    {a.imageUrls.length > 1 && (
+                      <div className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1 text-xs font-medium text-white">
+                        +{a.imageUrls.length - 1} more
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="px-3 py-2">

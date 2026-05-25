@@ -29,7 +29,7 @@ interface AnnouncementFormProps {
     id: string;
     title: string;
     content: string;
-    imageUrl: string | null;
+    imageUrls: string[];
     published: boolean;
     pinned: boolean;
     expiresAt: string | null;
@@ -40,7 +40,7 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(announcement?.title ?? "");
   const [content, setContent] = useState(announcement?.content ?? "");
-  const [imageUrl, setImageUrl] = useState<string | null>(announcement?.imageUrl ?? null);
+  const [imageUrls, setImageUrls] = useState<string[]>(announcement?.imageUrls ?? []);
   const [published, setPublished] = useState(announcement?.published ?? false);
   const [pinned, setPinned] = useState(announcement?.pinned ?? false);
   const [expiresAt, setExpiresAt] = useState(
@@ -56,7 +56,7 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
       const data = {
         title,
         content,
-        imageUrl,
+        imageUrls,
         published,
         pinned,
         expiresAt: expiresAt || null,
@@ -70,7 +70,7 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
         toast.success("Announcement created");
         setTitle("");
         setContent("");
-        setImageUrl(null);
+        setImageUrls([]);
         setPublished(false);
         setPinned(false);
         setExpiresAt("");
@@ -134,32 +134,36 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Image (optional)</Label>
-            {imageUrl ? (
-              <div className="relative">
-                <Image
-                  src={imageUrl}
-                  alt="Announcement image"
-                  width={400}
-                  height={300}
-                  className="rounded-md border object-cover w-full max-h-60"
-                  unoptimized
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-2 h-7 bg-background/80 hover:bg-background"
-                  onClick={() => setImageUrl(null)}
-                >
-                  <X className="mr-1 h-3 w-3" /> Remove
-                </Button>
+            <Label>Images (optional)</Label>
+            {imageUrls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {imageUrls.map((url, i) => (
+                  <div key={`${url}-${i}`} className="relative aspect-square">
+                    <Image
+                      src={url}
+                      alt={`Image ${i + 1}`}
+                      fill
+                      sizes="120px"
+                      className="rounded-md border object-cover"
+                      unoptimized
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-6 w-6 bg-background/80 p-0 hover:bg-background"
+                      onClick={() => setImageUrls((arr) => arr.filter((_, idx) => idx !== i))}
+                      aria-label="Remove image"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <Button type="button" variant="outline" size="sm" onClick={() => setMediaPicker(true)}>
-                <ImageIcon className="mr-2 h-4 w-4" /> Pick image
-              </Button>
             )}
+            <Button type="button" variant="outline" size="sm" onClick={() => setMediaPicker(true)}>
+              <ImageIcon className="mr-2 h-4 w-4" /> {imageUrls.length === 0 ? "Pick image" : "Add another image"}
+            </Button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
@@ -198,7 +202,7 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
       <MediaPickerDialog
         open={mediaPicker}
         onClose={() => setMediaPicker(false)}
-        onSelect={(url) => setImageUrl(url)}
+        onSelect={(url) => setImageUrls((arr) => [...arr, url])}
       />
     </Dialog>
   );

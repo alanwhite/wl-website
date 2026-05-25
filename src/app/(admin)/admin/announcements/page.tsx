@@ -82,7 +82,7 @@ export default async function AnnouncementsPage({
                         id: a.id,
                         title: a.title,
                         content: a.content,
-                        imageUrl: a.imageUrl,
+                        imageUrls: a.imageUrls,
                         published: a.published,
                         pinned: a.pinned,
                         expiresAt: a.expiresAt?.toISOString() ?? null,

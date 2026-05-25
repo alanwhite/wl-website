@@ -230,7 +230,7 @@ model Announcement {
   id        String    @id @default(cuid())
   title     String
   content   String    @db.Text
-  imageUrl  String?
+  imageUrls String[]  @default([])
   published Boolean   @default(false)
   pinned    Boolean   @default(false)
   expiresAt DateTime?
