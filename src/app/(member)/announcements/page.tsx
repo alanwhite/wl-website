@@ -75,12 +75,12 @@ export default async function AnnouncementsPage() {
           {announcements.map((a) => (
             <Card key={a.id} className="overflow-hidden">
               {a.imageUrl && (
-                <div className="relative aspect-video w-full bg-muted">
+                <div className="relative mx-auto aspect-video w-full max-w-xl bg-muted">
                   <Image
                     src={a.imageUrl}
                     alt=""
                     fill
-                    sizes="(max-width: 768px) 100vw, 700px"
+                    sizes="(max-width: 768px) 100vw, 576px"
                     className="object-cover"
                     unoptimized
                   />

@@ -193,12 +193,12 @@ export async function DashboardActivity({ user, standalone = false }: Props) {
                 className="block overflow-hidden rounded-md border bg-card transition-colors hover:bg-accent"
               >
                 {a.imageUrl && (
-                  <div className="relative aspect-[2/1] w-full bg-muted">
+                  <div className="relative mx-auto aspect-[2/1] w-full max-w-xl bg-muted">
                     <Image
                       src={a.imageUrl}
                       alt=""
                       fill
-                      sizes="(max-width: 768px) 100vw, 700px"
+                      sizes="(max-width: 768px) 100vw, 576px"
                       className="object-cover"
                       unoptimized
                     />
