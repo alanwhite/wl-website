@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Plus, Pin, Pencil } from "lucide-react";
+import Image from "next/image";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +73,19 @@ export default async function AnnouncementsPage() {
       ) : (
         <div className="space-y-3">
           {announcements.map((a) => (
-            <Card key={a.id}>
+            <Card key={a.id} className="overflow-hidden">
+              {a.imageUrl && (
+                <div className="relative aspect-video w-full bg-muted">
+                  <Image
+                    src={a.imageUrl}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 100vw, 700px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -84,7 +97,7 @@ export default async function AnnouncementsPage() {
                         <Badge variant="secondary" className="text-xs">Expired</Badge>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
+                    <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
                       {a.content}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">

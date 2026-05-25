@@ -11,6 +11,7 @@ import { sendPushNotifications } from "@/lib/push";
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
+  imageUrl: z.string().nullable().optional().transform((v) => (v && v.length > 0 ? v : null)),
   published: z.boolean(),
   pinned: z.boolean(),
   expiresAt: z.string().nullable().transform((val) => (val ? new Date(val) : null)),

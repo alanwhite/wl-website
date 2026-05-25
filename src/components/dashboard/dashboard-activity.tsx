@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { format } from "date-fns";
 import { Megaphone, Calendar, ListTodo, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -189,14 +190,28 @@ export async function DashboardActivity({ user, standalone = false }: Props) {
               <Link
                 key={a.id}
                 href="/announcements"
-                className="block rounded-md border bg-card px-3 py-2 transition-colors hover:bg-accent"
+                className="block overflow-hidden rounded-md border bg-card transition-colors hover:bg-accent"
               >
-                <div className="text-sm font-medium">{a.title}</div>
-                <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
-                  {a.content}
-                </p>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {format(a.createdAt, "d MMM yyyy")}
+                {a.imageUrl && (
+                  <div className="relative aspect-[2/1] w-full bg-muted">
+                    <Image
+                      src={a.imageUrl}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 100vw, 700px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                )}
+                <div className="px-3 py-2">
+                  <div className="text-sm font-medium">{a.title}</div>
+                  <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
+                    {a.content}
+                  </p>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {format(a.createdAt, "d MMM yyyy")}
+                  </div>
                 </div>
               </Link>
             ))}

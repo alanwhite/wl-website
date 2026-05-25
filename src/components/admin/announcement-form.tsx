@@ -20,13 +20,16 @@ import {
 } from "@/lib/actions/announcements";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Image as ImageIcon, X } from "lucide-react";
+import Image from "next/image";
+import { MediaPickerDialog } from "@/components/admin/media-picker-dialog";
 
 interface AnnouncementFormProps {
   announcement?: {
     id: string;
     title: string;
     content: string;
+    imageUrl: string | null;
     published: boolean;
     pinned: boolean;
     expiresAt: string | null;
@@ -37,12 +40,14 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(announcement?.title ?? "");
   const [content, setContent] = useState(announcement?.content ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(announcement?.imageUrl ?? null);
   const [published, setPublished] = useState(announcement?.published ?? false);
   const [pinned, setPinned] = useState(announcement?.pinned ?? false);
   const [expiresAt, setExpiresAt] = useState(
     announcement?.expiresAt ? announcement.expiresAt.split("T")[0] : ""
   );
   const [loading, setLoading] = useState(false);
+  const [mediaPicker, setMediaPicker] = useState(false);
   const router = useRouter();
 
   async function handleSave() {
@@ -51,6 +56,7 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
       const data = {
         title,
         content,
+        imageUrl,
         published,
         pinned,
         expiresAt: expiresAt || null,
@@ -64,6 +70,7 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
         toast.success("Announcement created");
         setTitle("");
         setContent("");
+        setImageUrl(null);
         setPublished(false);
         setPinned(false);
         setExpiresAt("");
@@ -126,6 +133,34 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
               rows={5}
             />
           </div>
+          <div className="space-y-2">
+            <Label>Image (optional)</Label>
+            {imageUrl ? (
+              <div className="relative">
+                <Image
+                  src={imageUrl}
+                  alt="Announcement image"
+                  width={400}
+                  height={300}
+                  className="rounded-md border object-cover w-full max-h-60"
+                  unoptimized
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-2 h-7 bg-background/80 hover:bg-background"
+                  onClick={() => setImageUrl(null)}
+                >
+                  <X className="mr-1 h-3 w-3" /> Remove
+                </Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" size="sm" onClick={() => setMediaPicker(true)}>
+                <ImageIcon className="mr-2 h-4 w-4" /> Pick image
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <Switch checked={published} onCheckedChange={setPublished} />
@@ -160,6 +195,11 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
           </div>
         </div>
       </DialogContent>
+      <MediaPickerDialog
+        open={mediaPicker}
+        onClose={() => setMediaPicker(false)}
+        onSelect={(url) => setImageUrl(url)}
+      />
     </Dialog>
   );
 }
