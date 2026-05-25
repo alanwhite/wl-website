@@ -1,8 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSiteInfo, getDashboardWelcomePageSlug } from "@/lib/config";
-import { AnnouncementsPanel } from "@/components/shared/announcements-panel";
+import { DashboardActivity } from "@/components/dashboard/dashboard-activity";
 import { prisma } from "@/lib/prisma";
 import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
@@ -30,15 +31,18 @@ export default async function DashboardPage() {
     const renderContent = page && contentHasHtml ? collapseBlankLinesBetweenTags(page.content) : page?.content;
 
     return (
-      <div className="mx-auto max-w-3xl">
-        {page ? (
-          <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
-            <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">Welcome page not found.</p>
-        )}
-      </div>
+      <>
+        <div className="mx-auto max-w-3xl">
+          {page ? (
+            <div className={contentHasHtml ? "max-w-none" : "prose prose-lg dark:prose-invert max-w-none prose-img:rounded-lg prose-img:shadow-md"}>
+              <Markdown rehypePlugins={[rehypeRaw]}>{renderContent}</Markdown>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground">Welcome page not found.</p>
+          )}
+        </div>
+        <DashboardActivity user={session.user} standalone />
+      </>
     );
   }
 
@@ -50,7 +54,7 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground">Good to see you.</p>
       </div>
 
-      <AnnouncementsPanel />
+      <DashboardActivity user={session.user} />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -72,9 +76,9 @@ export default async function DashboardPage() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               You can review or change your details on your{" "}
-              <a href="/profile" className="text-primary underline">
+              <Link href="/profile" className="text-primary underline">
                 profile page
-              </a>
+              </Link>
               .
             </p>
           </CardContent>
