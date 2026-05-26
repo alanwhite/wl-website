@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSiteInfo, getConfig } from "@/lib/config";
 import { Github } from "lucide-react";
-import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
+import { PasskeyLoginPrompt } from "@/components/auth/passkey-login-button";
 import { ProviderSignInButton } from "@/components/auth/provider-signin-button";
 
 export const dynamic = "force-dynamic";
@@ -105,7 +105,12 @@ export default async function LoginPage({
               </div>
             </div>
           )}
-          {/* Provider buttons first — primary action for new and returning users */}
+          {/* Prominent passkey button at the top — only renders when this browser
+              has previously saved a passkey here (localStorage hint). For first-time
+              and passkey-less users this is invisible and OAuth stays primary. */}
+          {passkeysEnabled && <PasskeyLoginPrompt variant="prominent" />}
+
+          {/* Provider buttons — primary action for new and returning users */}
           {providers.map((provider) => (
             <form
               key={provider.id}
@@ -124,9 +129,9 @@ export default async function LoginPage({
               New here? Just click one of the buttons above to register.
             </p>
           )}
-          {/* Passkey link — discreet hint for returning members who set up a
-              passkey from their profile. First-time users use OAuth above. */}
-          {passkeysEnabled && <PasskeyLoginButton />}
+          {/* Discreet hint at the bottom for browsers that haven't yet used a passkey
+              here. Auto-hides once the prominent variant above takes over. */}
+          {passkeysEnabled && <PasskeyLoginPrompt variant="subtle" />}
         </CardContent>
       </Card>
       </div>

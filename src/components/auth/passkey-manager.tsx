@@ -5,6 +5,7 @@ import { signIn } from "next-auth/webauthn";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { removePasskey } from "@/lib/actions/passkeys";
+import { rememberPasskey, forgetPasskey } from "@/components/auth/passkey-login-button";
 
 interface PasskeyInfo {
   credentialID: string;
@@ -26,6 +27,7 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
     try {
       // Auth.js WebAuthn registration is triggered via signIn with action "register"
       await signIn("passkey", { action: "register", redirect: false });
+      rememberPasskey();
       toast.success("Sign-in saved to this device. Refresh to see it listed.");
       // Reload the page to show the new passkey
       window.location.reload();
@@ -41,7 +43,13 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
     setLoading(true);
     try {
       await removePasskey(credentialID);
-      setPasskeys(passkeys.filter((p) => p.credentialID !== credentialID));
+      const remaining = passkeys.filter((p) => p.credentialID !== credentialID);
+      setPasskeys(remaining);
+      if (remaining.length === 0) {
+        // No saved sign-ins left for this account — clear the login-page hint
+        // so the discreet variant returns until they save one again.
+        forgetPasskey();
+      }
       toast.success("Sign-in removed from this site. You may also want to delete it from your device: System Settings → Passwords.", { duration: 8000 });
     } catch {
       toast.error("Couldn't remove sign-in");
