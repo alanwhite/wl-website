@@ -71,7 +71,7 @@ export default async function AnnouncementsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="mx-auto max-w-xl space-y-3">
           {announcements.map((a) => (
             <Card key={a.id} className="overflow-hidden">
               <AnnouncementGallery images={a.imageUrls} />
