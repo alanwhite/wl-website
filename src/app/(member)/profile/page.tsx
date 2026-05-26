@@ -58,7 +58,7 @@ export default async function ProfilePage() {
   const pushPending =
     isPushEnabled() && pushSubCount === 0 && !extra.notificationsPromptDismissed;
   const pendingItems: { step: SetupStep; label: string; anchor: string }[] = [];
-  if (passkeyPending) pendingItems.push({ step: "passkey", label: "Set up a passkey", anchor: "passkeys" });
+  if (passkeyPending) pendingItems.push({ step: "passkey", label: "Save sign-in to this device", anchor: "passkeys" });
   if (pushPending) pendingItems.push({ step: "notifications", label: "Turn on notifications", anchor: "notifications" });
 
   const initials = session.user.name
@@ -167,7 +167,7 @@ export default async function ProfilePage() {
       {passkeysEnabled && (
         <Card id="passkeys" className={cn("scroll-mt-20", passkeyPending && "ring-2 ring-primary/40")}>
           <CardHeader>
-            <CardTitle className="text-lg">Passkeys</CardTitle>
+            <CardTitle className="text-lg">Quick sign-in</CardTitle>
           </CardHeader>
           <CardContent>
             <PasskeyManager passkeys={authenticators} />

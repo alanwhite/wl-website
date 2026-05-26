@@ -26,25 +26,25 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
     try {
       // Auth.js WebAuthn registration is triggered via signIn with action "register"
       await signIn("passkey", { action: "register", redirect: false });
-      toast.success("Passkey registered! Refresh to see it listed.");
+      toast.success("Sign-in saved to this device. Refresh to see it listed.");
       // Reload the page to show the new passkey
       window.location.reload();
     } catch {
-      toast.error("Failed to register passkey. Your browser may not support passkeys.");
+      toast.error("Couldn't save sign-in to this device. Your browser may not support it.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleRemove(credentialID: string) {
-    if (!confirm("Remove this passkey? You won't be able to use it to sign in anymore.")) return;
+    if (!confirm("Remove the saved sign-in for this device? You'll need to use Google or Apple to sign in here next time.")) return;
     setLoading(true);
     try {
       await removePasskey(credentialID);
       setPasskeys(passkeys.filter((p) => p.credentialID !== credentialID));
-      toast.success("Passkey removed from this site. You may also want to delete it from your device: System Settings → Passwords.", { duration: 8000 });
+      toast.success("Sign-in removed from this site. You may also want to delete it from your device: System Settings → Passwords.", { duration: 8000 });
     } catch {
-      toast.error("Failed to remove passkey");
+      toast.error("Couldn't remove sign-in");
     } finally {
       setLoading(false);
     }
@@ -58,13 +58,21 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
     return labels[type] ?? type;
   }
 
+  const hasAny = passkeys.length > 0;
+
   return (
     <div className="space-y-4">
-      {passkeys.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No passkeys registered. Add one to sign in without needing to remember your OAuth provider.
-        </p>
-      ) : (
+      {!hasAny && (
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            Save your sign-in to this device so you can come back without having to choose Google or Apple again — use your fingerprint, face, or device PIN to sign in next time.
+          </p>
+          <p className="text-xs">
+            Browsers call this a <em>passkey</em>. It&apos;s safer than a password and only works from this device (or any device signed into the same browser).
+          </p>
+        </div>
+      )}
+      {hasAny && (
         <div className="space-y-2">
           {passkeys.map((pk) => (
             <div
@@ -72,9 +80,7 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
               className="flex items-center justify-between rounded border p-3"
             >
               <div>
-                <p className="text-sm font-medium">
-                  Passkey
-                </p>
+                <p className="text-sm font-medium">Saved sign-in</p>
                 <p className="text-xs text-muted-foreground">
                   {deviceLabel(pk.credentialDeviceType, pk.credentialBackedUp)}
                   {pk.transports && ` (${pk.transports})`}
@@ -92,8 +98,8 @@ export function PasskeyManager({ passkeys: initialPasskeys }: PasskeyManagerProp
           ))}
         </div>
       )}
-      <Button onClick={handleRegister} disabled={loading} variant="outline">
-        {loading ? "Registering..." : "Add Passkey"}
+      <Button onClick={handleRegister} disabled={loading} variant={hasAny ? "outline" : "default"}>
+        {loading ? "Saving…" : hasAny ? "Save another device" : "Save sign-in to this device"}
       </Button>
     </div>
   );
