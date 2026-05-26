@@ -124,20 +124,9 @@ export default async function LoginPage({
               New here? Just click one of the buttons above to register.
             </p>
           )}
-          {/* Passkey section — secondary, for returning members only */}
-          {passkeysEnabled && (
-            <>
-              <div className="relative pt-2">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Returning member?</span>
-                </div>
-              </div>
-              <PasskeyLoginButton />
-            </>
-          )}
+          {/* Passkey link — discreet hint for returning members who set up a
+              passkey from their profile. First-time users use OAuth above. */}
+          {passkeysEnabled && <PasskeyLoginButton />}
         </CardContent>
       </Card>
       </div>
