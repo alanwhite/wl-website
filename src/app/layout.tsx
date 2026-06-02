@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
-import { getThemeConfig, getSiteInfo, getConfig } from "@/lib/config";
+import { getThemeConfig, getSiteInfo, getConfig, getAnimateCards } from "@/lib/config";
 import { AnalyticsScript } from "@/components/layout/analytics-script";
 import "./globals.css";
 
@@ -65,12 +65,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const theme = await getThemeConfig();
+  const [theme, animateCards] = await Promise.all([getThemeConfig(), getAnimateCards()]);
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased${animateCards ? " animate-cards" : ""}`}
         style={
           {
             "--primary": theme.primary,

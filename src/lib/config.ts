@@ -211,6 +211,10 @@ export async function getFormApprovalEmailBody(): Promise<string | null> {
   return getConfig("form.approvalEmailBody");
 }
 
+export async function getAnimateCards(): Promise<boolean> {
+  return (await getConfig("ui.animateCards")) === "true";
+}
+
 export async function getFormRejectionEmailBody(): Promise<string | null> {
   return getConfig("form.rejectionEmailBody");
 }
