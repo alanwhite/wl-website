@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getSiteInfo, getConfig } from "@/lib/config";
 import { Header } from "@/components/layout/header";
-import { AdminSidebar } from "@/components/layout/admin-sidebar";
+import { AdminSidebar, AdminMobileNav } from "@/components/layout/admin-sidebar";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
 
@@ -24,9 +24,10 @@ export default async function AdminLayout({
     <Providers session={session}>
       <div className="flex min-h-screen flex-col">
         <Header siteName={siteInfo.name} logoUrl={logoUrl} logoDarkUrl={logoDarkUrl} navLinks={navLinks} />
+        <AdminMobileNav />
         <div className="flex flex-1">
           <AdminSidebar />
-          <main className="flex-1 p-6">{children}</main>
+          <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </Providers>
