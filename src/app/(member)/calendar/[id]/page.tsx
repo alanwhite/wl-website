@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin, Pencil, Check, X, HelpCircle } from "lucide-react";
 import { LocalDate } from "@/components/shared/local-date";
+import { EventDateRange } from "@/components/shared/event-date-range";
 import { DeleteEventButton } from "@/components/calendar/delete-event-button";
 import { RsvpButton } from "@/components/calendar/rsvp-button";
 
@@ -188,9 +189,12 @@ export default async function EventDetailPage({
           <div className="flex flex-wrap gap-4 text-sm">
             <span className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              {event.allDay
-                ? <LocalDate date={event.startDate} dateFormat="EEEE d MMMM yyyy" />
-                : <><LocalDate date={event.startDate} dateFormat="EEEE d MMMM yyyy, h:mm a" /> — <LocalDate date={event.endDate} dateFormat="h:mm a" /></>}
+              <EventDateRange
+                startDate={event.startDate}
+                endDate={event.endDate}
+                allDay={event.allDay}
+                variant="detail"
+              />
             </span>
             {event.location && (
               <span className="flex items-center gap-2">
