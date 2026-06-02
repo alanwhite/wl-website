@@ -5,13 +5,19 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+}
+
 interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions) {
   const from = process.env.EMAIL_FROM ?? "noreply@example.com";
 
   if (!resend) {
@@ -19,6 +25,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
       from,
       to,
       subject,
+      attachments: attachments?.map((a) => `${a.filename} (${a.content.length} bytes)`),
     });
     return;
   }
@@ -28,6 +35,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
     to: Array.isArray(to) ? to : [to],
     subject,
     html,
+    attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content })),
   });
 
   if (error) {
@@ -45,12 +53,14 @@ export async function sendBrandedEmail({
   to,
   subject,
   bodyHtml,
+  attachments,
 }: {
   to: string | string[];
   subject: string;
   bodyHtml: string;
+  attachments?: EmailAttachment[];
 }) {
   const { buildBrandedEmail } = await import("./email-template");
   const html = await buildBrandedEmail(bodyHtml);
-  return sendEmail({ to, subject, html });
+  return sendEmail({ to, subject, html, attachments });
 }

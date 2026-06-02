@@ -137,6 +137,58 @@ ${markdownToEmailHtml(body)}
 </p>`;
 }
 
+const DEFAULT_FORM_APPROVAL_BODY = `## Your {{formTitle}} submission has been accepted
+
+Thanks for your submission — we've reviewed it and it's been accepted.`;
+
+const DEFAULT_FORM_REJECTION_BODY = `## Your {{formTitle}} submission
+
+Thanks for taking the time to apply. After review, we're unable to approve your submission on this occasion.`;
+
+const FORM_EMAIL_SIGN_OFF = `<p style="margin:0;color:#3f3f46;line-height:1.6;">
+  If you have any questions, just reply to this email and we'll be in touch.
+</p>`;
+
+function interpolate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
+}
+
+function reviewerNotesHtml(notes: string | null | undefined): string {
+  if (!notes || !notes.trim()) return "";
+  return `<div style="margin:16px 0;padding:12px 16px;border-left:3px solid #e4e4e7;background:#f4f4f5;color:#3f3f46;line-height:1.6;">
+  <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#71717a;margin-bottom:6px;">A note from us</div>
+  ${escapeHtml(notes).replace(/\n/g, "<br/>")}
+</div>`;
+}
+
+function termsAttachmentBlurbHtml(termsFileName: string | null | undefined): string {
+  if (!termsFileName) return "";
+  return `<p style="margin:0 0 16px;color:#3f3f46;line-height:1.6;">
+  We have attached <strong>${escapeHtml(termsFileName)}</strong> for your reference — please take a moment to read it.
+</p>`;
+}
+
+export function formApprovalEmailHtml(
+  formTitle: string,
+  customBody: string | null | undefined,
+  reviewerNotes?: string | null,
+  termsFileName?: string | null,
+): string {
+  const body = (customBody && customBody.trim()) || DEFAULT_FORM_APPROVAL_BODY;
+  const rendered = interpolate(body, { formTitle });
+  return `${markdownToEmailHtml(rendered)}${termsAttachmentBlurbHtml(termsFileName)}${reviewerNotesHtml(reviewerNotes)}${FORM_EMAIL_SIGN_OFF}`;
+}
+
+export function formRejectionEmailHtml(
+  formTitle: string,
+  customBody: string | null | undefined,
+  reviewerNotes?: string | null,
+): string {
+  const body = (customBody && customBody.trim()) || DEFAULT_FORM_REJECTION_BODY;
+  const rendered = interpolate(body, { formTitle });
+  return `${markdownToEmailHtml(rendered)}${reviewerNotesHtml(reviewerNotes)}${FORM_EMAIL_SIGN_OFF}`;
+}
+
 export function rejectionEmailHtml(reason?: string): string {
   return `
 <h2 style="margin:0 0 16px;color:#18181b;">Registration Update</h2>

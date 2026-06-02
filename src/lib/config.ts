@@ -207,6 +207,14 @@ export async function getApprovalEmailBody(): Promise<string | null> {
   return getConfig("registration.approvalEmailBody");
 }
 
+export async function getFormApprovalEmailBody(): Promise<string | null> {
+  return getConfig("form.approvalEmailBody");
+}
+
+export async function getFormRejectionEmailBody(): Promise<string | null> {
+  return getConfig("form.rejectionEmailBody");
+}
+
 export interface TierRule {
   field: string;
   operator: "starts-with" | "matches" | "equals" | "in";

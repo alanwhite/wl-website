@@ -2,12 +2,41 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getFormCreatorRoles, canCreateForms } from "@/lib/config";
+import {
+  getFormCreatorRoles,
+  canCreateForms,
+  getFormApprovalEmailBody,
+  getFormRejectionEmailBody,
+} from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { deleteFile } from "@/lib/upload";
 import { headers } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendBrandedEmail, type EmailAttachment } from "@/lib/email";
+import { formApprovalEmailHtml, formRejectionEmailHtml } from "@/lib/email-template";
+import { readFile } from "fs/promises";
+import path from "path";
+
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+
+async function loadTermsAttachment(
+  media: { fileName: string; filePath: string; fileSize: number } | null | undefined,
+): Promise<EmailAttachment | null> {
+  if (!media) return null;
+  if (media.fileSize > MAX_ATTACHMENT_BYTES) {
+    console.warn(`[form-email] Skipping terms attachment ${media.fileName}: ${media.fileSize} bytes exceeds ${MAX_ATTACHMENT_BYTES}`);
+    return null;
+  }
+  try {
+    const absPath = path.join(process.cwd(), media.filePath.replace(/^\//, ""));
+    const content = await readFile(absPath);
+    return { filename: media.fileName, content };
+  } catch (err) {
+    console.error(`[form-email] Failed to read terms attachment ${media.filePath}:`, err);
+    return null;
+  }
+}
 
 const submitLimiter = rateLimit({ interval: 60_000 });
 
@@ -255,13 +284,22 @@ export async function approveSubmission(submissionId: string, notes?: string) {
 
   const user = await requireFormManager(submission.formId);
 
-  await prisma.formSubmission.update({
+  const updated = await prisma.formSubmission.update({
     where: { id: submissionId },
     data: {
       status: "approved",
       reviewedBy: user.id,
       reviewedAt: new Date(),
       reviewNotes: notes || null,
+    },
+    include: {
+      form: {
+        select: {
+          slug: true,
+          title: true,
+          termsMedia: { select: { fileName: true, filePath: true, fileSize: true } },
+        },
+      },
     },
   });
 
@@ -273,11 +311,23 @@ export async function approveSubmission(submissionId: string, notes?: string) {
     targetId: submissionId,
   });
 
-  const sub = await prisma.formSubmission.findUnique({
-    where: { id: submissionId },
-    include: { form: { select: { slug: true } } },
-  });
-  revalidatePath(`/forms/${sub?.form.slug}/submissions`);
+  if (updated.email) {
+    const customBody = await getFormApprovalEmailBody();
+    const attachment = await loadTermsAttachment(updated.form.termsMedia);
+    await sendBrandedEmail({
+      to: updated.email,
+      subject: `Your ${updated.form.title} submission has been accepted`,
+      bodyHtml: formApprovalEmailHtml(
+        updated.form.title,
+        customBody,
+        updated.reviewNotes,
+        attachment ? attachment.filename : null,
+      ),
+      attachments: attachment ? [attachment] : undefined,
+    }).catch(console.error);
+  }
+
+  revalidatePath(`/forms/${updated.form.slug}/submissions`);
 }
 
 export async function rejectSubmission(submissionId: string, notes?: string) {
@@ -289,7 +339,7 @@ export async function rejectSubmission(submissionId: string, notes?: string) {
 
   const user = await requireFormManager(submission.formId);
 
-  await prisma.formSubmission.update({
+  const updated = await prisma.formSubmission.update({
     where: { id: submissionId },
     data: {
       status: "rejected",
@@ -297,6 +347,7 @@ export async function rejectSubmission(submissionId: string, notes?: string) {
       reviewedAt: new Date(),
       reviewNotes: notes || null,
     },
+    include: { form: { select: { slug: true, title: true } } },
   });
 
   await logAudit({
@@ -307,11 +358,16 @@ export async function rejectSubmission(submissionId: string, notes?: string) {
     targetId: submissionId,
   });
 
-  const sub = await prisma.formSubmission.findUnique({
-    where: { id: submissionId },
-    include: { form: { select: { slug: true } } },
-  });
-  revalidatePath(`/forms/${sub?.form.slug}/submissions`);
+  if (updated.email) {
+    const customBody = await getFormRejectionEmailBody();
+    await sendBrandedEmail({
+      to: updated.email,
+      subject: `Your ${updated.form.title} submission`,
+      bodyHtml: formRejectionEmailHtml(updated.form.title, customBody, updated.reviewNotes),
+    }).catch(console.error);
+  }
+
+  revalidatePath(`/forms/${updated.form.slug}/submissions`);
 }
 
 export async function deleteSubmission(submissionId: string) {
