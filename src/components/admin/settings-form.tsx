@@ -42,6 +42,7 @@ import {
   updateNotificationDefaults,
   updateGroupSettings,
   updateGroupMemberFields,
+  updateProjectSettings,
   updateDashboardCards,
   updateDashboardWelcomePageSlug,
   updateDashboardWelcomeDismissible,
@@ -84,6 +85,8 @@ interface SettingsFormProps {
     groupManagerRoles: string[];
     groupMemberFields: import("@/lib/config").RegistrationField[];
     groupConfirmLabel: string;
+    projectLabel: string;
+    projectManagerRoles: string[];
     dashboardCards: DashboardCard[];
     dashboardWelcomePageSlug: string;
     dashboardWelcomeDismissible: boolean;
@@ -122,6 +125,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [financialYearStart, setFinancialYearStart] = useState(String(settings.financialYearStartMonth));
   const [groupLabelVal, setGroupLabelVal] = useState(settings.groupLabel);
   const [groupManagerRoleSlugs, setGroupManagerRoleSlugs] = useState<string[]>(settings.groupManagerRoles);
+  const [projectLabelVal, setProjectLabelVal] = useState(settings.projectLabel);
+  const [projectManagerRoleSlugs, setProjectManagerRoleSlugs] = useState<string[]>(settings.projectManagerRoles);
   const [groupMemberFieldsJson, setGroupMemberFieldsJson] = useState(JSON.stringify(settings.groupMemberFields, null, 2));
   const [groupConfirmLabelVal, setGroupConfirmLabelVal] = useState(settings.groupConfirmLabel);
   const [dashboardCardsJson, setDashboardCardsJson] = useState(JSON.stringify(settings.dashboardCards, null, 2));
@@ -484,6 +489,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="calendar" className="justify-start">Calendar</TabsTrigger>
         <TabsTrigger value="financials" className="justify-start">Financials</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
+        <TabsTrigger value="projects" className="justify-start">Projects</TabsTrigger>
         <TabsTrigger value="groups" className="justify-start">Groups</TabsTrigger>
         <TabsTrigger value="notifications" className="justify-start">Notifications</TabsTrigger>
         <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
@@ -1362,6 +1368,66 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         </Card>
       </TabsContent>
 
+
+      <TabsContent value="projects">
+        <Card>
+          <CardHeader>
+            <CardTitle>Projects</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Project Label</Label>
+              <Input
+                value={projectLabelVal}
+                onChange={(e) => setProjectLabelVal(e.target.value)}
+                placeholder="Project"
+              />
+              <p className="text-xs text-muted-foreground">
+                What projects are called on this site (e.g. &quot;Initiative&quot;, &quot;Campaign&quot;, &quot;Event&quot;).
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Project Manager Roles</Label>
+              <div className="space-y-1">
+                {roles.map((role) => (
+                  <label key={role.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={projectManagerRoleSlugs.includes(role.slug)}
+                      onChange={(e) => {
+                        if (e.target.checked) setProjectManagerRoleSlugs([...projectManagerRoleSlugs, role.slug]);
+                        else setProjectManagerRoleSlugs(projectManagerRoleSlugs.filter((s) => s !== role.slug));
+                      }}
+                      className="h-4 w-4 rounded border"
+                    />
+                    {role.name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Roles that can create, edit, archive and delete projects, and link any content
+                into them. Per-project view and contributor access is set on each project under
+                Admin → Projects. Admins can always manage projects.
+              </p>
+            </div>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await updateProjectSettings(projectLabelVal || "Project", JSON.stringify(projectManagerRoleSlugs));
+                  toast.success("Project settings saved");
+                } catch {
+                  toast.error("Failed to save");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Project Settings
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
 
       <TabsContent value="groups">
         <Card>

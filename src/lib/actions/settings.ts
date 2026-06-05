@@ -417,6 +417,22 @@ export async function updateGroupSettings(label: string, managerRoleSlugsJson: s
   });
 }
 
+export async function updateProjectSettings(label: string, managerRoleSlugsJson: string) {
+  const admin = await requireAdmin();
+  await setConfig("projects.label", label);
+  await setConfig("projects.managerRoles", managerRoleSlugsJson);
+  invalidateConfigCache("projects.label");
+  invalidateConfigCache("projects.managerRoles");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.projects.update",
+    details: { label },
+  });
+}
+
 export async function updateGroupMemberFields(fieldsJson: string, confirmLabel: string) {
   const admin = await requireAdmin();
   JSON.parse(fieldsJson); // validate
