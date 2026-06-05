@@ -766,7 +766,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Configure which cards appear on the member dashboard, in order. Card types: &quot;page&quot; (renders a CMS page), &quot;group-hub&quot; (RSVP &amp; choices), &quot;admin-summary&quot; (manager view). Leave empty for the default dashboard. Ignored when a Welcome Page is set above.
+              Configure which cards appear on the member dashboard, in order. Card types: &quot;page&quot; (renders a CMS page), &quot;group-hub&quot; (RSVP &amp; choices), &quot;admin-summary&quot; (manager view), &quot;projects&quot; (your active projects with an activity summary; optional &quot;title&quot; override). Leave empty for the default dashboard. The &quot;projects&quot; card also shows below a configured Welcome Page.
             </p>
             <Textarea
               value={dashboardCardsJson}

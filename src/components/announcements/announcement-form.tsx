@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { Image as ImageIcon, X } from "lucide-react";
 import Image from "next/image";
 import { MediaPickerDialog } from "@/components/admin/media-picker-dialog";
+import { ProjectSelect } from "@/components/shared/project-select";
 
 interface MemberAnnouncementFormProps {
   announcement?: {
@@ -27,10 +28,13 @@ interface MemberAnnouncementFormProps {
     published: boolean;
     pinned: boolean;
     expiresAt: Date | null;
+    projectId?: string | null;
   };
+  projects?: { id: string; name: string }[];
+  defaultProjectId?: string;
 }
 
-export function MemberAnnouncementForm({ announcement }: MemberAnnouncementFormProps) {
+export function MemberAnnouncementForm({ announcement, projects = [], defaultProjectId }: MemberAnnouncementFormProps) {
   const isEdit = !!announcement;
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -42,12 +46,22 @@ export function MemberAnnouncementForm({ announcement }: MemberAnnouncementFormP
   const [expiresAt, setExpiresAt] = useState(
     announcement?.expiresAt ? new Date(announcement.expiresAt).toISOString().slice(0, 10) : "",
   );
+  const [projectId, setProjectId] = useState(announcement?.projectId ?? defaultProjectId ?? "");
   const [mediaPicker, setMediaPicker] = useState(false);
 
   async function handleSave() {
     setLoading(true);
     try {
-      const data = { title, content, imageUrls, published, pinned, expiresAt: expiresAt || null };
+      const data = {
+        title,
+        content,
+        imageUrls,
+        published,
+        pinned,
+        expiresAt: expiresAt || null,
+        // Only send projectId when the user can pick one; otherwise leave unchanged
+        ...(projects.length > 0 ? { projectId: projectId || null } : {}),
+      };
       if (isEdit) {
         await updateAnnouncement(announcement.id, data);
         toast.success("Announcement updated");
@@ -137,6 +151,7 @@ export function MemberAnnouncementForm({ announcement }: MemberAnnouncementFormP
           <Label>Expires (optional)</Label>
           <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="max-w-xs" />
         </div>
+        <ProjectSelect projects={projects} value={projectId} onChange={setProjectId} />
         <div className="flex gap-3">
           <Button onClick={handleSave} disabled={loading}>
             {loading ? "Saving..." : isEdit ? "Update" : "Create"}

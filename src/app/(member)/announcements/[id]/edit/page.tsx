@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAnnouncementManagerRoles, canManageAnnouncements } from "@/lib/config";
+import { getContributableProjects } from "@/lib/project-access";
 import { MemberAnnouncementForm } from "@/components/announcements/announcement-form";
 
 export const dynamic = "force-dynamic";
@@ -18,12 +19,15 @@ export default async function EditAnnouncementPage({
   if (!canManageAnnouncements(session.user, managerRoles)) redirect("/announcements");
 
   const { id } = await params;
-  const announcement = await prisma.announcement.findUnique({ where: { id } });
+  const [announcement, projects] = await Promise.all([
+    prisma.announcement.findUnique({ where: { id } }),
+    getContributableProjects(session.user),
+  ]);
   if (!announcement) notFound();
 
   return (
     <div className="mx-auto max-w-2xl">
-      <MemberAnnouncementForm announcement={announcement} />
+      <MemberAnnouncementForm announcement={announcement} projects={projects} />
     </div>
   );
 }

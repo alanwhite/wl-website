@@ -7,76 +7,69 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { createCategory, updateCategory, deleteCategory } from "@/lib/actions/library";
-import { ProjectSelect } from "@/components/shared/project-select";
+import { createProject, updateProject, deleteProject, setProjectStatus } from "@/lib/actions/projects";
 import { toast } from "sonner";
 
-interface CategoryFormProps {
-  category?: {
+interface ProjectFormProps {
+  project?: {
     id: string;
     name: string;
     slug: string;
     description: string | null;
+    status: "ACTIVE" | "ARCHIVED";
     sortOrder: number;
+    pinToNav: boolean;
     targetRoleSlugs: string[];
     targetMinTierLevel: number | null;
-    uploaderRoleSlugs: string[];
-    uploaderMinTierLevel: number | null;
-    projectId?: string | null;
-    parentId?: string | null;
+    contributorRoleSlugs: string[];
+    contributorMinTierLevel: number | null;
   };
   roles: { id: string; name: string; slug: string }[];
   tiers: { id: string; name: string; level: number }[];
-  parentId?: string;
-  projects?: { id: string; name: string }[];
-  defaultProjectId?: string;
+  label: string;
 }
 
-export function CategoryForm({ category, roles, tiers, parentId, projects = [], defaultProjectId }: CategoryFormProps) {
+export function ProjectForm({ project, roles, tiers, label }: ProjectFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState(category?.name ?? "");
-  const [slug, setSlug] = useState(category?.slug ?? "");
-  const [description, setDescription] = useState(category?.description ?? "");
-  const [sortOrder, setSortOrder] = useState(category?.sortOrder ?? 0);
-  const [targetRoleSlugs, setTargetRoleSlugs] = useState<string[]>(category?.targetRoleSlugs ?? []);
+  const [name, setName] = useState(project?.name ?? "");
+  const [slug, setSlug] = useState(project?.slug ?? "");
+  const [description, setDescription] = useState(project?.description ?? "");
+  const [sortOrder, setSortOrder] = useState(project?.sortOrder ?? 0);
+  const [pinToNav, setPinToNav] = useState(project?.pinToNav ?? false);
+  const [targetRoleSlugs, setTargetRoleSlugs] = useState<string[]>(project?.targetRoleSlugs ?? []);
   const [targetMinTierLevel, setTargetMinTierLevel] = useState<string>(
-    category?.targetMinTierLevel?.toString() ?? ""
+    project?.targetMinTierLevel?.toString() ?? ""
   );
-  const [uploaderRoleSlugs, setUploaderRoleSlugs] = useState<string[]>(category?.uploaderRoleSlugs ?? []);
-  const [uploaderMinTierLevel, setUploaderMinTierLevel] = useState<string>(
-    category?.uploaderMinTierLevel?.toString() ?? ""
+  const [contributorRoleSlugs, setContributorRoleSlugs] = useState<string[]>(project?.contributorRoleSlugs ?? []);
+  const [contributorMinTierLevel, setContributorMinTierLevel] = useState<string>(
+    project?.contributorMinTierLevel?.toString() ?? ""
   );
 
   function handleNameChange(value: string) {
     setName(value);
-    if (!category) {
+    if (!project) {
       setSlug(value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
     }
   }
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
-    // Append parentId if creating a sub-category
-    if (parentId && !category) {
-      formData.set("parentId", parentId);
-    }
-    // Append role slugs
     for (const s of targetRoleSlugs) {
       formData.append("targetRoleSlugs", s);
     }
-    for (const s of uploaderRoleSlugs) {
-      formData.append("uploaderRoleSlugs", s);
+    for (const s of contributorRoleSlugs) {
+      formData.append("contributorRoleSlugs", s);
     }
     try {
-      if (category) {
-        await updateCategory(category.id, formData);
-        toast.success("Category updated");
+      if (project) {
+        await updateProject(project.id, formData);
+        toast.success(`${label} updated`);
       } else {
-        await createCategory(formData);
-        toast.success("Category created");
+        await createProject(formData);
+        toast.success(`${label} created`);
       }
-      router.push("/admin/documents");
+      router.push("/admin/projects");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
     } finally {
@@ -84,14 +77,27 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
     }
   }
 
-  async function handleDelete() {
-    if (!category) return;
-    if (!confirm(`Delete category "${category.name}" and all its documents? This cannot be undone.`)) return;
+  async function handleArchiveToggle() {
+    if (!project) return;
     setLoading(true);
     try {
-      await deleteCategory(category.id);
-      toast.success("Category deleted");
-      router.push("/admin/documents");
+      await setProjectStatus(project.id, project.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE");
+      toast.success(project.status === "ACTIVE" ? `${label} archived` : `${label} reactivated`);
+      router.push("/admin/projects");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update status");
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!project) return;
+    if (!confirm(`Delete "${project.name}"? Linked polls, folders, events, announcements and forms revert to standalone — nothing else is deleted.`)) return;
+    setLoading(true);
+    try {
+      await deleteProject(project.id);
+      toast.success(`${label} deleted`);
+      router.push("/admin/projects");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
       setLoading(false);
@@ -111,7 +117,7 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 required
-                placeholder="Committee Minutes"
+                placeholder="Gala Day 2026"
               />
             </div>
             <div className="space-y-2">
@@ -122,10 +128,10 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
-                placeholder="committee-minutes"
-                disabled={!!category}
+                placeholder="gala-day-2026"
+                disabled={!!project}
               />
-              {!category && (
+              {!project && (
                 <p className="text-xs text-muted-foreground">Auto-generated from name. Used in the URL.</p>
               )}
             </div>
@@ -138,35 +144,43 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
               name="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="Minutes from monthly committee meetings"
+              rows={3}
+              placeholder="Planning and coordination for the 2026 summer gala day"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sortOrder">Sort Order</Label>
-            <Input
-              id="sortOrder"
-              name="sortOrder"
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
-              className="w-24"
-            />
+          <div className="flex flex-wrap items-end gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="sortOrder">Sort Order</Label>
+              <Input
+                id="sortOrder"
+                name="sortOrder"
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+                className="w-24"
+              />
+            </div>
+            <div className="flex items-center gap-2 pb-2">
+              <input
+                type="checkbox"
+                id="pinToNav"
+                name="pinToNav"
+                checked={pinToNav}
+                onChange={(e) => setPinToNav(e.target.checked)}
+                className="h-4 w-4 rounded border"
+              />
+              <Label htmlFor="pinToNav" className="font-normal">
+                Pin to member navigation
+              </Label>
+            </div>
           </div>
-
-          {/* Sub-folders inherit the project gate via their top-level parent */}
-          {!parentId && !category?.parentId && (
-            <ProjectSelect
-              projects={projects}
-              defaultProjectId={category?.projectId ?? defaultProjectId}
-            />
-          )}
 
           <div className="space-y-3 rounded border p-4">
             <Label className="text-base">Who can view</Label>
             <p className="text-sm text-muted-foreground">
-              Leave empty to make this category visible to all approved members.
+              Leave empty to make this {label.toLowerCase()} visible to all approved members.
+              Content inside is additionally filtered by its own targeting.
             </p>
 
             {roles.length > 0 && (
@@ -176,7 +190,7 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
                   <div key={role.id} className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      id={`cat-role-${role.slug}`}
+                      id={`view-role-${role.slug}`}
                       checked={targetRoleSlugs.includes(role.slug)}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -187,7 +201,7 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
                       }}
                       className="h-4 w-4 rounded border"
                     />
-                    <Label htmlFor={`cat-role-${role.slug}`} className="text-sm font-normal">
+                    <Label htmlFor={`view-role-${role.slug}`} className="text-sm font-normal">
                       {role.name}
                     </Label>
                   </div>
@@ -217,30 +231,31 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
           </div>
 
           <div className="space-y-3 rounded border p-4">
-            <Label className="text-base">Who can upload</Label>
+            <Label className="text-base">Who can contribute</Label>
             <p className="text-sm text-muted-foreground">
-              Leave empty so only admins can upload. Select roles/tiers to allow others to upload documents.
+              Contributors can add polls, document folders, events, announcements and forms to
+              this {label.toLowerCase()}. Leave empty so only admins and project managers can.
             </p>
 
             {roles.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-sm">Allow upload for these roles:</Label>
+                <Label className="text-sm">Allow contributions from these roles:</Label>
                 {roles.map((role) => (
                   <div key={role.id} className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      id={`upload-role-${role.slug}`}
-                      checked={uploaderRoleSlugs.includes(role.slug)}
+                      id={`contrib-role-${role.slug}`}
+                      checked={contributorRoleSlugs.includes(role.slug)}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setUploaderRoleSlugs([...uploaderRoleSlugs, role.slug]);
+                          setContributorRoleSlugs([...contributorRoleSlugs, role.slug]);
                         } else {
-                          setUploaderRoleSlugs(uploaderRoleSlugs.filter((s) => s !== role.slug));
+                          setContributorRoleSlugs(contributorRoleSlugs.filter((s) => s !== role.slug));
                         }
                       }}
                       className="h-4 w-4 rounded border"
                     />
-                    <Label htmlFor={`upload-role-${role.slug}`} className="text-sm font-normal">
+                    <Label htmlFor={`contrib-role-${role.slug}`} className="text-sm font-normal">
                       {role.name}
                     </Label>
                   </div>
@@ -250,15 +265,15 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
 
             {tiers.length > 0 && (
               <div className="space-y-2">
-                <Label htmlFor="uploaderMinTierLevel" className="text-sm">Minimum tier level to upload:</Label>
+                <Label htmlFor="contributorMinTierLevel" className="text-sm">Minimum tier level to contribute:</Label>
                 <select
-                  id="uploaderMinTierLevel"
-                  name="uploaderMinTierLevel"
-                  value={uploaderMinTierLevel}
-                  onChange={(e) => setUploaderMinTierLevel(e.target.value)}
+                  id="contributorMinTierLevel"
+                  name="contributorMinTierLevel"
+                  value={contributorMinTierLevel}
+                  onChange={(e) => setContributorMinTierLevel(e.target.value)}
                   className="w-full rounded border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Admin only</option>
+                  <option value="">Admins &amp; project managers only</option>
                   {tiers.map((tier) => (
                     <option key={tier.id} value={tier.level}>
                       {tier.name} (level {tier.level})
@@ -269,14 +284,19 @@ export function CategoryForm({ category, roles, tiers, parentId, projects = [], 
             )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : category ? "Save Changes" : "Create Category"}
+              {loading ? "Saving..." : project ? "Save Changes" : `Create ${label}`}
             </Button>
-            {category && (
-              <Button type="button" variant="destructive" onClick={handleDelete} disabled={loading}>
-                Delete Category
-              </Button>
+            {project && (
+              <>
+                <Button type="button" variant="outline" onClick={handleArchiveToggle} disabled={loading}>
+                  {project.status === "ACTIVE" ? "Archive" : "Reactivate"}
+                </Button>
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={loading}>
+                  Delete
+                </Button>
+              </>
             )}
           </div>
         </form>

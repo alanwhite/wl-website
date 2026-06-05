@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getFormCreatorRoles, canCreateForms } from "@/lib/config";
+import { getContributableProjects } from "@/lib/project-access";
 import { prisma } from "@/lib/prisma";
 import { FormEditor } from "@/components/forms/form-editor";
 
@@ -18,17 +19,19 @@ export default async function EditFormPage({
   if (!canCreateForms(session.user, creatorRoles)) redirect("/dashboard");
 
   const { id } = await params;
-  const form = await prisma.publicForm.findUnique({ where: { id } });
+  const [form, roles, projects] = await Promise.all([
+    prisma.publicForm.findUnique({ where: { id } }),
+    prisma.role.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, slug: true },
+    }),
+    getContributableProjects(session.user),
+  ]);
   if (!form) notFound();
-
-  const roles = await prisma.role.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, slug: true },
-  });
 
   return (
     <div className="mx-auto max-w-2xl">
-      <FormEditor roles={roles} form={form} />
+      <FormEditor roles={roles} form={form} projects={projects} />
     </div>
   );
 }

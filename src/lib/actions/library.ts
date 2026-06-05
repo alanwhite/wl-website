@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
-import { canUploadToCategory, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
+import { canUploadToCategory, canAccessProject, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
+import { getCategoryEffectiveProject, assertProjectContributor } from "@/lib/project-access";
 import { saveDocument, deleteFile } from "@/lib/upload";
 
 async function requireDocumentManager() {
@@ -43,8 +44,12 @@ export async function createCategory(formData: FormData) {
   const uploaderRoleSlugs = formData.getAll("uploaderRoleSlugs") as string[];
   const uploaderMinTierLevelRaw = formData.get("uploaderMinTierLevel") as string;
   const uploaderMinTierLevel = uploaderMinTierLevelRaw ? parseInt(uploaderMinTierLevelRaw, 10) : null;
+  const projectId = (formData.get("projectId") as string) || null;
 
   if (!name || !slug) throw new Error("Name and slug are required");
+
+  // Only top-level folders link directly to a project; sub-folders inherit
+  const project = parentId ? null : await assertProjectContributor(user, projectId);
 
   const category = await prisma.libraryCategory.create({
     data: {
@@ -57,6 +62,7 @@ export async function createCategory(formData: FormData) {
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
       uploaderRoleSlugs: uploaderRoleSlugs.filter(Boolean),
       uploaderMinTierLevel: uploaderMinTierLevel && !isNaN(uploaderMinTierLevel) ? uploaderMinTierLevel : null,
+      projectId: project?.id ?? null,
     },
   });
 
@@ -85,8 +91,20 @@ export async function updateCategory(id: string, formData: FormData) {
   const uploaderRoleSlugs = formData.getAll("uploaderRoleSlugs") as string[];
   const uploaderMinTierLevelRaw = formData.get("uploaderMinTierLevel") as string;
   const uploaderMinTierLevel = uploaderMinTierLevelRaw ? parseInt(uploaderMinTierLevelRaw, 10) : null;
+  const projectIdRaw = formData.get("projectId");
 
   if (!name) throw new Error("Name is required");
+
+  const existing = await prisma.libraryCategory.findUnique({ where: { id }, select: { parentId: true } });
+  if (!existing) throw new Error("Category not found");
+
+  // The project select only appears on top-level folders (sub-folders inherit);
+  // when the field is absent from the form, leave the link unchanged.
+  let projectUpdate: { projectId: string | null } | undefined;
+  if (projectIdRaw !== null && !existing.parentId) {
+    const project = await assertProjectContributor(user, (projectIdRaw as string) || null);
+    projectUpdate = { projectId: project?.id ?? null };
+  }
 
   await prisma.libraryCategory.update({
     where: { id },
@@ -98,6 +116,7 @@ export async function updateCategory(id: string, formData: FormData) {
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
       uploaderRoleSlugs: uploaderRoleSlugs.filter(Boolean),
       uploaderMinTierLevel: uploaderMinTierLevel && !isNaN(uploaderMinTierLevel) ? uploaderMinTierLevel : null,
+      ...(projectUpdate ?? {}),
     },
   });
 
@@ -280,6 +299,12 @@ export async function uploadDocument(categoryId: string, formData: FormData) {
   const category = await prisma.libraryCategory.findUnique({ where: { id: categoryId } });
   if (!category) throw new Error("Category not found");
 
+  // Project gate first (read access to the project, inherited from ancestors),
+  // then the category's uploader gate
+  const effectiveProject = await getCategoryEffectiveProject(categoryId);
+  if (effectiveProject && !canAccessProject(user, effectiveProject)) {
+    throw new Error("You don't have permission to upload to this category");
+  }
   if (!canUploadToCategory(user, category)) {
     throw new Error("You don't have permission to upload to this category");
   }
@@ -326,6 +351,10 @@ export async function deleteDocument(id: string) {
   });
   if (!doc) throw new Error("Document not found");
 
+  const effectiveProject = await getCategoryEffectiveProject(doc.categoryId);
+  if (effectiveProject && !canAccessProject(user, effectiveProject)) {
+    throw new Error("You don't have permission to manage documents in this category");
+  }
   if (!canUploadToCategory(user, doc.category)) {
     throw new Error("You don't have permission to manage documents in this category");
   }

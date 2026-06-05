@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { canAccessPoll, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
+import { canAccessProjectArtifact, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
 import { CategoryCard } from "@/components/library/category-card";
 import { MoveDialog } from "@/components/library/move-dialog";
 import { ReorderButtons } from "@/components/library/reorder-buttons";
@@ -24,13 +24,14 @@ export default async function DocumentsPage() {
     orderBy: { sortOrder: "asc" },
     include: {
       _count: { select: { documents: true, children: true } },
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
     },
   });
 
   const isAdmin = (session.user.tierLevel ?? 0) >= 999;
   const accessible = isAdmin
     ? categories
-    : categories.filter((c) => canAccessPoll(session.user, c));
+    : categories.filter((c) => canAccessProjectArtifact(session.user, c, c.project));
 
   const folderTree = canManage ? await buildFolderTree(session.user) : [];
 

@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getCalendarManagerRoles, canManageCalendar } from "@/lib/config";
+import { getCalendarManagerRoles, canManageCalendar, canAccessProject } from "@/lib/config";
+import { assertProjectContributor } from "@/lib/project-access";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { sendPushNotifications } from "@/lib/push";
@@ -35,6 +36,7 @@ export async function createEvent(data: {
   recurrenceEnd?: string;
   targetRoleSlugs?: string[];
   targetMinTierLevel?: number;
+  projectId?: string | null;
 }) {
   const user = await requireCalendarManager();
 
@@ -44,6 +46,8 @@ export async function createEvent(data: {
   if (endDate <= startDate) {
     endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
   }
+
+  const project = await assertProjectContributor(user, data.projectId);
 
   const event = await prisma.calendarEvent.create({
     data: {
@@ -57,6 +61,7 @@ export async function createEvent(data: {
       recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
       targetRoleSlugs: data.targetRoleSlugs ?? [],
       targetMinTierLevel: data.targetMinTierLevel ?? null,
+      projectId: project?.id ?? null,
       createdBy: user.id,
     },
   });
@@ -79,6 +84,7 @@ export async function createEvent(data: {
     tag: `event-${event.id}`,
     targetRoleSlugs: data.targetRoleSlugs,
     targetMinTierLevel: data.targetMinTierLevel,
+    project,
     excludeUserId: user.id,
   }).catch((err) => console.error("[Push] Failed to send event notifications:", err));
 
@@ -99,6 +105,7 @@ export async function updateEvent(
     recurrenceEnd?: string;
     targetRoleSlugs?: string[];
     targetMinTierLevel?: number;
+    projectId?: string | null;
   },
 ) {
   const user = await requireCalendarManager();
@@ -108,6 +115,9 @@ export async function updateEvent(
   if (updateEnd <= updateStart) {
     updateEnd = new Date(updateStart.getTime() + 60 * 60 * 1000);
   }
+
+  // undefined = leave the project link unchanged; null/"" = unlink
+  const project = data.projectId !== undefined ? await assertProjectContributor(user, data.projectId) : undefined;
 
   const event = await prisma.calendarEvent.update({
     where: { id: eventId },
@@ -122,6 +132,7 @@ export async function updateEvent(
       recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
       targetRoleSlugs: data.targetRoleSlugs ?? [],
       targetMinTierLevel: data.targetMinTierLevel ?? null,
+      ...(project !== undefined ? { projectId: project?.id ?? null } : {}),
     },
   });
 
@@ -164,6 +175,15 @@ export async function rsvpEvent(eventId: string, status: "accepted" | "declined"
   const session = await auth();
   if (!session?.user || session.user.status !== "APPROVED") {
     throw new Error("Unauthorized");
+  }
+
+  const event = await prisma.calendarEvent.findUnique({
+    where: { id: eventId },
+    select: { project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } } },
+  });
+  if (!event) throw new Error("Event not found");
+  if (event.project && !canAccessProject(session.user, event.project)) {
+    throw new Error("You do not have access to this event");
   }
 
   await prisma.eventRsvp.upsert({

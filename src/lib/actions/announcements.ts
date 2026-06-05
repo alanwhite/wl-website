@@ -105,9 +105,15 @@ export async function getActiveAnnouncements() {
   return prisma.announcement.findMany({
     where: {
       published: true,
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
+      AND: [
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+        // No user context here, so exclude anything inside a restricted project
+        {
+          OR: [
+            { projectId: null },
+            { project: { targetRoleSlugs: { isEmpty: true }, targetMinTierLevel: null } },
+          ],
+        },
       ],
     },
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],

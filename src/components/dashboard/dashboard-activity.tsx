@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Megaphone, Calendar, ListTodo, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
-import { canAccessPoll, getGroupMemberFields } from "@/lib/config";
+import { canAccessProject, canAccessProjectArtifact, getGroupMemberFields } from "@/lib/config";
 import { isFieldVisible } from "@/lib/registration-fields";
 
 interface User {
@@ -29,17 +29,21 @@ interface Props {
 export async function DashboardActivity({ user, standalone = false }: Props) {
   const now = new Date();
 
-  const [announcements, events, openPolls, userWithGroup, memberFields] = await Promise.all([
+  const projectSelect = { select: { targetRoleSlugs: true, targetMinTierLevel: true } };
+
+  const [allAnnouncements, events, openPolls, userWithGroup, memberFields] = await Promise.all([
     prisma.announcement.findMany({
       where: {
         published: true,
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
+      include: { project: projectSelect },
       orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-      take: 3,
+      take: 10,
     }),
     prisma.calendarEvent.findMany({
       where: { endDate: { gte: now } },
+      include: { project: projectSelect },
       orderBy: { startDate: "asc" },
       take: 10,
     }),
@@ -50,6 +54,7 @@ export async function DashboardActivity({ user, standalone = false }: Props) {
         title: true,
         targetRoleSlugs: true,
         targetMinTierLevel: true,
+        project: projectSelect,
         votes: { where: { userId: user.id }, select: { id: true }, take: 1 },
       },
     }),
@@ -69,19 +74,18 @@ export async function DashboardActivity({ user, standalone = false }: Props) {
     getGroupMemberFields(),
   ]);
 
-  // Visibility-filter events by tier + role
+  // Visibility-filter by tier + role, layered with the project gate
   const isAdmin = (user.tierLevel ?? 0) >= 999;
+  const announcements = allAnnouncements
+    .filter((a) => isAdmin || !a.project || canAccessProject(user, a.project))
+    .slice(0, 3);
+
   const visibleEvents = events
-    .filter((e) => {
-      if (isAdmin) return true;
-      if (e.targetMinTierLevel !== null && (user.tierLevel ?? 0) < e.targetMinTierLevel) return false;
-      if (e.targetRoleSlugs.length > 0 && !e.targetRoleSlugs.some((s) => user.roleSlugs?.includes(s))) return false;
-      return true;
-    })
+    .filter((e) => isAdmin || canAccessProjectArtifact(user, e, e.project))
     .slice(0, 3);
 
   const unvotedPolls = openPolls
-    .filter((p) => canAccessPoll(user, p) && p.votes.length === 0)
+    .filter((p) => canAccessProjectArtifact(user, p, p.project) && p.votes.length === 0)
     .slice(0, 3);
 
   // Action items derived from group state + open polls

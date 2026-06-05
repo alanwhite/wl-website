@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
-import { getPollManagerRoles, canManagePolls, canAccessPoll } from "@/lib/config";
+import { getPollManagerRoles, canManagePolls, canAccessProjectArtifact } from "@/lib/config";
+import { assertProjectContributor } from "@/lib/project-access";
 import { sendPushNotifications } from "@/lib/push";
 
 async function requireApprovedMember() {
@@ -55,11 +56,15 @@ export async function createPoll(formData: FormData) {
   const targetRoleSlugs = formData.getAll("targetRoleSlugs") as string[];
   const targetMinTierLevelRaw = formData.get("targetMinTierLevel") as string;
   const targetMinTierLevel = targetMinTierLevelRaw ? parseInt(targetMinTierLevelRaw, 10) : null;
+  const projectId = (formData.get("projectId") as string) || null;
 
   if (!title?.trim()) throw new Error("Title is required");
 
   const options = optionsRaw.filter((o) => o.trim());
   if (options.length < 2) throw new Error("At least 2 options are required");
+
+  // Validates contributor rights and returns the project's read gate for push targeting
+  const project = await assertProjectContributor(user, projectId);
 
   const poll = await prisma.poll.create({
     data: {
@@ -69,6 +74,7 @@ export async function createPoll(formData: FormData) {
       maxVotes: isNaN(maxVotes) ? 1 : maxVotes,
       targetRoleSlugs: targetRoleSlugs.filter(Boolean),
       targetMinTierLevel: targetMinTierLevel && !isNaN(targetMinTierLevel) ? targetMinTierLevel : null,
+      projectId: project?.id ?? null,
       createdBy: user.id,
       options: {
         create: options.map((text, i) => ({
@@ -97,6 +103,7 @@ export async function createPoll(formData: FormData) {
     tag: `poll-${poll.id}`,
     targetRoleSlugs: targetRoleSlugs.filter(Boolean),
     targetMinTierLevel,
+    project,
     excludeUserId: user.id,
   }).catch((err) => console.error("[Push] Failed to send poll notifications:", err));
 
@@ -109,12 +116,15 @@ export async function castVotes(pollId: string, optionIds: string[]) {
 
   const poll = await prisma.poll.findUnique({
     where: { id: pollId },
-    include: { options: true },
+    include: {
+      options: true,
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
+    },
   });
 
   if (!poll) throw new Error("Poll not found");
   if (poll.closedAt) throw new Error("Poll is closed");
-  if (!canAccessPoll(user, poll)) throw new Error("You do not have access to this poll");
+  if (!canAccessProjectArtifact(user, poll, poll.project)) throw new Error("You do not have access to this poll");
 
   // Validate option IDs
   const validIds = new Set(poll.options.map((o) => o.id));

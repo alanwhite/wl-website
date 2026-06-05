@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { canAccessPoll, getMemberManagerRoles, canManageMembers, getGroupMemberFields } from "./config";
+import { canAccessProject, canAccessProjectArtifact, getMemberManagerRoles, canManageMembers, getGroupMemberFields } from "./config";
 import type { RegistrationField } from "./config";
 import { isFieldVisible } from "./registration-fields";
 import { isPushEnabled } from "./push";
@@ -39,6 +39,7 @@ export async function getNotificationCounts(user: {
       id: true,
       targetRoleSlugs: true,
       targetMinTierLevel: true,
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
       votes: {
         where: { userId: user.id },
         select: { id: true },
@@ -48,7 +49,7 @@ export async function getNotificationCounts(user: {
   });
 
   const unvotedPolls = openPolls.filter(
-    (poll) => canAccessPoll(user, poll) && poll.votes.length === 0,
+    (poll) => canAccessProjectArtifact(user, poll, poll.project) && poll.votes.length === 0,
   );
 
   if (unvotedPolls.length > 0) {
@@ -128,7 +129,7 @@ export async function getNotificationCounts(user: {
   }
 
   // Active announcements the user hasn't viewed yet
-  const announcementsUnseen = await getUnseenAnnouncementsCount(user.id);
+  const announcementsUnseen = await getUnseenAnnouncementsCount(user);
   if (announcementsUnseen > 0) {
     counts["/announcements"] = announcementsUnseen;
   }
@@ -136,20 +137,28 @@ export async function getNotificationCounts(user: {
   return counts;
 }
 
-async function getUnseenAnnouncementsCount(userId: string): Promise<number> {
+async function getUnseenAnnouncementsCount(user: {
+  id: string;
+  roleSlugs?: string[];
+  tierLevel?: number;
+}): Promise<number> {
   const profile = await prisma.userProfile.findUnique({
-    where: { userId },
+    where: { userId: user.id },
     select: { extra: true },
   });
   const extra = (profile?.extra as Record<string, unknown>) ?? {};
   const lastViewedRaw = extra.announcementsLastViewedAt;
   const lastViewed = typeof lastViewedRaw === "string" ? new Date(lastViewedRaw) : null;
 
-  return prisma.announcement.count({
+  const unseen = await prisma.announcement.findMany({
     where: {
       published: true,
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       ...(lastViewed ? { createdAt: { gt: lastViewed } } : {}),
     },
+    select: { project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } } },
   });
+
+  // Only count announcements whose project (if any) the user can access
+  return unseen.filter((a) => !a.project || canAccessProject(user, a.project)).length;
 }

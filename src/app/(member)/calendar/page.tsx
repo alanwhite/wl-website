@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCalendarManagerRoles, canManageCalendar, canAccessPoll } from "@/lib/config";
+import { getCalendarManagerRoles, canManageCalendar, canAccessProjectArtifact } from "@/lib/config";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,15 +28,18 @@ export default async function CalendarPage() {
       ],
     },
     orderBy: { startDate: "asc" },
-    include: { creator: { select: { name: true } } },
+    include: {
+      creator: { select: { name: true } },
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
+    },
     take: 50,
   });
 
-  // Filter by role/tier access
+  // Filter by role/tier access (project gate AND event targeting)
   const isAdmin = (session.user.tierLevel ?? 0) >= 999;
   const accessible = isAdmin
     ? events
-    : events.filter((e) => canAccessPoll(session.user, e));
+    : events.filter((e) => canAccessProjectArtifact(session.user, e, e.project));
 
   return (
     <div className="space-y-6">

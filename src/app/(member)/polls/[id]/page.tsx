@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getPollManagerRoles, canManagePolls, canAccessPoll } from "@/lib/config";
+import { getPollManagerRoles, canManagePolls, canAccessProjectArtifact } from "@/lib/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PollVoteForm } from "@/components/polls/poll-vote-form";
@@ -32,6 +32,7 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
       },
       votes: true,
       creator: { select: { name: true } },
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
     },
   });
 
@@ -40,7 +41,7 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
   const managerRoles = await getPollManagerRoles();
   const isManager = canManagePolls(session.user, managerRoles);
 
-  if (!isManager && !canAccessPoll(session.user, poll)) {
+  if (!isManager && !canAccessProjectArtifact(session.user, poll, poll.project)) {
     redirect("/polls");
   }
 

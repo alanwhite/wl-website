@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createEvent, updateEvent } from "@/lib/actions/calendar";
+import { ProjectSelect } from "@/components/shared/project-select";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -29,7 +30,10 @@ interface EventFormProps {
     allDay: boolean;
     recurrence: string | null;
     recurrenceEnd: Date | null;
+    projectId?: string | null;
   };
+  projects?: { id: string; name: string }[];
+  defaultProjectId?: string;
 }
 
 function toLocalDateTimeString(date: Date): string {
@@ -42,7 +46,7 @@ function toLocalDateString(date: Date): string {
   return new Date(date).toISOString().slice(0, 10);
 }
 
-export function EventForm({ event }: EventFormProps) {
+export function EventForm({ event, projects = [], defaultProjectId }: EventFormProps) {
   const isEdit = !!event;
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -72,6 +76,8 @@ export function EventForm({ event }: EventFormProps) {
       allDay,
       recurrence: recurrence === "none" ? undefined : recurrence,
       recurrenceEnd: recurrenceEndRaw ? new Date(recurrenceEndRaw).toISOString() : undefined,
+      // null = unlink, undefined = field not on the form (leave unchanged)
+      projectId: form.has("projectId") ? ((form.get("projectId") as string) || null) : undefined,
     };
 
     try {
@@ -162,6 +168,11 @@ export function EventForm({ event }: EventFormProps) {
               </div>
             )}
           </div>
+
+          <ProjectSelect
+            projects={projects}
+            defaultProjectId={event?.projectId ?? defaultProjectId}
+          />
 
           <div className="space-y-2">
             <Label>Recurrence</Label>

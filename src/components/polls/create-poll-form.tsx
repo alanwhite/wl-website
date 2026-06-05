@@ -7,14 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createPoll } from "@/lib/actions/polls";
+import { ProjectSelect } from "@/components/shared/project-select";
 import { toast } from "sonner";
 
 interface CreatePollFormProps {
   roles: { id: string; name: string; slug: string }[];
   tiers: { id: string; name: string; level: number }[];
+  projects?: { id: string; name: string }[];
+  defaultProjectId?: string;
 }
 
-export function CreatePollForm({ roles, tiers }: CreatePollFormProps) {
+export function CreatePollForm({ roles, tiers, projects = [], defaultProjectId }: CreatePollFormProps) {
   const router = useRouter();
   const [options, setOptions] = useState(["", ""]);
   const [targetRoleSlugs, setTargetRoleSlugs] = useState<string[]>([]);
@@ -95,6 +98,8 @@ export function CreatePollForm({ roles, tiers }: CreatePollFormProps) {
           <option value="0">Unlimited</option>
         </select>
       </div>
+
+      <ProjectSelect projects={projects} defaultProjectId={defaultProjectId} />
 
       <div className="space-y-2">
         <Label>Options (minimum 2)</Label>

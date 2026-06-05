@@ -5,6 +5,7 @@ import { MemberSidebar } from "@/components/layout/member-sidebar";
 import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
+import { getPinnedProjectNavItems } from "@/lib/project-access";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 import { getNotificationCounts } from "@/lib/notifications";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
@@ -43,6 +44,14 @@ export default async function MemberLayout({
       href: link.href,
       icon: link.icon,
     }));
+
+  // Pinned projects the user can access appear as their own nav entries
+  // (deduped against any manually configured link to the same project)
+  if (user?.status === "APPROVED") {
+    const pinnedProjects = await getPinnedProjectNavItems(user);
+    const existingHrefs = new Set(memberLinks.map((l) => l.href));
+    memberLinks.push(...pinnedProjects.filter((p) => !existingHrefs.has(p.href)));
+  }
 
   // Fetch notification counts for badge display
   const notificationCounts = user?.status === "APPROVED"

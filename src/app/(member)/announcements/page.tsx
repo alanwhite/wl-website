@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAnnouncementManagerRoles, canManageAnnouncements } from "@/lib/config";
+import { getAnnouncementManagerRoles, canManageAnnouncements, canAccessProject } from "@/lib/config";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ export default async function AnnouncementsPage() {
   const canManage = canManageAnnouncements(session.user, managerRoles);
 
   // Managers see all, regular members see published only
-  const [announcements] = await Promise.all([
+  const [allAnnouncements] = await Promise.all([
     prisma.announcement.findMany({
       where: canManage
         ? undefined
@@ -44,11 +44,17 @@ export default async function AnnouncementsPage() {
             published: true,
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
+      include: { project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } } },
       orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     }),
     // Clear the unseen-announcements badge on the nav for this user
     markAnnouncementsViewed(session.user.id),
   ]);
+
+  // Project gate: announcements inside a restricted project only show to its members
+  const announcements = canManage
+    ? allAnnouncements
+    : allAnnouncements.filter((a) => !a.project || canAccessProject(session.user, a.project));
 
   return (
     <div className="space-y-6">

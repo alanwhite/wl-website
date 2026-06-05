@@ -2,8 +2,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSiteInfo, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible } from "@/lib/config";
+import { getSiteInfo, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible, getDashboardCards } from "@/lib/config";
 import { DashboardActivity } from "@/components/dashboard/dashboard-activity";
+import { DashboardProjects } from "@/components/dashboard/dashboard-projects";
 import { DismissWelcomeButton, ShowWelcomeAgainLink } from "@/components/dashboard/welcome-toggle";
 import { prisma } from "@/lib/prisma";
 import Markdown from "react-markdown";
@@ -16,10 +17,11 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [siteInfo, welcomeSlug, welcomeDismissible, profile] = await Promise.all([
+  const [siteInfo, welcomeSlug, welcomeDismissible, dashboardCards, profile] = await Promise.all([
     getSiteInfo(),
     getDashboardWelcomePageSlug(),
     getDashboardWelcomeDismissible(),
+    getDashboardCards(),
     prisma.userProfile.findUnique({
       where: { userId: session.user.id },
       select: { extra: true },
@@ -27,6 +29,9 @@ export default async function DashboardPage() {
   ]);
   const extra = (profile?.extra as Record<string, unknown>) ?? {};
   const welcomeDismissed = welcomeDismissible && !!extra.dashboardWelcomeDismissed;
+
+  // Opt-in projects card (the only dashboard.cards type currently rendered)
+  const projectsCard = dashboardCards.find((c) => c.type === "projects");
 
   // Welcome page mode — render CMS page full-bleed (unless the member's hidden it)
   if (welcomeSlug) {
@@ -62,6 +67,11 @@ export default async function DashboardPage() {
         {!page && (
           <p className="text-center text-muted-foreground">Welcome page not found.</p>
         )}
+        {projectsCard && (
+          <div className="mx-auto mt-8 max-w-3xl px-4">
+            <DashboardProjects user={session.user} title={projectsCard.title} />
+          </div>
+        )}
         <DashboardActivity user={session.user} standalone />
       </>
     );
@@ -74,6 +84,8 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold">Hello, {session.user.name ?? "there"}</h1>
         <p className="text-muted-foreground">Good to see you.</p>
       </div>
+
+      {projectsCard && <DashboardProjects user={session.user} title={projectsCard.title} />}
 
       <DashboardActivity user={session.user} />
 

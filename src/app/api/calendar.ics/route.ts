@@ -52,13 +52,21 @@ function recurrenceToRRule(recurrence: string): string | null {
 }
 
 export async function GET() {
-  const [events, siteInfo, timezone] = await Promise.all([
+  const [allEvents, siteInfo, timezone] = await Promise.all([
     prisma.calendarEvent.findMany({
       orderBy: { startDate: "asc" },
+      include: { project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } } },
     }),
     getSiteInfo(),
     getSiteTimezone(),
   ]);
+
+  // The ICS feed URL is unauthenticated, so exclude events that live inside a
+  // restricted project (events with their own targeting are already included
+  // by long-standing subscribe-URL behaviour; the project gate is stricter).
+  const events = allEvents.filter(
+    (e) => !e.project || (e.project.targetRoleSlugs.length === 0 && e.project.targetMinTierLevel == null),
+  );
 
   const domain = process.env.AUTH_URL?.replace(/^https?:\/\//, "") ?? "localhost";
 

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getAnnouncementManagerRoles, canManageAnnouncements } from "@/lib/config";
+import { assertProjectContributor } from "@/lib/project-access";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -15,6 +16,8 @@ const announcementSchema = z.object({
   published: z.boolean(),
   pinned: z.boolean(),
   expiresAt: z.string().nullable().transform((val) => (val ? new Date(val) : null)),
+  // null/"" = standalone, undefined = leave unchanged on update
+  projectId: z.string().nullable().optional(),
 });
 
 async function requireAnnouncementManager() {
@@ -31,10 +34,12 @@ async function requireAnnouncementManager() {
 
 export async function createAnnouncement(data: z.input<typeof announcementSchema>) {
   const user = await requireAnnouncementManager();
-  const validated = announcementSchema.parse(data);
+  const { projectId, ...validated } = announcementSchema.parse(data);
+
+  const project = await assertProjectContributor(user, projectId);
 
   const announcement = await prisma.announcement.create({
-    data: { ...validated, createdBy: user.id },
+    data: { ...validated, projectId: project?.id ?? null, createdBy: user.id },
   });
 
   await logAudit({
@@ -53,6 +58,7 @@ export async function createAnnouncement(data: z.input<typeof announcementSchema
       body: `New announcement: ${announcement.title}`,
       url: "/announcements",
       tag: `announcement-${announcement.id}`,
+      project,
       excludeUserId: user.id,
     }).catch((err) => console.error("[Push] Failed to send announcement notifications:", err));
   }
@@ -64,11 +70,16 @@ export async function createAnnouncement(data: z.input<typeof announcementSchema
 
 export async function updateAnnouncement(id: string, data: z.input<typeof announcementSchema>) {
   const user = await requireAnnouncementManager();
-  const validated = announcementSchema.parse(data);
+  const { projectId, ...validated } = announcementSchema.parse(data);
+
+  const project = projectId !== undefined ? await assertProjectContributor(user, projectId) : undefined;
 
   const announcement = await prisma.announcement.update({
     where: { id },
-    data: validated,
+    data: {
+      ...validated,
+      ...(project !== undefined ? { projectId: project?.id ?? null } : {}),
+    },
   });
 
   await logAudit({

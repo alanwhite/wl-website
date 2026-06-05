@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   FolderOpen,
+  FolderKanban,
   BarChart3,
   User,
   FileText,
@@ -30,6 +31,7 @@ import {
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
   FolderOpen,
+  FolderKanban,
   BarChart3,
   User,
   FileText,

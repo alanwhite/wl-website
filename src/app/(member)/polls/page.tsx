@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getPollManagerRoles, canManagePolls, canAccessPoll } from "@/lib/config";
+import { getPollManagerRoles, canManagePolls, canAccessProjectArtifact } from "@/lib/config";
 import { PollCard } from "@/components/polls/poll-card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -22,14 +22,15 @@ export default async function PollsPage() {
         where: { userId: session.user.id },
         select: { id: true },
       },
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
     },
     orderBy: [{ closedAt: "asc" }, { createdAt: "desc" }],
   });
 
-  // Filter polls the user can access, then split open/closed
+  // Filter polls the user can access (project gate AND poll targeting), then split open/closed
   const accessiblePolls = isManager
     ? polls // managers see all polls
-    : polls.filter((p) => canAccessPoll(session.user, p));
+    : polls.filter((p) => canAccessProjectArtifact(session.user, p, p.project));
   const openPolls = accessiblePolls.filter((p) => !p.closedAt);
   const closedPolls = accessiblePolls.filter((p) => p.closedAt);
 

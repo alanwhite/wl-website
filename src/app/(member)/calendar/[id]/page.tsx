@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCalendarManagerRoles, canManageCalendar } from "@/lib/config";
+import { getCalendarManagerRoles, canManageCalendar, canAccessProject } from "@/lib/config";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,7 @@ export default async function EventDetailPage({
         },
         orderBy: { createdAt: "asc" },
       },
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
     },
   });
 
@@ -88,6 +89,11 @@ export default async function EventDetailPage({
 
   const managerRoles = await getCalendarManagerRoles();
   const canManage = canManageCalendar(session.user, managerRoles);
+
+  // Project gate: events inside a restricted project are only visible to members of it
+  if (!canManage && event.project && !canAccessProject(session.user, event.project)) {
+    redirect("/calendar");
+  }
 
   const myRsvp = event.rsvps.find((r) => r.userId === session.user.id);
   const accepted = event.rsvps.filter((r) => r.status === "accepted");

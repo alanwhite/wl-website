@@ -8,6 +8,7 @@ import {
   getFormApprovalEmailBody,
   getFormRejectionEmailBody,
 } from "@/lib/config";
+import { assertProjectContributor } from "@/lib/project-access";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { deleteFile } from "@/lib/upload";
@@ -98,9 +99,12 @@ export async function createForm(data: {
   heroTitle?: string;
   hideHeader?: boolean;
   managerRoleSlugs: string[];
+  projectId?: string | null;
 }) {
   const user = await requireFormCreator();
   JSON.parse(data.fields);
+
+  const project = await assertProjectContributor(user, data.projectId);
 
   const form = await prisma.publicForm.create({
     data: {
@@ -112,6 +116,7 @@ export async function createForm(data: {
       heroTitle: data.heroTitle || null,
       hideHeader: data.hideHeader ?? false,
       managerRoleSlugs: data.managerRoleSlugs,
+      projectId: project?.id ?? null,
       createdBy: user.id,
     },
   });
@@ -141,10 +146,14 @@ export async function updateForm(
     hideHeader?: boolean;
     published: boolean;
     managerRoleSlugs: string[];
+    projectId?: string | null;
   },
 ) {
   const user = await requireFormCreator();
   JSON.parse(data.fields);
+
+  // undefined = leave the project link unchanged; null/"" = unlink
+  const project = data.projectId !== undefined ? await assertProjectContributor(user, data.projectId) : undefined;
 
   // Clean up old hero image if it's being changed or removed
   const existing = await prisma.publicForm.findUnique({
@@ -168,6 +177,7 @@ export async function updateForm(
       hideHeader: data.hideHeader ?? false,
       published: data.published,
       managerRoleSlugs: data.managerRoleSlugs,
+      ...(project !== undefined ? { projectId: project?.id ?? null } : {}),
     },
   });
 

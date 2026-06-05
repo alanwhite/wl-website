@@ -17,6 +17,7 @@ import {
   Layers,
   Shield,
   FolderOpen,
+  FolderKanban,
   Mail,
   Menu,
 } from "lucide-react";
@@ -38,6 +39,7 @@ const navItems = [
   { href: "/admin/pages", label: "Pages", icon: FileText },
   { href: "/admin/media", label: "Media", icon: Image },
   { href: "/admin/documents", label: "Documents", icon: FolderOpen },
+  { href: "/admin/projects", label: "Projects", icon: FolderKanban },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/newsletters", label: "Newsletters", icon: Mail },
   { href: "/admin/contacts", label: "Contacts", icon: MessageSquare },

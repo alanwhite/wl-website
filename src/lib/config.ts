@@ -435,7 +435,7 @@ export async function getGroupManagerRoles(): Promise<string[]> {
 // ── Dashboard ──
 
 export interface DashboardCard {
-  type: "page" | "group-hub" | "admin-summary";
+  type: "page" | "group-hub" | "admin-summary" | "projects";
   slug?: string;    // for page cards
   title?: string;   // optional override title
 }
@@ -478,4 +478,89 @@ export function canManageGroups(
   if (user.tierLevel && user.tierLevel >= 999) return true;
   if (managerRoles.length === 0) return false;
   return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
+// ── Projects ──
+
+export async function getProjectLabel(): Promise<string> {
+  const label = await getConfig("projects.label");
+  return label ?? "Project";
+}
+
+export async function getProjectManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("projects.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageProjects(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
+export function canAccessProject(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  project: { targetRoleSlugs: string[]; targetMinTierLevel: number | null },
+): boolean {
+  // Admin can always access
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+
+  // No targeting = everyone can access
+  if (project.targetRoleSlugs.length === 0 && project.targetMinTierLevel == null) return true;
+
+  // Check tier requirement
+  if (project.targetMinTierLevel != null && (user.tierLevel ?? 0) < project.targetMinTierLevel) {
+    return false;
+  }
+
+  // Check role requirement
+  if (project.targetRoleSlugs.length > 0) {
+    if (!project.targetRoleSlugs.some((slug) => user.roleSlugs?.includes(slug))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function canContributeToProject(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  project: { contributorRoleSlugs: string[]; contributorMinTierLevel: number | null },
+): boolean {
+  // Admin can always contribute
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+
+  // No contributor settings = nobody except admin (mirrors canUploadToCategory)
+  if (project.contributorRoleSlugs.length === 0 && project.contributorMinTierLevel == null) return false;
+
+  // Check tier requirement
+  if (project.contributorMinTierLevel != null && (user.tierLevel ?? 0) < project.contributorMinTierLevel) {
+    return false;
+  }
+
+  // Check role requirement
+  if (project.contributorRoleSlugs.length > 0) {
+    if (!project.contributorRoleSlugs.some((slug) => user.roleSlugs?.includes(slug))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Layered access check for an artifact that may belong to a project:
+ * the user must pass the project's read gate (if linked) AND the
+ * artifact's own targeting.
+ */
+export function canAccessProjectArtifact(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  artifact: { targetRoleSlugs: string[]; targetMinTierLevel: number | null },
+  project: { targetRoleSlugs: string[]; targetMinTierLevel: number | null } | null | undefined,
+): boolean {
+  if (project && !canAccessProject(user, project)) return false;
+  return canAccessPoll(user, artifact);
 }

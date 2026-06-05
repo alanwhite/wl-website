@@ -14,6 +14,44 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?       @db.Text
+  status      ProjectStatus @default(ACTIVE)
+
+  // Read gate: who can see the project and (layered with artifact targeting) its contents
+  targetRoleSlugs    String[] @default([])
+  targetMinTierLevel Int?
+
+  // Write gate: who can link/create artifacts inside the project
+  contributorRoleSlugs    String[] @default([])
+  contributorMinTierLevel Int?
+
+  pinToNav  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  createdBy String?
+  creator   User?   @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  polls         Poll[]
+  categories    LibraryCategory[]
+  events        CalendarEvent[]
+  announcements Announcement[]
+  forms         PublicForm[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, pinToNav])
+}
+
 model MembershipTier {
   id          String  @id @default(cuid())
   name        String  @unique
@@ -73,6 +111,7 @@ model User {
   notificationPreferences   NotificationPreference[]
   pushSubscriptions         PushSubscription[]
   groups                    Group[]           @relation("GroupMembers")
+  projectsCreated           Project[]         @relation("ProjectCreator")
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 }
@@ -237,10 +276,13 @@ model Announcement {
   pinned    Boolean   @default(false)
   expiresAt DateTime?
   createdBy String
+  projectId String?
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   @@index([published, expiresAt])
+  @@index([projectId])
 }
 
 model Poll {
@@ -255,12 +297,15 @@ model Poll {
   closedBy          String?
   createdBy         String?
   creator           User?        @relation("PollCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  projectId         String?
+  project           Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   options           PollOption[]
   votes             PollVote[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
   @@index([createdAt])
+  @@index([projectId])
 }
 
 model PollOption {
@@ -299,9 +344,13 @@ model LibraryCategory {
   targetMinTierLevel   Int?
   uploaderRoleSlugs    String[]          @default([])
   uploaderMinTierLevel Int?
+  projectId            String?
+  project              Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
   documents            LibraryDocument[]
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
+
+  @@index([projectId])
 }
 
 model LibraryDocument {
@@ -337,12 +386,15 @@ model CalendarEvent {
   targetMinTierLevel Int?
   createdBy          String?
   creator            User?        @relation("EventCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  projectId          String?
+  project            Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   rsvps              EventRsvp[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
   @@index([startDate])
   @@index([createdAt])
+  @@index([projectId])
 }
 
 model EventRsvp {
@@ -391,9 +443,13 @@ model PublicForm {
   createdBy          String?
   termsMediaId       String?
   termsMedia         Media?           @relation("FormTerms", fields: [termsMediaId], references: [id], onDelete: SetNull)
+  projectId          String?
+  project            Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
   submissions        FormSubmission[]
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
+
+  @@index([projectId])
 }
 
 model FormSubmission {

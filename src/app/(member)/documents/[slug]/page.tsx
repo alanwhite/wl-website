@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { canUploadToCategory, canAccessPoll, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
+import { canUploadToCategory, canAccessProjectArtifact, getDocumentManagerRoles, canManageDocuments } from "@/lib/config";
+import { getCategoryEffectiveProject } from "@/lib/project-access";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,15 +50,21 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       },
       children: {
         orderBy: { sortOrder: "asc" },
-        include: { _count: { select: { documents: true, children: true } } },
+        include: {
+          _count: { select: { documents: true, children: true } },
+          project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
+        },
       },
+      project: { select: { targetRoleSlugs: true, targetMinTierLevel: true } },
     },
   });
 
   if (!category) notFound();
 
   const isAdmin = (session.user.tierLevel ?? 0) >= 999;
-  if (!isAdmin && !canAccessPoll(session.user, category)) {
+  // Sub-folders inherit the project gate from their nearest project-linked ancestor
+  const effectiveProject = category.project ?? (await getCategoryEffectiveProject(category.id));
+  if (!isAdmin && !canAccessProjectArtifact(session.user, category, effectiveProject)) {
     redirect("/documents");
   }
 
@@ -68,10 +75,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const breadcrumbs = await getBreadcrumbs(category.id);
   const folderTree = canManageCats ? await buildFolderTree(session.user) : [];
 
-  // Filter children by access
+  // Filter children by access (project gate AND category targeting)
   const accessibleChildren = isAdmin
     ? category.children
-    : category.children.filter((c) => canAccessPoll(session.user, c));
+    : category.children.filter((c) => canAccessProjectArtifact(session.user, c, c.project));
 
   return (
     <div className="space-y-6">

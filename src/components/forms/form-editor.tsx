@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createForm, updateForm, deleteForm, uploadFormHeroImage } from "@/lib/actions/forms";
+import { ProjectSelect } from "@/components/shared/project-select";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -25,10 +26,13 @@ interface FormEditorProps {
     hideHeader: boolean;
     published: boolean;
     managerRoleSlugs: string[];
+    projectId?: string | null;
   };
+  projects?: { id: string; name: string }[];
+  defaultProjectId?: string;
 }
 
-export function FormEditor({ roles, form }: FormEditorProps) {
+export function FormEditor({ roles, form, projects = [], defaultProjectId }: FormEditorProps) {
   const isEdit = !!form;
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -43,6 +47,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
   const [hideHeader, setHideHeader] = useState(form?.hideHeader ?? false);
   const [published, setPublished] = useState(form?.published ?? false);
   const [managerSlugs, setManagerSlugs] = useState<string[]>(form?.managerRoleSlugs ?? []);
+  const [projectId, setProjectId] = useState(form?.projectId ?? defaultProjectId ?? "");
   const heroFileRef = useRef<HTMLInputElement>(null);
 
   function handleTitleChange(val: string) {
@@ -67,6 +72,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
           hideHeader,
           published,
           managerRoleSlugs: managerSlugs,
+          ...(projects.length > 0 ? { projectId: projectId || null } : {}),
         });
         toast.success("Form updated");
       } else {
@@ -79,6 +85,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
           heroTitle: heroTitle || undefined,
           hideHeader,
           managerRoleSlugs: managerSlugs,
+          ...(projects.length > 0 ? { projectId: projectId || null } : {}),
         });
         toast.success("Form created");
       }
@@ -217,6 +224,7 @@ export function FormEditor({ roles, form }: FormEditorProps) {
             <Label>Published</Label>
           </div>
         )}
+        <ProjectSelect projects={projects} value={projectId} onChange={setProjectId} />
         <div className="space-y-2">
           <Label>Manager Roles</Label>
           <p className="text-xs text-muted-foreground">Who can review submissions for this form.</p>

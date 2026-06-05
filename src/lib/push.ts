@@ -29,7 +29,9 @@ interface PushPayload {
 
 /**
  * Send push notifications for a new item (poll, announcement, event).
- * Respects user preferences and role/tier targeting.
+ * Respects user preferences and role/tier targeting. When the item lives
+ * inside a project, pass the project's read gate too — both must pass
+ * (layered, like canAccessProjectArtifact).
  */
 export async function sendPushNotifications({
   type,
@@ -39,6 +41,7 @@ export async function sendPushNotifications({
   tag,
   targetRoleSlugs,
   targetMinTierLevel,
+  project,
   excludeUserId,
 }: {
   type: string; // "polls", "announcements", "events"
@@ -48,6 +51,7 @@ export async function sendPushNotifications({
   tag?: string;
   targetRoleSlugs?: string[];
   targetMinTierLevel?: number | null;
+  project?: { targetRoleSlugs: string[]; targetMinTierLevel: number | null } | null;
   excludeUserId?: string; // don't notify the creator
 }) {
   if (!isPushEnabled()) return;
@@ -108,6 +112,12 @@ export async function sendPushNotifications({
     if (targetMinTierLevel != null && user.tierLevel < targetMinTierLevel) continue;
     if (targetRoleSlugs && targetRoleSlugs.length > 0) {
       if (!targetRoleSlugs.some((slug) => userRoleSlugs.includes(slug))) continue;
+    }
+
+    // Project gate (layered with the item's own targeting)
+    if (project && user.tierLevel < 999) {
+      if (project.targetMinTierLevel != null && user.tierLevel < project.targetMinTierLevel) continue;
+      if (project.targetRoleSlugs.length > 0 && !project.targetRoleSlugs.some((slug) => userRoleSlugs.includes(slug))) continue;
     }
 
     // Send to all of this user's subscriptions (multiple devices)
