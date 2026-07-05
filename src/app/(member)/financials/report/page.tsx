@@ -137,42 +137,69 @@ export default async function MonthlyReportPage({
           {transactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No transactions in {monthLabel}</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-2">Date</th>
-                  <th className="pb-2">Description</th>
-                  <th className="hidden pb-2 sm:table-cell print:table-cell">Category</th>
-                  <th className="hidden pb-2 sm:table-cell print:table-cell">Reference</th>
-                  <th className="pb-2 text-right">Income</th>
-                  <th className="pb-2 text-right">Expense</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Phones: stacked list — a ledger table can't fit a narrow screen */}
+              <div className="sm:hidden print:hidden">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="border-b last:border-0">
-                    <td className="py-2 whitespace-nowrap align-top">{format(tx.date, "d MMM")}</td>
-                    <td className="py-2 break-words align-top">{tx.description}</td>
-                    <td className="hidden py-2 align-top sm:table-cell print:table-cell">{tx.category}</td>
-                    <td className="hidden py-2 align-top text-muted-foreground sm:table-cell print:table-cell">{tx.reference ?? "—"}</td>
-                    <td className="py-2 text-right whitespace-nowrap align-top text-green-600">
-                      {tx.type === "income" ? formatPence(tx.amount) : ""}
-                    </td>
-                    <td className="py-2 text-right whitespace-nowrap align-top text-red-600">
-                      {tx.type === "expense" ? formatPence(tx.amount) : ""}
-                    </td>
-                  </tr>
+                  <div key={tx.id} className="flex items-start justify-between gap-3 border-b py-2 last:border-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-sm font-medium">{tx.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(tx.date, "d MMM")} · {tx.category}
+                        {tx.reference ? ` · ${tx.reference}` : ""}
+                      </p>
+                    </div>
+                    <span className={`whitespace-nowrap text-sm font-semibold ${tx.type === "income" ? "text-green-600" : "text-red-600"}`}>
+                      {tx.type === "income" ? "+" : "-"}{formatPence(tx.amount)}
+                    </span>
+                  </div>
                 ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 font-bold">
-                  <td colSpan={2} className="py-2">Totals</td>
-                  <td colSpan={2} className="hidden py-2 sm:table-cell print:table-cell"></td>
-                  <td className="py-2 text-right whitespace-nowrap text-green-600">{formatPence(monthIncome)}</td>
-                  <td className="py-2 text-right whitespace-nowrap text-red-600">{formatPence(monthExpense)}</td>
-                </tr>
-              </tfoot>
-            </table>
+                <div className="flex items-center justify-between pt-3 text-sm font-bold">
+                  <span>Totals</span>
+                  <span className="whitespace-nowrap">
+                    <span className="text-green-600">+{formatPence(monthIncome)}</span>{" "}
+                    <span className="text-red-600">−{formatPence(monthExpense)}</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Larger screens and print: full ledger table */}
+              <table className="hidden w-full text-sm sm:table print:table">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-2">Date</th>
+                    <th className="pb-2">Description</th>
+                    <th className="pb-2">Category</th>
+                    <th className="pb-2">Reference</th>
+                    <th className="pb-2 text-right">Income</th>
+                    <th className="pb-2 text-right">Expense</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} className="border-b last:border-0">
+                      <td className="py-2 whitespace-nowrap align-top">{format(tx.date, "d MMM")}</td>
+                      <td className="py-2 break-words align-top">{tx.description}</td>
+                      <td className="py-2 align-top">{tx.category}</td>
+                      <td className="py-2 align-top text-muted-foreground">{tx.reference ?? "—"}</td>
+                      <td className="py-2 text-right whitespace-nowrap align-top text-green-600">
+                        {tx.type === "income" ? formatPence(tx.amount) : ""}
+                      </td>
+                      <td className="py-2 text-right whitespace-nowrap align-top text-red-600">
+                        {tx.type === "expense" ? formatPence(tx.amount) : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 font-bold">
+                    <td colSpan={4} className="py-2">Totals</td>
+                    <td className="py-2 text-right whitespace-nowrap text-green-600">{formatPence(monthIncome)}</td>
+                    <td className="py-2 text-right whitespace-nowrap text-red-600">{formatPence(monthExpense)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </>
           )}
         </CardContent>
       </Card>
