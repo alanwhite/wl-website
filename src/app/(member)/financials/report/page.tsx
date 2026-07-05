@@ -137,8 +137,6 @@ export default async function MonthlyReportPage({
           {transactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No transactions in {monthLabel}</p>
           ) : (
-            {/* Category & Reference are hidden on phones so the table fits;
-                they remain on sm+ screens, in print, and in the CSV export */}
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left">
