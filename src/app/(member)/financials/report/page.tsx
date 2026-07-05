@@ -78,9 +78,9 @@ export default async function MonthlyReportPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Monthly Report</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <a href={`/api/export/financials?month=${month}&year=${year}`} download>Export CSV</a>
           </Button>
