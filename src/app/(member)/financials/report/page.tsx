@@ -137,13 +137,15 @@ export default async function MonthlyReportPage({
           {transactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No transactions in {monthLabel}</p>
           ) : (
+            {/* Category & Reference are hidden on phones so the table fits;
+                they remain on sm+ screens, in print, and in the CSV export */}
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left">
                   <th className="pb-2">Date</th>
                   <th className="pb-2">Description</th>
-                  <th className="pb-2">Category</th>
-                  <th className="pb-2">Reference</th>
+                  <th className="hidden pb-2 sm:table-cell print:table-cell">Category</th>
+                  <th className="hidden pb-2 sm:table-cell print:table-cell">Reference</th>
                   <th className="pb-2 text-right">Income</th>
                   <th className="pb-2 text-right">Expense</th>
                 </tr>
@@ -151,14 +153,14 @@ export default async function MonthlyReportPage({
               <tbody>
                 {transactions.map((tx) => (
                   <tr key={tx.id} className="border-b last:border-0">
-                    <td className="py-2">{format(tx.date, "d MMM")}</td>
-                    <td className="py-2">{tx.description}</td>
-                    <td className="py-2">{tx.category}</td>
-                    <td className="py-2 text-muted-foreground">{tx.reference ?? "—"}</td>
-                    <td className="py-2 text-right text-green-600">
+                    <td className="py-2 whitespace-nowrap align-top">{format(tx.date, "d MMM")}</td>
+                    <td className="py-2 break-words align-top">{tx.description}</td>
+                    <td className="hidden py-2 align-top sm:table-cell print:table-cell">{tx.category}</td>
+                    <td className="hidden py-2 align-top text-muted-foreground sm:table-cell print:table-cell">{tx.reference ?? "—"}</td>
+                    <td className="py-2 text-right whitespace-nowrap align-top text-green-600">
                       {tx.type === "income" ? formatPence(tx.amount) : ""}
                     </td>
-                    <td className="py-2 text-right text-red-600">
+                    <td className="py-2 text-right whitespace-nowrap align-top text-red-600">
                       {tx.type === "expense" ? formatPence(tx.amount) : ""}
                     </td>
                   </tr>
@@ -166,9 +168,10 @@ export default async function MonthlyReportPage({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 font-bold">
-                  <td colSpan={4} className="py-2">Totals</td>
-                  <td className="py-2 text-right text-green-600">{formatPence(monthIncome)}</td>
-                  <td className="py-2 text-right text-red-600">{formatPence(monthExpense)}</td>
+                  <td colSpan={2} className="py-2">Totals</td>
+                  <td colSpan={2} className="hidden py-2 sm:table-cell print:table-cell"></td>
+                  <td className="py-2 text-right whitespace-nowrap text-green-600">{formatPence(monthIncome)}</td>
+                  <td className="py-2 text-right whitespace-nowrap text-red-600">{formatPence(monthExpense)}</td>
                 </tr>
               </tfoot>
             </table>
