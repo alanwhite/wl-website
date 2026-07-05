@@ -73,7 +73,7 @@ export default async function MemberLayout({
         </div>
         <div className="flex flex-1">
           <MemberSidebar items={memberLinks} notificationCounts={notificationCounts} />
-          <main className="min-w-0 flex-1 overflow-hidden px-4 py-8 pb-20 md:px-6 md:pb-8">
+          <main className="min-w-0 flex-1 overflow-hidden px-4 py-8 pb-20 md:px-6 md:pb-8 print:overflow-visible print:p-0">
             {children}
           </main>
         </div>

@@ -84,7 +84,7 @@ function NavList({ pathname, onSelect }: { pathname: string; onSelect?: () => vo
 export function AdminSidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden w-64 border-r bg-muted/30 md:block min-h-[calc(100vh-4rem)]">
+    <aside className="hidden w-64 border-r bg-muted/30 md:block min-h-[calc(100vh-4rem)] print:hidden">
       <NavList pathname={pathname} />
     </aside>
   );

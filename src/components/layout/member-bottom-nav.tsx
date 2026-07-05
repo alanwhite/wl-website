@@ -70,7 +70,7 @@ export function MemberBottomNav({ items, notificationCounts = {} }: MemberBottom
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden print:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
     >
       <div className="flex items-center justify-around px-2">

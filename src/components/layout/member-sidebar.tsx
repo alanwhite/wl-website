@@ -29,7 +29,7 @@ export function MemberSidebar({ items, notificationCounts = {} }: MemberSidebarP
   ];
 
   return (
-    <aside className="hidden w-64 border-r bg-muted/30 md:block min-h-[calc(100vh-4rem)]">
+    <aside className="hidden w-64 border-r bg-muted/30 md:block min-h-[calc(100vh-4rem)] print:hidden">
       <nav className="flex flex-col gap-1 p-4">
         {allItems.map((item) => {
           const Icon = getIcon(item.icon) ?? LayoutDashboard;

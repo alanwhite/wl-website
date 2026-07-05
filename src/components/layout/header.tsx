@@ -58,7 +58,7 @@ export function Header({ siteName, logoUrl, logoDarkUrl, navLinks, transparent }
   });
 
   return (
-    <header className={transparent ? "" : "border-b"}>
+    <header className={transparent ? "print:hidden" : "border-b print:hidden"}>
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className={`flex items-center gap-2 text-xl font-bold ${transparent ? "text-white" : ""}`}>
           {logoUrl && (
