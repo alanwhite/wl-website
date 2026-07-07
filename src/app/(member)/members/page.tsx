@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getMemberManagerRoles, canManageMembers } from "@/lib/config";
+import { getMemberManagerRoles, canManageMembers, getMembersShowStats } from "@/lib/config";
+import { MemberStats } from "@/components/members/member-stats";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ export default async function MembersPage({
 
   const managerRoles = await getMemberManagerRoles();
   if (!canManageMembers(session.user, managerRoles)) redirect("/dashboard");
+
+  const showStats = await getMembersShowStats();
 
   const params = await searchParams;
   const query = params.q?.trim();
@@ -73,9 +76,9 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Members</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <a href="/api/export/members" download>Export CSV</a>
           </Button>
@@ -89,6 +92,8 @@ export default async function MembersPage({
           </Button>
         </div>
       </div>
+
+      {showStats && <MemberStats />}
 
       <form action="/members" method="get">
         <Input

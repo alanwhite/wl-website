@@ -417,6 +417,34 @@ export async function updateGroupSettings(label: string, managerRoleSlugsJson: s
   });
 }
 
+export async function updateMembersShowStats(enabled: boolean) {
+  const admin = await requireAdmin();
+  await setConfig("members.showStats", enabled ? "true" : "false");
+  invalidateConfigCache("members.showStats");
+  revalidatePath("/admin/settings");
+  revalidatePath("/members");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.members.showStats",
+    details: { enabled },
+  });
+}
+
+export async function updateLayoutSettings(managerRoleSlugsJson: string) {
+  const admin = await requireAdmin();
+  await setConfig("layouts.managerRoles", managerRoleSlugsJson);
+  invalidateConfigCache("layouts.managerRoles");
+  revalidatePath("/admin/settings");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.layouts.update",
+  });
+}
+
 export async function updateProjectSettings(label: string, managerRoleSlugsJson: string) {
   const admin = await requireAdmin();
   await setConfig("projects.label", label);

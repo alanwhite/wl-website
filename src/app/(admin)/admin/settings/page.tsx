@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getProjectLabel, getProjectManagerRoles, getDashboardCards, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getProjectLabel, getProjectManagerRoles, getDashboardCards, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible, getMembersShowStats } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -79,6 +79,7 @@ export default async function AdminSettingsPage() {
             : null,
           heroImages,
           memberManagerRoles: (await getConfigJson<string[]>("members.managerRoles")) ?? [],
+          membersShowStats: await getMembersShowStats(),
           documentManagerRoles: (await getConfigJson<string[]>("documents.managerRoles")) ?? [],
           formCreatorRoles: (await getConfigJson<string[]>("forms.creatorRoles")) ?? [],
           announcementManagerRoles: (await getConfigJson<string[]>("announcements.managerRoles")) ?? [],
@@ -95,6 +96,7 @@ export default async function AdminSettingsPage() {
           groupConfirmLabel: await getGroupConfirmLabel(),
           projectLabel: await getProjectLabel(),
           projectManagerRoles: await getProjectManagerRoles(),
+          layoutManagerRoles: (await getConfigJson<string[]>("layouts.managerRoles")) ?? [],
           dashboardCards: await getDashboardCards(),
           dashboardWelcomePageSlug: (await getDashboardWelcomePageSlug()) ?? "",
           dashboardWelcomeDismissible: await getDashboardWelcomeDismissible(),

@@ -249,6 +249,12 @@ export async function getMemberManagerRoles(): Promise<string[]> {
   return roles ?? [];
 }
 
+/** Opt-in stats charts at the top of the members page (off by default —
+ *  tier splits and registration trends make no sense for e.g. a wedding site). */
+export async function getMembersShowStats(): Promise<boolean> {
+  return (await getConfig("members.showStats")) === "true";
+}
+
 export function canManageMembers(
   user: { roleSlugs?: string[]; tierLevel?: number },
   managerRoles: string[],
@@ -544,6 +550,47 @@ export function canContributeToProject(
   // Check role requirement
   if (project.contributorRoleSlugs.length > 0) {
     if (!project.contributorRoleSlugs.some((slug) => user.roleSlugs?.includes(slug))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// ── Layout plans ──
+
+export async function getLayoutManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("layouts.managerRoles");
+  return roles ?? [];
+}
+
+export function canManageLayouts(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
+export function canEditLayoutPlan(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  plan: { editorRoleSlugs: string[]; editorMinTierLevel: number | null },
+): boolean {
+  // Admin can always edit
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+
+  // No editor settings = nobody except admin/layout managers (mirrors canUploadToCategory)
+  if (plan.editorRoleSlugs.length === 0 && plan.editorMinTierLevel == null) return false;
+
+  // Check tier requirement
+  if (plan.editorMinTierLevel != null && (user.tierLevel ?? 0) < plan.editorMinTierLevel) {
+    return false;
+  }
+
+  // Check role requirement
+  if (plan.editorRoleSlugs.length > 0) {
+    if (!plan.editorRoleSlugs.some((slug) => user.roleSlugs?.includes(slug))) {
       return false;
     }
   }

@@ -31,6 +31,7 @@ import {
   updateTierRules,
   updateAddressData,
   updateMemberManagerRoles,
+  updateMembersShowStats,
   updateDocumentManagerRoles,
   updateFormCreatorRoles,
   updateAnnouncementManagerRoles,
@@ -43,6 +44,7 @@ import {
   updateGroupSettings,
   updateGroupMemberFields,
   updateProjectSettings,
+  updateLayoutSettings,
   updateDashboardCards,
   updateDashboardWelcomePageSlug,
   updateDashboardWelcomeDismissible,
@@ -72,6 +74,7 @@ interface SettingsFormProps {
     addressDataSummary: { postcodes: number; addresses: number } | null;
     heroImages: string[];
     memberManagerRoles: string[];
+    membersShowStats: boolean;
     calendarManagerRoles: string[];
     financialManagerRoles: string[];
     financialViewerRoles: string[];
@@ -87,6 +90,7 @@ interface SettingsFormProps {
     groupConfirmLabel: string;
     projectLabel: string;
     projectManagerRoles: string[];
+    layoutManagerRoles: string[];
     dashboardCards: DashboardCard[];
     dashboardWelcomePageSlug: string;
     dashboardWelcomeDismissible: boolean;
@@ -116,6 +120,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [analyticsScript, setAnalyticsScript] = useState(settings.analyticsScript);
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
   const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
+  const [membersShowStats, setMembersShowStats] = useState(settings.membersShowStats);
   const [documentManagerRoleSlugs, setDocumentManagerRoleSlugs] = useState<string[]>(settings.documentManagerRoles);
   const [formCreatorRoleSlugs, setFormCreatorRoleSlugs] = useState<string[]>(settings.formCreatorRoles);
   const [announcementManagerRoleSlugs, setAnnouncementManagerRoleSlugs] = useState<string[]>(settings.announcementManagerRoles);
@@ -127,6 +132,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [groupManagerRoleSlugs, setGroupManagerRoleSlugs] = useState<string[]>(settings.groupManagerRoles);
   const [projectLabelVal, setProjectLabelVal] = useState(settings.projectLabel);
   const [projectManagerRoleSlugs, setProjectManagerRoleSlugs] = useState<string[]>(settings.projectManagerRoles);
+  const [layoutManagerRoleSlugs, setLayoutManagerRoleSlugs] = useState<string[]>(settings.layoutManagerRoles);
   const [groupMemberFieldsJson, setGroupMemberFieldsJson] = useState(JSON.stringify(settings.groupMemberFields, null, 2));
   const [groupConfirmLabelVal, setGroupConfirmLabelVal] = useState(settings.groupConfirmLabel);
   const [dashboardCardsJson, setDashboardCardsJson] = useState(JSON.stringify(settings.dashboardCards, null, 2));
@@ -281,7 +287,8 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
     setLoading(true);
     try {
       await updateMemberManagerRoles(JSON.stringify(memberManagerRoleSlugs));
-      toast.success("Member manager roles saved");
+      await updateMembersShowStats(membersShowStats);
+      toast.success("Member management settings saved");
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -490,6 +497,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="financials" className="justify-start">Financials</TabsTrigger>
         <TabsTrigger value="polls" className="justify-start">Polls</TabsTrigger>
         <TabsTrigger value="projects" className="justify-start">Projects</TabsTrigger>
+        <TabsTrigger value="layouts" className="justify-start">Layouts</TabsTrigger>
         <TabsTrigger value="groups" className="justify-start">Groups</TabsTrigger>
         <TabsTrigger value="notifications" className="justify-start">Notifications</TabsTrigger>
         <TabsTrigger value="integrations" className="justify-start">Integrations</TabsTrigger>
@@ -1320,6 +1328,23 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                 </div>
               )}
             </div>
+            <div className="space-y-2 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="members-show-stats"
+                  checked={membersShowStats}
+                  onChange={(e) => setMembersShowStats(e.target.checked)}
+                  className="h-4 w-4 rounded border"
+                />
+                <Label htmlFor="members-show-stats">Show stats charts on the members page</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Adds a membership-by-tier breakdown and a 12-month registrations/approvals/rejections
+                chart above the member list. Visible to member managers and admins. Off by default —
+                enable where tiers and registration flow are meaningful (e.g. a community site).
+              </p>
+            </div>
             <Button onClick={handleSaveMemberManagerRoles} disabled={loading}>Save Member Management Settings</Button>
           </CardContent>
         </Card>
@@ -1424,6 +1449,55 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               }}
             >
               Save Project Settings
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="layouts">
+        <Card>
+          <CardHeader>
+            <CardTitle>Layout Plans</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Layout Manager Roles</Label>
+              <div className="space-y-1">
+                {roles.map((role) => (
+                  <label key={role.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={layoutManagerRoleSlugs.includes(role.slug)}
+                      onChange={(e) => {
+                        if (e.target.checked) setLayoutManagerRoleSlugs([...layoutManagerRoleSlugs, role.slug]);
+                        else setLayoutManagerRoleSlugs(layoutManagerRoleSlugs.filter((s) => s !== role.slug));
+                      }}
+                      className="h-4 w-4 rounded border"
+                    />
+                    {role.name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Roles that can create and delete layout plans (stall maps, seating plans) and edit
+                any of them. Per-plan view and editor access is set on each plan. Admins can always
+                manage layout plans.
+              </p>
+            </div>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await updateLayoutSettings(JSON.stringify(layoutManagerRoleSlugs));
+                  toast.success("Layout settings saved");
+                } catch {
+                  toast.error("Failed to save");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Layout Settings
             </Button>
           </CardContent>
         </Card>
