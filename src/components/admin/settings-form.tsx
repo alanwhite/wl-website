@@ -32,7 +32,7 @@ import {
   updateAddressData,
   updateMemberManagerRoles,
   updateMembersShowStats,
-  updateContactSettings,
+  updateContactManagerRoles,
   updateDocumentManagerRoles,
   updateFormCreatorRoles,
   updateAnnouncementManagerRoles,
@@ -77,7 +77,6 @@ interface SettingsFormProps {
     memberManagerRoles: string[];
     membersShowStats: boolean;
     contactManagerRoles: string[];
-    contactNavSortOrder: number;
     calendarManagerRoles: string[];
     financialManagerRoles: string[];
     financialViewerRoles: string[];
@@ -125,7 +124,6 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
   const [membersShowStats, setMembersShowStats] = useState(settings.membersShowStats);
   const [contactManagerRoleSlugs, setContactManagerRoleSlugs] = useState<string[]>(settings.contactManagerRoles);
-  const [contactNavSortOrder, setContactNavSortOrder] = useState(String(settings.contactNavSortOrder));
   const [documentManagerRoleSlugs, setDocumentManagerRoleSlugs] = useState<string[]>(settings.documentManagerRoles);
   const [formCreatorRoleSlugs, setFormCreatorRoleSlugs] = useState<string[]>(settings.formCreatorRoles);
   const [announcementManagerRoleSlugs, setAnnouncementManagerRoleSlugs] = useState<string[]>(settings.announcementManagerRoles);
@@ -1303,9 +1301,10 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Contact-form messages arrive in an Inbox. Choose which roles can see and manage it —
-              an <strong>Inbox</strong> item then appears in their navigation automatically. Admins
-              always have access (also under Admin → Contacts). Leave empty to keep it admin-only.
+              Contact-form messages arrive in an Inbox at <code>/inbox</code>. Choose which roles can
+              see and manage it — admins always can (also under Admin → Contacts). To show it in the
+              member menu, add a link to <code>/inbox</code> in the <strong>Navigation</strong> tab.
+              Leave the roles empty to keep the inbox admin-only.
             </p>
             <div className="space-y-2">
               <Label>Inbox Manager Roles</Label>
@@ -1336,31 +1335,12 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
                 </div>
               )}
             </div>
-            <div className="space-y-2 border-t pt-4">
-              <Label htmlFor="inbox-nav-position">Menu position</Label>
-              <Input
-                id="inbox-nav-position"
-                type="number"
-                value={contactNavSortOrder}
-                onChange={(e) => setContactNavSortOrder(e.target.value)}
-                className="w-28"
-              />
-              <p className="text-xs text-muted-foreground">
-                Where the Inbox appears in the member menu. Lower numbers sit higher up; your
-                other menu links are numbered from 0 in their listed order (see the Navigation tab).
-                A high number (the default) keeps the Inbox at the bottom.
-              </p>
-            </div>
             <Button
               disabled={loading}
               onClick={async () => {
                 setLoading(true);
                 try {
-                  const pos = parseInt(contactNavSortOrder, 10);
-                  await updateContactSettings(
-                    JSON.stringify(contactManagerRoleSlugs),
-                    Number.isFinite(pos) ? pos : 999,
-                  );
+                  await updateContactManagerRoles(JSON.stringify(contactManagerRoleSlugs));
                   toast.success("Inbox settings saved");
                 } catch {
                   toast.error("Failed to save");

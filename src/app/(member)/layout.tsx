@@ -6,7 +6,6 @@ import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
 import { getPinnedProjectNavItems } from "@/lib/project-access";
-import { getContactManagerRoles, canManageContacts, getContactNavSortOrder } from "@/lib/config";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 import { getNotificationCounts } from "@/lib/notifications";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
@@ -44,30 +43,15 @@ export default async function MemberLayout({
       label: link.label,
       href: link.href,
       icon: link.icon,
-      sortOrder: link.sortOrder,
     }));
 
-  // Auto-injected member nav items carry a sortOrder so they interleave with the
-  // configured links rather than always landing at the end.
+  // Pinned projects the user can access appear as their own nav entries
+  // (deduped against any manually configured link to the same project)
   if (user?.status === "APPROVED") {
-    const existingHrefs = new Set(memberLinks.map((l) => l.href));
-
-    // Pinned projects the user can access (default near the end, after config links)
     const pinnedProjects = await getPinnedProjectNavItems(user);
-    pinnedProjects
-      .filter((p) => !existingHrefs.has(p.href))
-      .forEach((p, i) => memberLinks.push({ ...p, sortOrder: 900 + i }));
-
-    // Contact inbox for users who can manage submissions — tied to the real
-    // permission (never drifts), positioned via a configurable sort order
-    const contactManagerRoles = await getContactManagerRoles();
-    if (canManageContacts(user, contactManagerRoles) && !existingHrefs.has("/inbox")) {
-      const inboxSort = await getContactNavSortOrder();
-      memberLinks.push({ label: "Inbox", href: "/inbox", icon: "Inbox", sortOrder: inboxSort });
-    }
+    const existingHrefs = new Set(memberLinks.map((l) => l.href));
+    memberLinks.push(...pinnedProjects.filter((p) => !existingHrefs.has(p.href)));
   }
-
-  memberLinks.sort((a, b) => a.sortOrder - b.sortOrder);
 
   // Fetch notification counts for badge display
   const notificationCounts = user?.status === "APPROVED"

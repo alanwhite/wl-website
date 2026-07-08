@@ -432,12 +432,10 @@ export async function updateMembersShowStats(enabled: boolean) {
   });
 }
 
-export async function updateContactSettings(managerRoleSlugsJson: string, navSortOrder: number) {
+export async function updateContactManagerRoles(managerRoleSlugsJson: string) {
   const admin = await requireAdmin();
   await setConfig("contacts.managerRoles", managerRoleSlugsJson);
-  await setConfig("contacts.navSortOrder", String(Number.isFinite(navSortOrder) ? navSortOrder : 999));
   invalidateConfigCache("contacts.managerRoles");
-  invalidateConfigCache("contacts.navSortOrder");
   revalidatePath("/admin/settings");
   revalidatePath("/inbox");
 

@@ -1,7 +1,7 @@
 import { getConfig, getConfigJson } from "@/lib/config";
 import { SettingsForm } from "@/components/admin/settings-form";
 import type { ThemeConfig, RegistrationField, RegistrationTermsConfig, TierRulesConfig, AddressData } from "@/lib/config";
-import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getProjectLabel, getProjectManagerRoles, getDashboardCards, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible, getMembersShowStats, getContactNavSortOrder } from "@/lib/config";
+import { getHeroImages, getNotificationTypes, getNotificationDefaults, getGroupLabel, getGroupManagerRoles, getGroupMemberFields, getGroupConfirmLabel, getProjectLabel, getProjectManagerRoles, getDashboardCards, getDashboardWelcomePageSlug, getDashboardWelcomeDismissible, getMembersShowStats } from "@/lib/config";
 import type { NavLink } from "@/lib/actions/settings";
 import { getNavLinks } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -81,7 +81,6 @@ export default async function AdminSettingsPage() {
           memberManagerRoles: (await getConfigJson<string[]>("members.managerRoles")) ?? [],
           membersShowStats: await getMembersShowStats(),
           contactManagerRoles: (await getConfigJson<string[]>("contacts.managerRoles")) ?? [],
-          contactNavSortOrder: await getContactNavSortOrder(),
           documentManagerRoles: (await getConfigJson<string[]>("documents.managerRoles")) ?? [],
           formCreatorRoles: (await getConfigJson<string[]>("forms.creatorRoles")) ?? [],
           announcementManagerRoles: (await getConfigJson<string[]>("announcements.managerRoles")) ?? [],

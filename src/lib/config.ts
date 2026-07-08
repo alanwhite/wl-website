@@ -254,14 +254,6 @@ export async function getContactManagerRoles(): Promise<string[]> {
   return roles ?? [];
 }
 
-/** Position of the auto-injected Inbox item in the member nav. Lower sorts
- *  higher; defaults high so it lands at the bottom. */
-export async function getContactNavSortOrder(): Promise<number> {
-  const v = await getConfig("contacts.navSortOrder");
-  const n = v ? parseInt(v, 10) : NaN;
-  return Number.isFinite(n) ? n : 999;
-}
-
 /** Who can see the contact inbox and manage submissions (admin always can). */
 export function canManageContacts(
   user: { roleSlugs?: string[]; tierLevel?: number },
