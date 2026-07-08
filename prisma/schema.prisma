@@ -45,11 +45,60 @@ model Project {
   events        CalendarEvent[]
   announcements Announcement[]
   forms         PublicForm[]
+  layoutPlans   LayoutPlan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status, pinToNav])
+}
+
+// Collaborative layout planner (stall plans, seating plans, safety maps).
+// All drawing state — item palette, placed items, traced features, scale —
+// lives in `data` (small JSON; the map photo is a separate uploaded file).
+// `version` provides optimistic concurrency: each save must present the
+// version it loaded, and a mismatch surfaces a reload-or-overwrite choice.
+model LayoutPlan {
+  id           String  @id @default(cuid())
+  title        String
+  description  String? @db.Text
+  data         Json    @default("{}")
+  mapImagePath String?
+  version      Int     @default(0)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  // Read gate (layered with the project gate, like other artifacts)
+  targetRoleSlugs    String[] @default([])
+  targetMinTierLevel Int?
+  // Write gate: who may move items and save (mirrors uploaderRoleSlugs)
+  editorRoleSlugs    String[] @default([])
+  editorMinTierLevel Int?
+
+  createdBy String?
+  creator   User?   @relation("LayoutPlanCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  updatedBy String?
+
+  revisions LayoutPlanRevision[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model LayoutPlanRevision {
+  id           String     @id @default(cuid())
+  layoutPlanId String
+  layoutPlan   LayoutPlan @relation(fields: [layoutPlanId], references: [id], onDelete: Cascade)
+  version      Int
+  data         Json
+  savedBy      String?
+  savedByName  String?
+  createdAt    DateTime   @default(now())
+
+  @@index([layoutPlanId, version])
 }
 
 model MembershipTier {
@@ -112,6 +161,7 @@ model User {
   pushSubscriptions         PushSubscription[]
   groups                    Group[]           @relation("GroupMembers")
   projectsCreated           Project[]         @relation("ProjectCreator")
+  layoutPlansCreated        LayoutPlan[]      @relation("LayoutPlanCreator")
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 }
@@ -148,6 +198,23 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Anonymised record written when a member is removed (a "leaver"). Deliberately
+// holds NO personal data — no name, email or contact — so it is not personal
+// data under GDPR and carries no ongoing retention liability. It exists purely
+// to power leaver counts/trends; the member's User row is still hard-deleted,
+// which serves as the actual erasure.
+model MembershipEvent {
+  id        String   @id @default(cuid())
+  type      String   @default("left")
+  tierName  String
+  tierLevel Int
+  joinedAt  DateTime
+  leftAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([leftAt])
 }
 
 model Authenticator {

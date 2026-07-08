@@ -7,6 +7,7 @@ import { UserStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { sendBrandedEmail } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
+import { recordLeaver } from "@/lib/membership-events";
 import { approvalEmailHtml, rejectionEmailHtml } from "@/lib/email-template";
 
 async function requireMemberManager() {
@@ -254,8 +255,13 @@ export async function updateUserStatus(userId: string, status: UserStatus) {
 export async function deleteUser(userId: string) {
   const manager = await requireMemberManager();
   if (userId === manager.id) throw new Error("You cannot delete your own account");
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, tierLevel: true } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, tierLevel: true, tierName: true, createdAt: true },
+  });
   if (user?.tierLevel && user.tierLevel >= 999) throw new Error("Cannot delete an admin account");
+  // Anonymised leaver record (no personal data) before the hard delete
+  if (user) await recordLeaver(user);
   await prisma.user.delete({ where: { id: userId } });
 
   await logAudit({

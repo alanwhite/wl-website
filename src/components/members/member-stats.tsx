@@ -38,7 +38,7 @@ export async function MemberStats() {
   const now = new Date();
   const since = startOfMonth(subMonths(now, 11));
 
-  const [tierCounts, recentUsers, reviews] = await Promise.all([
+  const [tierCounts, recentUsers, reviews, leaversCount] = await Promise.all([
     prisma.user.groupBy({
       by: ["tierName", "tierLevel"],
       where: { status: "APPROVED", tierLevel: { gt: 0, lt: 999 } },
@@ -53,6 +53,7 @@ export async function MemberStats() {
       where: { reviewedAt: { gte: since } },
       select: { reviewedAt: true, user: { select: { status: true } } },
     }),
+    prisma.membershipEvent.count({ where: { type: "left", leftAt: { gte: since } } }),
   ]);
 
   // ── Tier split ──
@@ -149,6 +150,11 @@ export async function MemberStats() {
                   approved member{totalMembers === 1 ? "" : "s"}
                 </span>
               </p>
+              {leaversCount > 0 && (
+                <p className="-mt-2 text-xs text-muted-foreground">
+                  {leaversCount} left in the last 12 months
+                </p>
+              )}
               {/* Composition bar: 2px gaps in the surface colour separate segments */}
               <div className="flex h-5 w-full gap-[2px] overflow-hidden" role="img" aria-label={`Membership split: ${shownTiers.map((t) => `${t.name} ${t.count}`).join(", ")}`}>
                 {shownTiers.map((t, i) => (
