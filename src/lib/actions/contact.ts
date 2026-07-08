@@ -4,12 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { contactSchema } from "@/lib/validations/registration";
 import { sendBrandedEmail, shouldNotifyAdmin } from "@/lib/email";
 import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/auth-helpers";
+import { getContactManagerRoles, canManageContacts } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
 
 const contactLimiter = rateLimit({ interval: 60_000, uniqueTokenPerInterval: 500 });
+
+async function requireContactManager() {
+  const session = await auth();
+  if (!session?.user || session.user.status !== "APPROVED") throw new Error("Unauthorized");
+  const managerRoles = await getContactManagerRoles();
+  if (!canManageContacts(session.user, managerRoles)) throw new Error("Unauthorized");
+  return session.user;
+}
 
 export async function submitContact(formData: FormData) {
   const headersList = await headers();
@@ -66,20 +74,20 @@ export async function submitContact(formData: FormData) {
 }
 
 export async function markContactRead(id: string) {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user)) throw new Error("Unauthorized");
+  await requireContactManager();
 
   await prisma.contactSubmission.update({
     where: { id },
     data: { read: true },
   });
   revalidatePath("/admin/contacts");
+  revalidatePath("/inbox");
 }
 
 export async function deleteContact(id: string) {
-  const session = await auth();
-  if (!session?.user || !isAdmin(session.user)) throw new Error("Unauthorized");
+  await requireContactManager();
 
   await prisma.contactSubmission.delete({ where: { id } });
   revalidatePath("/admin/contacts");
+  revalidatePath("/inbox");
 }

@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { canAccessProject, canAccessProjectArtifact, getMemberManagerRoles, canManageMembers, getGroupMemberFields } from "./config";
+import { canAccessProject, canAccessProjectArtifact, getMemberManagerRoles, canManageMembers, getContactManagerRoles, canManageContacts, getGroupMemberFields } from "./config";
 import type { RegistrationField } from "./config";
 import { isFieldVisible } from "./registration-fields";
 import { isPushEnabled } from "./push";
@@ -71,6 +71,15 @@ export async function getNotificationCounts(user: {
     const pendingSubmissions = forms.reduce((sum, f) => sum + f._count.submissions, 0);
     if (pendingSubmissions > 0) {
       counts["/forms"] = pendingSubmissions;
+    }
+  }
+
+  // Unread contact messages for contact managers
+  const contactManagerRoles = await getContactManagerRoles();
+  if (canManageContacts(user, contactManagerRoles)) {
+    const unreadContacts = await prisma.contactSubmission.count({ where: { read: false } });
+    if (unreadContacts > 0) {
+      counts["/inbox"] = unreadContacts;
     }
   }
 

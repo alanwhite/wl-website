@@ -25,6 +25,7 @@ import {
   Wallet,
   TrendingUp,
   ClipboardList,
+  Inbox,
   type LucideIcon,
 } from "lucide-react";
 
@@ -55,6 +56,7 @@ const iconMap: Record<string, LucideIcon> = {
   Wallet,
   TrendingUp,
   ClipboardList,
+  Inbox,
 };
 
 export function getIcon(name: string | undefined): LucideIcon | null {

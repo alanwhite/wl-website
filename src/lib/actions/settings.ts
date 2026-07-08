@@ -432,6 +432,20 @@ export async function updateMembersShowStats(enabled: boolean) {
   });
 }
 
+export async function updateContactManagerRoles(managerRoleSlugsJson: string) {
+  const admin = await requireAdmin();
+  await setConfig("contacts.managerRoles", managerRoleSlugsJson);
+  invalidateConfigCache("contacts.managerRoles");
+  revalidatePath("/admin/settings");
+  revalidatePath("/inbox");
+
+  await logAudit({
+    userId: admin.id,
+    userName: admin.name ?? "Admin",
+    action: "settings.contacts.update",
+  });
+}
+
 export async function updateLayoutSettings(managerRoleSlugsJson: string) {
   const admin = await requireAdmin();
   await setConfig("layouts.managerRoles", managerRoleSlugsJson);

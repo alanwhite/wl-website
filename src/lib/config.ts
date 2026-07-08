@@ -249,6 +249,21 @@ export async function getMemberManagerRoles(): Promise<string[]> {
   return roles ?? [];
 }
 
+export async function getContactManagerRoles(): Promise<string[]> {
+  const roles = await getConfigJson<string[]>("contacts.managerRoles");
+  return roles ?? [];
+}
+
+/** Who can see the contact inbox and manage submissions (admin always can). */
+export function canManageContacts(
+  user: { roleSlugs?: string[]; tierLevel?: number },
+  managerRoles: string[],
+): boolean {
+  if (user.tierLevel && user.tierLevel >= 999) return true;
+  if (managerRoles.length === 0) return false;
+  return managerRoles.some((slug) => user.roleSlugs?.includes(slug));
+}
+
 /** Opt-in stats charts at the top of the members page (off by default —
  *  tier splits and registration trends make no sense for e.g. a wedding site). */
 export async function getMembersShowStats(): Promise<boolean> {

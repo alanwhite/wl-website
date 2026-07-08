@@ -6,6 +6,7 @@ import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { Providers } from "@/components/layout/providers";
 import { getNavLinks } from "@/lib/navigation";
 import { getPinnedProjectNavItems } from "@/lib/project-access";
+import { getContactManagerRoles, canManageContacts } from "@/lib/config";
 import { SYSTEM_LEVELS } from "@/lib/auth-helpers";
 import { getNotificationCounts } from "@/lib/notifications";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
@@ -51,6 +52,13 @@ export default async function MemberLayout({
     const pinnedProjects = await getPinnedProjectNavItems(user);
     const existingHrefs = new Set(memberLinks.map((l) => l.href));
     memberLinks.push(...pinnedProjects.filter((p) => !existingHrefs.has(p.href)));
+
+    // Contact inbox appears for users who can manage submissions — tied to the
+    // real permission, so it never drifts from a hand-configured nav link
+    const contactManagerRoles = await getContactManagerRoles();
+    if (canManageContacts(user, contactManagerRoles) && !existingHrefs.has("/inbox")) {
+      memberLinks.push({ label: "Inbox", href: "/inbox", icon: "Inbox" });
+    }
   }
 
   // Fetch notification counts for badge display

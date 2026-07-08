@@ -32,6 +32,7 @@ import {
   updateAddressData,
   updateMemberManagerRoles,
   updateMembersShowStats,
+  updateContactManagerRoles,
   updateDocumentManagerRoles,
   updateFormCreatorRoles,
   updateAnnouncementManagerRoles,
@@ -75,6 +76,7 @@ interface SettingsFormProps {
     heroImages: string[];
     memberManagerRoles: string[];
     membersShowStats: boolean;
+    contactManagerRoles: string[];
     calendarManagerRoles: string[];
     financialManagerRoles: string[];
     financialViewerRoles: string[];
@@ -121,6 +123,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
   const [pollManagerRoleSlugs, setPollManagerRoleSlugs] = useState<string[]>(settings.pollManagerRoles);
   const [memberManagerRoleSlugs, setMemberManagerRoleSlugs] = useState<string[]>(settings.memberManagerRoles);
   const [membersShowStats, setMembersShowStats] = useState(settings.membersShowStats);
+  const [contactManagerRoleSlugs, setContactManagerRoleSlugs] = useState<string[]>(settings.contactManagerRoles);
   const [documentManagerRoleSlugs, setDocumentManagerRoleSlugs] = useState<string[]>(settings.documentManagerRoles);
   const [formCreatorRoleSlugs, setFormCreatorRoleSlugs] = useState<string[]>(settings.formCreatorRoles);
   const [announcementManagerRoleSlugs, setAnnouncementManagerRoleSlugs] = useState<string[]>(settings.announcementManagerRoles);
@@ -490,6 +493,7 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
         <TabsTrigger value="addressData" className="justify-start">Address Data</TabsTrigger>
         <TabsTrigger value="terms" className="justify-start">Terms &amp; Conditions</TabsTrigger>
         <TabsTrigger value="memberMgmt" className="justify-start">Member Mgmt</TabsTrigger>
+        <TabsTrigger value="contacts" className="justify-start">Inbox</TabsTrigger>
         <TabsTrigger value="documents" className="justify-start">Documents</TabsTrigger>
         <TabsTrigger value="forms" className="justify-start">Forms</TabsTrigger>
         <TabsTrigger value="announcements" className="justify-start">Announcements</TabsTrigger>
@@ -1286,6 +1290,65 @@ export function SettingsForm({ settings, tiers, roles }: SettingsFormProps) {
               </div>
             </div>
             <Button onClick={handleSaveFinancialRoles} disabled={loading}>Save Financial Settings</Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="contacts">
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact Inbox</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Contact-form messages arrive in an Inbox. Choose which roles can see and manage it —
+              an <strong>Inbox</strong> item then appears in their navigation automatically. Admins
+              always have access (also under Admin → Contacts). Leave empty to keep it admin-only.
+            </p>
+            <div className="space-y-2">
+              <Label>Inbox Manager Roles</Label>
+              {roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No roles defined yet. Create roles in the Roles section first.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`contact-role-${role.slug}`}
+                        checked={contactManagerRoleSlugs.includes(role.slug)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setContactManagerRoleSlugs([...contactManagerRoleSlugs, role.slug]);
+                          } else {
+                            setContactManagerRoleSlugs(contactManagerRoleSlugs.filter((s) => s !== role.slug));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border"
+                      />
+                      <Label htmlFor={`contact-role-${role.slug}`}>{role.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await updateContactManagerRoles(JSON.stringify(contactManagerRoleSlugs));
+                  toast.success("Inbox settings saved");
+                } catch {
+                  toast.error("Failed to save");
+                }
+                setLoading(false);
+              }}
+            >
+              Save Inbox Settings
+            </Button>
           </CardContent>
         </Card>
       </TabsContent>
