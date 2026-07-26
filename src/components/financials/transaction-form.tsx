@@ -16,6 +16,25 @@ import { createTransaction, updateTransaction } from "@/lib/actions/financials";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+// A server action that fails at the transport layer (dropped connection, DNS,
+// offline) rejects with the browser's own fetch error rather than anything the
+// action threw. The wording differs per browser, so match on both the type and
+// the known messages: Safari says "Load Failed", Chrome "Failed to fetch".
+const NETWORK_ERROR_MESSAGES = [
+  "load failed",
+  "failed to fetch",
+  "networkerror",
+  "network request failed",
+  "connection appears to be offline",
+];
+
+function isNetworkError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err instanceof TypeError) return true;
+  const message = err.message.toLowerCase();
+  return NETWORK_ERROR_MESSAGES.some((m) => message.includes(m));
+}
+
 interface Category {
   name: string;
   type: string;
@@ -75,7 +94,25 @@ export function TransactionForm({ categories, transaction }: TransactionFormProp
       }
       router.push("/financials");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      // The form keeps what was typed, so recovery is just pressing submit
+      // again. Don't retry automatically: creating a transaction isn't
+      // idempotent, and a request that was committed before the connection
+      // dropped would be written a second time.
+      if (isNetworkError(err)) {
+        toast.error(
+          isEdit
+            ? "Connection lost — changes not saved"
+            : "Connection lost — transaction not saved",
+          {
+            description: isEdit
+              ? "Your changes are still here. Press Update to try again."
+              : "Your details are still here. Press Add Transaction to try again, then check the list in case it saved twice.",
+            duration: 10000,
+          },
+        );
+      } else {
+        toast.error(err instanceof Error ? err.message : "Failed to save");
+      }
     } finally {
       setLoading(false);
     }
